@@ -9,6 +9,12 @@ import 'package:ta_client/features/login/bloc/login_state.dart';
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
+  /// Creates a [LoginPage] and wraps it in a [BlocProvider] that provides
+  /// a [LoginBloc].
+  ///
+  /// This is a convenience method for creating a [LoginPage] with a
+  /// [LoginBloc] provider. It is intended to be used as a root widget in
+  /// a Flutter application.
   static Widget create() {
     return BlocProvider(
       create: (context) => LoginBloc(),
@@ -16,6 +22,13 @@ class LoginPage extends StatelessWidget {
     );
   }
 
+  /// Builds a [Scaffold] with an [AppBar] with the title "Login", and a
+  /// [Column] in the body. The [Column] contains two [TextField]s for the
+  /// email or username and password, and an [ElevatedButton] for submitting
+  /// the login. The [BlocListener] listens to the [LoginBloc] and if the
+  /// state is [LoginSuccess], it navigates to the [Routes.dashboard] page.
+  /// If the state is [LoginFailure], it shows a [SnackBar] with the error
+  /// message.
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -7,6 +7,12 @@ class OtpBloc extends Bloc<OtpEvent, OtpState> {
     on<OtpSubmitted>(_onOtpSubmitted);
   }
 
+  /// Handles the [OtpSubmitted] event by emitting an [OtpLoading] state,
+  /// then simulating the OTP verification process. If successful, emits
+  /// an [OtpSuccess] state, otherwise emits an [OtpFailure] state with the
+  /// error message.
+  ///
+  /// This function simulates a delay to mimic OTP verification logic.
   Future<void> _onOtpSubmitted(
     OtpSubmitted event,
     Emitter<OtpState> emit,

@@ -9,6 +9,12 @@ import 'package:ta_client/features/otp/bloc/otp_state.dart';
 class OtpVerificationPage extends StatelessWidget {
   const OtpVerificationPage({super.key});
 
+  /// Creates an [OtpVerificationPage] and wraps it in a [BlocProvider]
+  /// that provides an [OtpBloc].
+  ///
+  /// This is a convenience method for creating an [OtpVerificationPage] with
+  /// an [OtpBloc] provider. It is intended to be used as a root widget in
+  /// a Flutter application.
   static Widget create() {
     return BlocProvider(
       create: (context) => OtpBloc(),
@@ -16,6 +22,13 @@ class OtpVerificationPage extends StatelessWidget {
     );
   }
 
+  /// Builds a [Scaffold] with an [AppBar] with the title 'OTP Verification'
+  /// and a [Column] with a [TextField] for entering the OTP and an
+  /// [ElevatedButton] for submitting the OTP.
+  ///
+  /// The [BlocListener] listens for [OtpSuccess] and [OtpFailure] events
+  /// and navigates to the [Routes.dashboard] route on success and shows
+  /// a [SnackBar] with the error message on failure.
   @override
   Widget build(BuildContext context) {
     return Scaffold(

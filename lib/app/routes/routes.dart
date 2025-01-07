@@ -9,6 +9,18 @@ class Routes {
   static const otpVerification = '/otp-verification';
   static const dashboard = '/dashboard';
 
+  /// This function generates a route based on the given [RouteSettings].
+  ///
+  /// If the route is not found, it logs a debug message and returns a [MaterialPageRoute]
+  /// with a [Scaffold] displaying a 'Page not found' [Text] widget.
+  ///
+  /// The supported routes are:
+  ///
+  /// - [welcome]: The welcome page.
+  /// - [login]: The login page.
+  /// - [register]: The register page.
+  /// - [otpVerification]: The OTP verification page.
+  /// - [dashboard]: The dashboard page.
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case welcome:

@@ -12,6 +12,11 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     add(DashboardReloadRequested());
   }
 
+  /// Handles [DashboardReloadRequested] event.
+  //
+  /// Emits [DashboardLoading] initially, then attempts to load the dashboard
+  /// data. If successful, emits [DashboardLoaded] with the loaded data.
+  /// Otherwise, emits [DashboardError] with the error message.
   Future<void> _onReload(
     DashboardReloadRequested event,
     Emitter<DashboardState> emit,
@@ -32,6 +37,10 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
   }
 
+  /// Handles [DashboardItemDeleted] event.
+  ///
+  /// When an item is deleted, this updates the state by removing the item from
+  /// the list of items. This does nothing if the state is not [DashboardLoaded].
   void _onItemDeleted(
     DashboardItemDeleted event,
     Emitter<DashboardState> emit,

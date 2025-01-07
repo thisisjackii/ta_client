@@ -11,6 +11,12 @@ import 'package:ta_client/features/register/bloc/register_state.dart';
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
 
+  /// Creates a [RegisterPage] and wraps it in a [BlocProvider] that provides
+  /// a [RegisterBloc].
+  ///
+  /// This is a convenience method for creating a [RegisterPage] with a
+  /// [RegisterBloc] provider. It is intended to be used as a root widget in
+  /// a Flutter application.
   static Widget create() {
     return BlocProvider(
       create: (context) => RegisterBloc(),
@@ -18,6 +24,16 @@ class RegisterPage extends StatelessWidget {
     );
   }
 
+  /// Builds a [Scaffold] with a [Column] of [CustomTextField]s and a
+  /// [CustomButton] to register a new user.
+  ///
+  /// The [Column] contains three [CustomTextField]s for entering the user's
+  /// full name, email, and password. The [CustomButton] is used to submit the
+  /// registration form.
+  ///
+  /// This method is a convenience method for creating a [RegisterPage] with a
+  /// [RegisterBloc] provider. It is intended to be used as a root widget in
+  /// a Flutter application.
   @override
   Widget build(BuildContext context) {
     return Scaffold(

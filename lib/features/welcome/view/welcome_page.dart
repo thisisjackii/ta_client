@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
 
+  /// A convenience method for creating a [WelcomePage] widget.
+  ///
+  /// This is intended to be used as a root widget in a Flutter application.
   static Widget create() {
     return const WelcomePage();
   }
@@ -31,6 +34,12 @@ class _WelcomePageState extends State<WelcomePage>
     );
   }
 
+  /// Initializes the animation controller and sets the first gradient animation.
+  ///
+  /// This method is called when the widget is inserted into the tree.
+  ///
+  /// The animation controller is set to repeat the animation forward and backward.
+  /// The `_setNewGradientAnimation` function is called to set the first gradient animation.
   @override
   void initState() {
     super.initState();
@@ -47,7 +56,15 @@ class _WelcomePageState extends State<WelcomePage>
     _controller.repeat(reverse: true);
   }
 
-  // Function to set a new gradient animation
+  /// Sets a new gradient animation when the current animation is completed or
+  /// dismissed.
+  //
+  /// This function generates two new random colors for the gradient and sets them
+  /// as the start and end colors for the animation using [ColorTween].
+  ///
+  /// The animation controller is set to listen for every tick and updates the
+  /// animation when the current animation is completed or dismissed. This ensures
+  /// that the animation loops indefinitely.
   void _setNewGradientAnimation() {
     _color1Animation = ColorTween(
       begin: _randomColor(),
@@ -68,12 +85,37 @@ class _WelcomePageState extends State<WelcomePage>
     });
   }
 
+  /// Disposes the animation controller to free up resources.
+  ///
+  /// This method is called when the widget is removed from the widget tree.
+  /// It ensures that the animation controller is properly disposed to prevent
+  /// memory leaks.
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
+  /// Builds the welcome page.
+  ///
+  /// This page displays a gradient animation with a placeholder image and
+  /// buttons to navigate to the login and register pages.
+  ///
+  /// The gradient animation is generated using [_setNewGradientAnimation] and
+  /// the animation controller is updated on every tick.
+  ///
+  /// The buttons are elevated buttons with a rounded rectangle shape and a
+  /// white text color. The login button has a deep purple color and the
+  /// register button has a white background with a deep purple border.
+  ///
+  /// The page is wrapped in a [Scaffold] widget with a [SafeArea] widget as
+  /// its body. This ensures that the content of the page is not obscured by
+  /// the system bars.
+  ///
+  /// The page is designed to be responsive and works well on different screen
+  /// sizes. The text and buttons are centered horizontally and the image is
+  /// placed at the top of the page. The buttons are placed at the bottom of
+  /// the page with a gap of 36 pixels between them.
   @override
   Widget build(BuildContext context) {
     return Scaffold(

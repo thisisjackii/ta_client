@@ -7,6 +7,12 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     on<RegisterSubmitted>(_onRegisterSubmitted);
   }
 
+  /// Handles [RegisterSubmitted] event by emitting an [RegisterLoading] state,
+  /// then simulating the registration process. If successful, emits
+  /// an [RegisterSuccess] state, otherwise emits an [RegisterFailure] state with
+  /// the error message.
+  //
+  /// This function simulates a delay to mimic registration logic.
   Future<void> _onRegisterSubmitted(
     RegisterSubmitted event,
     Emitter<RegisterState> emit,
