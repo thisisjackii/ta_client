@@ -8,6 +8,7 @@ class CustomDashboardItem {
   final String category;
   final String subcategory;
   final String amount;
+  final String id;
 
   CustomDashboardItem({
     required this.title,
@@ -16,10 +17,21 @@ class CustomDashboardItem {
     required this.category,
     required this.subcategory,
     required this.amount,
+    required this.id,
   });
 }
 
-class GroupedListViewExample extends StatelessWidget {
+class GroupedItems extends StatefulWidget {
+  final ValueNotifier<bool> isSelectionMode;
+
+  const GroupedItems({Key? key, required this.isSelectionMode})
+      : super(key: key);
+
+  @override
+  _GroupedItemsState createState() => _GroupedItemsState();
+}
+
+class _GroupedItemsState extends State<GroupedItems> {
   final List<CustomDashboardItem> items = [
     CustomDashboardItem(
         title: 'Component 1',
@@ -27,36 +39,58 @@ class GroupedListViewExample extends StatelessWidget {
         date: DateTime(2025, 1, 15),
         category: 'Category 1',
         subcategory: 'Subcategory 1',
-        amount: 'Rp. 1.500.000'),
+        amount: 'Rp. 1.500.000',
+        id: '1'),
     CustomDashboardItem(
         title: 'Component 2',
         description: 'Description 2',
         date: DateTime(2025, 1, 15),
         category: 'Category 2',
         subcategory: 'Subcategory 2',
-        amount: 'Rp. 500.000'),
+        amount: 'Rp. 500.000',
+        id: '2'),
     CustomDashboardItem(
         title: 'Component 1',
         description: 'Description 3',
         date: DateTime(2025, 1, 16),
         category: 'Category 1',
         subcategory: 'Subcategory 2',
-        amount: 'Rp. 25.000'),
+        amount: 'Rp. 25.000',
+        id: '3'),
     CustomDashboardItem(
         title: 'Component 1',
         description: 'Description 4',
         date: DateTime(2025, 1, 17),
         category: 'Category 1',
         subcategory: 'Subcategory 2',
-        amount: 'Rp. 12.000'),
+        amount: 'Rp. 12.000',
+        id: '4'),
     CustomDashboardItem(
         title: 'Component 2',
         description: 'Description 5',
         date: DateTime(2025, 1, 17),
         category: 'Category 2',
         subcategory: 'Subcategory 1',
-        amount: 'Rp. 40.000'),
+        amount: 'Rp. 40.000',
+        id: '5'),
   ];
+
+  final Set<String> selectedItems = {}; // Track selected item IDs
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen to changes in selection mode
+    widget.isSelectionMode.addListener(() {
+      if (!widget.isSelectionMode.value) {
+        // Clear selected items when exiting selection mode
+        setState(() {
+          selectedItems.clear();
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,70 +192,99 @@ class GroupedListViewExample extends StatelessWidget {
             ),
             // List of items for this date
             ...itemsForDate.map((item) {
-              return Container(
-                margin:
-                    const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    // border: Border.all(width: 2.0, color: Colors.black26),
+              final isSelected = selectedItems.contains(item.id);
+
+              return GestureDetector(
+                onLongPress: () {
+                  // Enable selection mode and select this item
+                  widget.isSelectionMode.value = true;
+                  setState(() {
+                    selectedItems.add(item.id);
+                  });
+                },
+                onTap: () {
+                  if (widget.isSelectionMode.value) {
+                    // Toggle selection
+                    setState(() {
+                      if (isSelected) {
+                        selectedItems.remove(item.id);
+                      } else {
+                        selectedItems.add(item.id);
+                      }
+                    });
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                      vertical: 4.0, horizontal: 8.0),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.blue.withOpacity(0.2) : Colors.white,
+                    border: Border.all(
+                      color: isSelected ? Colors.blue : Colors.white,
+                      width: 2.0,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black12,
-                          offset: const Offset(
-                            2.0,
-                            2.0,
+                        color: Colors.black12,
+                        offset: const Offset(2.0, 2.0),
+                        blurRadius: 2.0,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.category,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 10),
+                              ),
+                              SizedBox(
+                                height: 4,
+                              ),
+                              Text(
+                                item.subcategory,
+                                style: const TextStyle(
+                                    fontSize: 8, color: Colors.grey),
+                              ),
+                            ],
                           ),
-                          blurRadius: 2.0,
-                          spreadRadius: 1)
-                    ]),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.category,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 10),
-                            ),
-                            SizedBox(height: 4,),
-                            Text(
-                              item.subcategory,
-                              style: const TextStyle(
-                                  fontSize: 8, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.title,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 12),
-                            ),
-                            SizedBox(height: 4,),
-                            Text(
-                              item.description,
-                              style: const TextStyle(
-                                  fontSize: 10, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          item.amount,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              SizedBox(
+                                height: 4,
+                              ),
+                              Text(
+                                item.description,
+                                style: const TextStyle(
+                                    fontSize: 10, color: Colors.grey),
+                              ),
+                            ],
                           ),
-                        ),
-                      ]),
+                          Text(
+                            item.amount,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ]),
+                  ),
                 ),
               );
             }).toList(),

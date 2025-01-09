@@ -7,7 +7,7 @@ import 'package:ta_client/features/dashboard/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/dashboard/bloc/dashboard_event.dart';
 import 'package:ta_client/features/dashboard/bloc/dashboard_state.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   static Widget create() {
@@ -18,9 +18,23 @@ class DashboardPage extends StatelessWidget {
   }
 
   @override
+  _DashboardPageState createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final ValueNotifier<bool> isSelectionMode = ValueNotifier(false); // State tracker
+
+  @override
+  void dispose() {
+    isSelectionMode.dispose(); // Clean up the notifier
+    super.dispose();
+  }
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: CustomAppBar(
+        isSelectionMode: isSelectionMode, // Pass the notifier to AppBar
+      ),
       body: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
           if (state is DashboardLoading) {
@@ -76,7 +90,9 @@ class DashboardPage extends StatelessWidget {
                     ),
                   ),
                   Expanded(
-                    child: GroupedListViewExample(),
+                    child: GroupedItems(
+                      isSelectionMode: isSelectionMode, // Pass the notifier to Items list
+                    ),
                   ),
                 ],
               ),

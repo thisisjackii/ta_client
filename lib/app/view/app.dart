@@ -14,7 +14,7 @@ class App extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: Routes.dashboard,
+      initialRoute: Routes.welcome,
       onGenerateRoute: Routes.generateRoute,
     );
   }
