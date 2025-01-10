@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/core/widgets/custom_dashboard_item.dart';
 import 'package:ta_client/core/widgets/custom_appbar.dart';
+import 'package:ta_client/core/widgets/custom_bottom_navbar.dart';
 import 'package:ta_client/features/dashboard/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/dashboard/bloc/dashboard_event.dart';
 import 'package:ta_client/features/dashboard/bloc/dashboard_state.dart';
@@ -22,6 +23,16 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  int _currentTab = 0; // Tracks the current tab
+  final List<Widget> _screens = [
+  ];
+
+  void _onTabSelected(int index) {
+    setState(() {
+      _currentTab = index; // Update the selected tab
+    });
+  }
+
   final ValueNotifier<bool> isSelectionMode = ValueNotifier(false); // State tracker
 
   @override
@@ -119,6 +130,16 @@ class _DashboardPageState extends State<DashboardPage> {
           }
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Add',
+        onPressed: () {
+        },
+        shape: const CircleBorder(),
+        backgroundColor: const Color(0xFF1D3B5A),
+        child: const Icon(Icons.create, color: Colors.white),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: CustomBottomNavbar(currentTab: _currentTab, onTabSelected: _onTabSelected),
     );
   }
 }
