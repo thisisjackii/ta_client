@@ -24,8 +24,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int _currentTab = 0; // Tracks the current tab
-  final List<Widget> _screens = [
-  ];
+  final List<Widget> _screens = [];
 
   void _onTabSelected(int index) {
     setState(() {
@@ -33,13 +32,15 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  final ValueNotifier<bool> isSelectionMode = ValueNotifier(false); // State tracker
+  final ValueNotifier<bool> isSelectionMode =
+      ValueNotifier(false); // State tracker
 
   @override
   void dispose() {
     isSelectionMode.dispose(); // Clean up the notifier
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,8 +56,8 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
+                  const Padding(
+                    padding: EdgeInsets.all(16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       // Aligns components to left, center, and right
@@ -64,37 +65,40 @@ class _DashboardPageState extends State<DashboardPage> {
                         // First Component
                         Column(
                           mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               'Title 1',
                               style: TextStyle(fontSize: 12),
                             ),
-                            Text('Subtitle 1', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            Text('Subtitle 1',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 12)),
                           ],
                         ),
                         // Second Component
                         Column(
                           mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               'Title 2',
                               style: TextStyle(fontSize: 12),
                             ),
-                            Text('Subtitle 2', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            Text('Subtitle 2',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 12)),
                           ],
                         ),
                         // Third Component
                         Column(
                           mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               'Title 3',
                               style: TextStyle(fontSize: 12),
                             ),
-                            Text('Subtitle 3', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            Text('Subtitle 3',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 12)),
                           ],
                         ),
                       ],
@@ -102,7 +106,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   Expanded(
                     child: GroupedItems(
-                      isSelectionMode: isSelectionMode, // Pass the notifier to Items list
+                      isSelectionMode:
+                          isSelectionMode, // Pass the notifier to Items list
                     ),
                   ),
                 ],
@@ -113,8 +118,10 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(state.errorMessage,
-                      style: const TextStyle(color: Colors.red)),
+                  Text(
+                    state.errorMessage,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => context
@@ -132,14 +139,14 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add',
-        onPressed: () {
-        },
+        onPressed: () {},
         shape: const CircleBorder(),
         backgroundColor: const Color(0xFF1D3B5A),
         child: const Icon(Icons.create, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: CustomBottomNavbar(currentTab: _currentTab, onTabSelected: _onTabSelected),
+      bottomNavigationBar: CustomBottomNavbar(
+          currentTab: _currentTab, onTabSelected: _onTabSelected),
     );
   }
 }

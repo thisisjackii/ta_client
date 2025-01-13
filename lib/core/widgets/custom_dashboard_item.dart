@@ -2,14 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class CustomDashboardItem {
-  final String title;
-  final String description;
-  final DateTime date;
-  final String category;
-  final String subcategory;
-  final String amount;
-  final String id;
-
   CustomDashboardItem({
     required this.title,
     required this.description,
@@ -19,13 +11,19 @@ class CustomDashboardItem {
     required this.amount,
     required this.id,
   });
+  final String title;
+  final String description;
+  final DateTime date;
+  final String category;
+  final String subcategory;
+  final String amount;
+  final String id;
 }
 
 class GroupedItems extends StatefulWidget {
-  final ValueNotifier<bool> isSelectionMode;
-
   const GroupedItems({Key? key, required this.isSelectionMode})
       : super(key: key);
+  final ValueNotifier<bool> isSelectionMode;
 
   @override
   _GroupedItemsState createState() => _GroupedItemsState();
@@ -34,45 +32,50 @@ class GroupedItems extends StatefulWidget {
 class _GroupedItemsState extends State<GroupedItems> {
   final List<CustomDashboardItem> items = [
     CustomDashboardItem(
-        title: 'Component 1',
-        description: 'Description 1',
-        date: DateTime(2025, 1, 15),
-        category: 'Category 1',
-        subcategory: 'Subcategory 1',
-        amount: 'Rp. 1.500.000',
-        id: '1'),
+      title: 'Component 1',
+      description: 'Description 1',
+      date: DateTime(2025, 1, 15),
+      category: 'Category 1',
+      subcategory: 'Subcategory 1',
+      amount: 'Rp. 1.500.000',
+      id: '1',
+    ),
     CustomDashboardItem(
-        title: 'Component 2',
-        description: 'Description 2',
-        date: DateTime(2025, 1, 15),
-        category: 'Category 2',
-        subcategory: 'Subcategory 2',
-        amount: 'Rp. 500.000',
-        id: '2'),
+      title: 'Component 2',
+      description: 'Description 2',
+      date: DateTime(2025, 1, 15),
+      category: 'Category 2',
+      subcategory: 'Subcategory 2',
+      amount: 'Rp. 500.000',
+      id: '2',
+    ),
     CustomDashboardItem(
-        title: 'Component 1',
-        description: 'Description 3',
-        date: DateTime(2025, 1, 16),
-        category: 'Category 1',
-        subcategory: 'Subcategory 2',
-        amount: 'Rp. 25.000',
-        id: '3'),
+      title: 'Component 1',
+      description: 'Description 3',
+      date: DateTime(2025, 1, 16),
+      category: 'Category 1',
+      subcategory: 'Subcategory 2',
+      amount: 'Rp. 25.000',
+      id: '3',
+    ),
     CustomDashboardItem(
-        title: 'Component 1',
-        description: 'Description 4',
-        date: DateTime(2025, 1, 17),
-        category: 'Category 1',
-        subcategory: 'Subcategory 2',
-        amount: 'Rp. 12.000',
-        id: '4'),
+      title: 'Component 1',
+      description: 'Description 4',
+      date: DateTime(2025, 1, 17),
+      category: 'Category 1',
+      subcategory: 'Subcategory 2',
+      amount: 'Rp. 12.000',
+      id: '4',
+    ),
     CustomDashboardItem(
-        title: 'Component 2',
-        description: 'Description 5',
-        date: DateTime(2025, 1, 17),
-        category: 'Category 2',
-        subcategory: 'Subcategory 1',
-        amount: 'Rp. 40.000',
-        id: '5'),
+      title: 'Component 2',
+      description: 'Description 5',
+      date: DateTime(2025, 1, 17),
+      category: 'Category 2',
+      subcategory: 'Subcategory 1',
+      amount: 'Rp. 40.000',
+      id: '5',
+    ),
   ];
 
   final Set<String> selectedItems = {}; // Track selected item IDs
@@ -85,9 +88,7 @@ class _GroupedItemsState extends State<GroupedItems> {
     widget.isSelectionMode.addListener(() {
       if (!widget.isSelectionMode.value) {
         // Clear selected items when exiting selection mode
-        setState(() {
-          selectedItems.clear();
-        });
+        setState(selectedItems.clear);
       }
     });
   }
@@ -96,7 +97,7 @@ class _GroupedItemsState extends State<GroupedItems> {
   Widget build(BuildContext context) {
     // Group items by date
     final groupedItems = <DateTime, List<CustomDashboardItem>>{};
-    for (var item in items) {
+    for (final item in items) {
       final date = DateTime(item.date.year, item.date.month, item.date.day);
       groupedItems.putIfAbsent(date, () => []).add(item);
     }
@@ -114,17 +115,15 @@ class _GroupedItemsState extends State<GroupedItems> {
           children: [
             // Date Header
             Padding(
-              padding:
-                  const EdgeInsets.only(left: 16.0, right: 16.0, top: 12.0),
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 // Aligns components to left, center, and right
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(right: 4.0),
+                        padding: const EdgeInsets.only(right: 4),
                         child: Text(
                           _formatDate(date),
                           style: const TextStyle(
@@ -134,16 +133,14 @@ class _GroupedItemsState extends State<GroupedItems> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(right: 4.0),
+                        padding: const EdgeInsets.only(right: 4),
                         child: Container(
                           decoration: BoxDecoration(
-                            border:
-                                Border.all(width: 2.0, color: Colors.black26),
+                            border: Border.all(width: 2, color: Colors.black26),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Padding(
-                            padding:
-                                const EdgeInsets.only(right: 8.0, left: 8.0),
+                            padding: const EdgeInsets.only(right: 8, left: 8),
                             child: Text(
                               _dayName(date),
                               style: const TextStyle(
@@ -155,7 +152,7 @@ class _GroupedItemsState extends State<GroupedItems> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(right: 4.0),
+                        padding: const EdgeInsets.only(right: 4),
                         child: Text(
                           _formatMonth(date),
                           style: const TextStyle(
@@ -166,27 +163,28 @@ class _GroupedItemsState extends State<GroupedItems> {
                       ),
                     ],
                   ),
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
+                        padding: EdgeInsets.only(left: 8),
                         child: Text(
                           'Rp. 1.500.000',
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.green),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green,
+                          ),
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
+                        padding: EdgeInsets.only(left: 8),
                         child: Text(
                           'Rp. 1.200.000',
-                          style:
-                              const TextStyle(fontSize: 12, color: Colors.red),
+                          style: TextStyle(fontSize: 12, color: Colors.red),
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -216,78 +214,92 @@ class _GroupedItemsState extends State<GroupedItems> {
                 },
                 child: Container(
                   margin: const EdgeInsets.symmetric(
-                      vertical: 4.0, horizontal: 8.0),
+                    vertical: 4,
+                    horizontal: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue.withOpacity(0.2) : Colors.white,
+                    color: isSelected
+                        ? Colors.blue.withOpacity(0.2)
+                        : Colors.white,
                     border: Border.all(
                       color: isSelected ? Colors.blue : Colors.white,
-                      width: 2.0,
+                      width: 2,
                     ),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
                         color: Colors.black12,
-                        offset: const Offset(2.0, 2.0),
-                        blurRadius: 2.0,
+                        offset: Offset(2, 2),
+                        blurRadius: 2,
                         spreadRadius: 1,
                       ),
                     ],
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.category,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 10),
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.category,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
                               ),
-                              SizedBox(
-                                height: 4,
-                              ),
-                              Text(
-                                item.subcategory,
-                                style: const TextStyle(
-                                    fontSize: 8, color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                              SizedBox(
-                                height: 4,
-                              ),
-                              Text(
-                                item.description,
-                                style: const TextStyle(
-                                    fontSize: 10, color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            item.amount,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
                             ),
+                            const SizedBox(
+                              height: 4,
+                            ),
+                            Text(
+                              item.subcategory,
+                              style: const TextStyle(
+                                fontSize: 8,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 4,
+                            ),
+                            Text(
+                              item.description,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          item.amount,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
                           ),
-                        ]),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         );
       },
@@ -300,7 +312,7 @@ class _GroupedItemsState extends State<GroupedItems> {
 
   String _dayName(DateTime date) {
     final dayName = DateFormat('EEE').format(date);
-    return '$dayName';
+    return dayName;
   }
 
   String _formatMonth(DateTime date) {

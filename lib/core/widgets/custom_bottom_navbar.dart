@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 
 class CustomBottomNavbar extends StatelessWidget {
-  final int currentTab;
-  final Function(int) onTabSelected;
-
   const CustomBottomNavbar({
     Key? key,
     required this.currentTab,
     required this.onTabSelected,
   }) : super(key: key);
+  final int currentTab;
+  final Function(int) onTabSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -59,50 +58,51 @@ class CustomBottomNavbar extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items
-          .map((item) => SizedBox(
-        width: 65,
-        child: MaterialButton(
-          onPressed: item.onTap,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                item.icon,
-                size: 20,
-                color: item.isSelected
-                    ? const Color(0xff1D3B5A)
-                    : Colors.blueGrey,
-              ),
-              Text(
-                item.label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontVariations: const [FontVariation('wght', 500)],
-                  color: item.isSelected
-                      ? const Color(0xff1D3B5A)
-                      : Colors.blueGrey,
+          .map(
+            (item) => SizedBox(
+              width: 65,
+              child: MaterialButton(
+                onPressed: item.onTap,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item.icon,
+                      size: 20,
+                      color: item.isSelected
+                          ? const Color(0xff1D3B5A)
+                          : Colors.blueGrey,
+                    ),
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontVariations: const [FontVariation('wght', 500)],
+                        color: item.isSelected
+                            ? const Color(0xff1D3B5A)
+                            : Colors.blueGrey,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ))
+            ),
+          )
           .toList(),
     );
   }
 }
 
 class _TabItem {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
   _TabItem({
     required this.label,
     required this.icon,
     required this.isSelected,
     required this.onTap,
   });
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
 }

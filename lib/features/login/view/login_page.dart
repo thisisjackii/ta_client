@@ -29,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        scrolledUnderElevation: 0.0,
+        scrolledUnderElevation: 0,
         backgroundColor: const Color(0xffFBFDFF),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -63,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Align(
+              const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Username',
@@ -115,9 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                   hintText: 'Password',
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureText
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                      _obscureText ? Icons.visibility : Icons.visibility_off,
                       color: _obscureText ? Colors.grey : Colors.blue,
                     ),
                     onPressed: () {
@@ -150,13 +148,16 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 10),
                   Material(
-                    color: Colors.transparent, // Transparent Material to use custom decoration
-                    borderRadius: BorderRadius.circular(64.0), // Match decoration corners
+                    color: Colors
+                        .transparent, // Transparent Material to use custom decoration
+                    borderRadius:
+                        BorderRadius.circular(64), // Match decoration corners
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(64.0), // Match decoration corners
+                      borderRadius:
+                          BorderRadius.circular(64), // Match decoration corners
                       onTap: () {
                         // Your onPressed logic here
-                        print("Button clicked!");
+                        print('Button clicked!');
                       },
                       onHover: (hovering) {
                         // Debug hover effect if needed
@@ -167,24 +168,29 @@ class _LoginPageState extends State<LoginPage> {
                       hoverColor: Colors.grey[300], // Hover effect
                       splashColor: Colors.grey[400], // Splash effect
                       child: AnimatedContainer(
-                        duration: Duration(milliseconds: 200), // Smooth transition
-                        padding: EdgeInsets.all(16.0), // Adjust padding as needed
+                        duration: const Duration(
+                            milliseconds: 200), // Smooth transition
+                        padding: const EdgeInsets.all(
+                            16), // Adjust padding as needed
                         decoration: BoxDecoration(
-                          color: _isHovered ? Colors.grey[300] : Colors.white, // Dynamic background
-                          boxShadow: [
+                          color: _isHovered
+                              ? Colors.grey[300]
+                              : Colors.white, // Dynamic background
+                          boxShadow: const [
                             BoxShadow(
                               color: Colors.black12,
-                              offset: const Offset(2.0, 2.0),
-                              blurRadius: 2.0,
+                              offset: Offset(2, 2),
+                              blurRadius: 2,
                               spreadRadius: 1,
                             ),
                           ],
-                          borderRadius: BorderRadius.circular(64.0), // Rounded corners
+                          borderRadius:
+                              BorderRadius.circular(64), // Rounded corners
                         ),
                         child: SvgPicture.asset(
                           'assets/icons/devicon_google.svg',
-                          width: 24.0,
-                          height: 24.0,
+                          width: 24,
+                          height: 24,
                         ),
                       ),
                     ),
@@ -206,14 +212,13 @@ class _LoginPageState extends State<LoginPage> {
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacementNamed(
-                          context, '/register');
+                        context,
+                        '/register',
+                      );
                     },
                     child: Text(
                       'Daftar disini',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelLarge!
-                          .copyWith(
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
                         fontVariations: [
                           const FontVariation('wght', 800),
                         ],

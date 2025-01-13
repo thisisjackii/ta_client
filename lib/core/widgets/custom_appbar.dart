@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For formatting the selected date
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
-  final ValueNotifier<bool> isSelectionMode;
-
   const CustomAppBar({super.key, required this.isSelectionMode});
+  final ValueNotifier<bool> isSelectionMode;
 
   @override
   _CustomAppBarState createState() => _CustomAppBarState();
@@ -29,7 +28,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    DateTime? selectedDate = await showDatePicker(
+    var selectedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2000), // Earliest date allowed
@@ -80,7 +79,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                 // Handle navigate forward action
               },
             ),
-          ]
+          ],
         ],
       ),
       actions: [
@@ -93,27 +92,27 @@ class _CustomAppBarState extends State<CustomAppBar> {
           )
         else
           Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.info),
-              onPressed: () {
-                // Handle settings action
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.filter_alt_rounded),
-              onPressed: () {
-                // Handle notifications action
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                // Handle account action
-              },
-            ),
-          ],
-        ),
+            children: [
+              IconButton(
+                icon: const Icon(Icons.info),
+                onPressed: () {
+                  // Handle settings action
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.filter_alt_rounded),
+                onPressed: () {
+                  // Handle notifications action
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  // Handle account action
+                },
+              ),
+            ],
+          ),
       ],
     );
   }
