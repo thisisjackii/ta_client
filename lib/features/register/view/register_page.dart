@@ -21,7 +21,25 @@ class RegisterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(
+        scrolledUnderElevation: 0,
+        backgroundColor: const Color(0xffFBFDFF),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, '/');
+          },
+        ),
+        title: const Text(
+          'Daftar',
+          style: TextStyle(
+            fontVariations: [
+              FontVariation('wght', 800),
+            ],
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: BlocListener<RegisterBloc, RegisterState>(
         listener: (context, state) {
           if (state is RegisterSuccess) {
@@ -38,23 +56,62 @@ class RegisterPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Username',
+                  style: TextStyle(
+                    fontVariations: [
+                      FontVariation('wght', 600),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               CustomTextField(
                 label: 'Full Name',
+                icons: Icons.person,
                 onChanged: (value) => context
                     .read<RegisterBloc>()
                     .add(RegisterNameChanged(value)),
               ),
               const SizedBox(height: 16),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Email',
+                  style: TextStyle(
+                    fontVariations: [
+                      FontVariation('wght', 600),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               CustomTextField(
                 label: 'Email',
+                icons: Icons.email,
                 keyboardType: TextInputType.emailAddress,
                 onChanged: (value) => context
                     .read<RegisterBloc>()
                     .add(RegisterEmailChanged(value)),
               ),
               const SizedBox(height: 16),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Password',
+                  style: TextStyle(
+                    fontVariations: [
+                      FontVariation('wght', 600),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               CustomTextField(
                 label: 'Password',
+                icons: Icons.lock,
                 isObscured: true,
                 onChanged: (value) => context
                     .read<RegisterBloc>()
