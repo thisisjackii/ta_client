@@ -8,6 +8,7 @@ class Routes {
   static const register = '/register';
   static const otpVerification = '/otp-verification';
   static const dashboard = '/dashboard';
+  static const create = '/create';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -21,6 +22,8 @@ class Routes {
         return MaterialPageRoute(builder: (_) => OtpVerificationPage.create());
       case dashboard:
         return MaterialPageRoute(builder: (_) => DashboardPage.create());
+      case create:
+        return MaterialPageRoute(builder: (_) => CreatePage.create());
       default:
         debugPrint('Unknown route: ${settings.name}');
         return MaterialPageRoute(

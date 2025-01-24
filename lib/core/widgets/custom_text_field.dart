@@ -4,23 +4,26 @@ import 'package:flutter/material.dart';
 class CustomTextField extends StatefulWidget {
   const CustomTextField({
     required this.label,
-    required this.onChanged,
-    required this.icons,
+    this.onChanged,
+    this.icons,
+    this.suffixType = SuffixType.none,
     super.key,
     this.isObscured = false,
     this.keyboardType,
   });
 
   final String label;
-  final IconData icons;
+  final IconData? icons;
   final bool isObscured;
   final TextInputType? keyboardType;
-  final void Function(String) onChanged;
+  final void Function(String)? onChanged;
+  final SuffixType suffixType;
 
   @override
   _CustomTextFieldState createState() => _CustomTextFieldState();
 }
 
+enum SuffixType { none, eye, camera }
 
 class _CustomTextFieldState extends State<CustomTextField> {
   late bool _isObscured;
@@ -40,13 +43,27 @@ class _CustomTextFieldState extends State<CustomTextField> {
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.blueGrey),
         ),
-        prefixIcon: Opacity(
+        prefixIcon: widget.icons != null
+            ? Opacity(
           opacity: 0.3,
           child: Icon(widget.icons),
-        ),
+        )
+            : null,
         hintText: widget.label,
-        suffixIcon: widget.isObscured
-            ? IconButton(
+        hintStyle: const TextStyle(
+          fontSize: 12,         // Custom font size
+          color: Colors.grey,   // Custom color
+        ),
+        suffixIcon: _buildSuffixIcon()
+      ),
+      onChanged: widget.onChanged,
+    );
+  }
+
+  Widget? _buildSuffixIcon() {
+    switch (widget.suffixType) {
+      case SuffixType.eye: // Obscure text toggle (password field)
+        return IconButton(
           icon: Icon(
             _isObscured ? Icons.visibility : Icons.visibility_off,
             color: _isObscured ? Colors.grey : Colors.blue,
@@ -56,10 +73,17 @@ class _CustomTextFieldState extends State<CustomTextField> {
               _isObscured = !_isObscured;
             });
           },
-        )
-            : null,
-      ),
-      onChanged: widget.onChanged,
-    );
+        );
+      case SuffixType.camera: // Camera icon
+        return IconButton(
+          icon: const Icon(Icons.camera_alt, color: Colors.black26),
+          onPressed: () {
+            print("Camera clicked at this moment");
+          },
+        );
+      case SuffixType.none: // No suffix icon
+      default:
+        return null;
+    }
   }
 }
