@@ -32,3 +32,14 @@ flutter:
   generate: true
   assets:
     - assets/icons/devicon_google.svg
+    - assets/icons/fluent_vehicle-car-profile-ltr-clock-16-filled.svg
+    - assets/icons/material-symbols_credit-card.svg
+    - assets/icons/material-symbols_credit-card-blk.svg
+    - assets/icons/material-symbols_money-bag-rounded.svg
+    - assets/icons/material-symbols_savings-rounded.svg
+    - assets/icons/material-symbols_smart-toy-rounded.svg
+    - assets/icons/material-symbols_wallet.svg
+    - assets/icons/mdi_car-sports-utility-vehicle.svg
+    - assets/icons/mdi_dots-horizontal.svg
+    - assets/icons/mdi_people.svg
+    - assets/icons/mdi_property-tag.svg

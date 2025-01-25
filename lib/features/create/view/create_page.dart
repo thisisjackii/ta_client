@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
 import 'package:ta_client/core/widgets/custom_date_picker.dart';
+import 'package:ta_client/core/widgets/custom_category_picker.dart';
 import 'package:flutter_toggle_tab/flutter_toggle_tab.dart';
 
 class CreatePage extends StatefulWidget {
@@ -134,9 +135,7 @@ class _CreatePageState extends State<CreatePage> {
               const SizedBox(width: 16),
               // Add spacing between the text and the text field
               Expanded(
-                child: CustomTextField(
-                  label: 'Pilih Kategori',
-                ),
+                child: CustomCategoryPicker(),
               ),
             ]),
             const SizedBox(height: 4),
