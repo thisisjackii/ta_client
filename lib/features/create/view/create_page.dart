@@ -73,7 +73,9 @@ class _CreatePageState extends State<CreatePage> {
                 borderRadius: 10,
                 height: 28,
                 selectedIndex: _selectedIndex,
-                selectedBackgroundColors: const [Colors.blue, Colors.blueAccent],
+                selectedBackgroundColors: _selectedIndex == 0
+                    ? [Colors.blue, Colors.blueAccent]
+                    : [Colors.red, Colors.redAccent],
                 selectedTextStyle: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -86,6 +88,8 @@ class _CreatePageState extends State<CreatePage> {
                 selectedLabelIndex: (index) {
                   setState(() {
                     _selectedIndex = index;
+                    _transactionType =
+                    index == 0 ? 'Pemasukan' : 'Pengeluaran';
                   });
                 },
                 isScroll: false,
@@ -176,8 +180,9 @@ class _CreatePageState extends State<CreatePage> {
                         borderRadius: BorderRadius.circular(8.0),
                     )
                 ),
-                backgroundColor:
-                    WidgetStateProperty.all<Color>(Colors.blueAccent),
+                backgroundColor: WidgetStateProperty.all<Color>(
+                  _selectedIndex == 0 ? Colors.blueAccent : Colors.redAccent,
+                ),
                 foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
               ),
               child: const Text(
