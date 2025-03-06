@@ -1,3 +1,4 @@
+// login_state.dart
 import 'package:equatable/equatable.dart';
 
 abstract class LoginState extends Equatable {

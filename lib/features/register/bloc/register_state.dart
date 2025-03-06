@@ -1,3 +1,4 @@
+// register_state.dart
 import 'package:equatable/equatable.dart';
 
 abstract class RegisterState extends Equatable {

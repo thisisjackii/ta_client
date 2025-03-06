@@ -40,7 +40,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   /// Handles [DashboardItemDeleted] event.
   ///
   /// When an item is deleted, this updates the state by removing the item from
-  /// the list of items. This does nothing if the state is not [DashboardLoaded].
+  /// the list of items. This does nothing if the state is not
+  /// [DashboardLoaded].
   void _onItemDeleted(
     DashboardItemDeleted event,
     Emitter<DashboardState> emit,

@@ -34,12 +34,15 @@ class _WelcomePageState extends State<WelcomePage>
     );
   }
 
-  /// Initializes the animation controller and sets the first gradient animation.
+  /// Initializes the animation controller and sets the first gradient
+  /// animation.
   ///
   /// This method is called when the widget is inserted into the tree.
   ///
-  /// The animation controller is set to repeat the animation forward and backward.
-  /// The `_setNewGradientAnimation` function is called to set the first gradient animation.
+  /// The animation controller is set to repeat the animation forward and
+  /// backward.
+  /// The `_setNewGradientAnimation` function is called to set the first
+  /// gradient animation.
   @override
   void initState() {
     super.initState();
@@ -59,12 +62,12 @@ class _WelcomePageState extends State<WelcomePage>
   /// Sets a new gradient animation when the current animation is completed or
   /// dismissed.
   //
-  /// This function generates two new random colors for the gradient and sets them
-  /// as the start and end colors for the animation using [ColorTween].
+  /// This function generates two new random colors for the gradient and sets
+  /// them as the start and end colors for the animation using [ColorTween].
   ///
   /// The animation controller is set to listen for every tick and updates the
-  /// animation when the current animation is completed or dismissed. This ensures
-  /// that the animation loops indefinitely.
+  /// animation when the current animation is completed or dismissed.
+  /// This ensures that the animation loops indefinitely.
   void _setNewGradientAnimation() {
     _color1Animation = ColorTween(
       begin: _randomColor(),
