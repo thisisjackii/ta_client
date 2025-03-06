@@ -1,8 +1,8 @@
 // login_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ta_client/app/routes/routes.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/features/login/bloc/login_bloc.dart';
 import 'package:ta_client/features/login/bloc/login_event.dart';
 import 'package:ta_client/features/login/bloc/login_state.dart';
@@ -169,9 +169,9 @@ class _LoginPageState extends State<LoginPage> {
                       splashColor: Colors.grey[400], // Splash effect
                       child: AnimatedContainer(
                         duration: const Duration(
-                            milliseconds: 200), // Smooth transition
+                            milliseconds: 200,), // Smooth transition
                         padding: const EdgeInsets.all(
-                            16), // Adjust padding as needed
+                            16,), // Adjust padding as needed
                         decoration: BoxDecoration(
                           color: _isHovered
                               ? Colors.grey[300]

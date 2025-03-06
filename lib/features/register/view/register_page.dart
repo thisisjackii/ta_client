@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/widgets/custom_button.dart';
-import 'package:ta_client/core/widgets/custom_text_field.dart';
 import 'package:ta_client/core/widgets/custom_date_selector.dart';
+import 'package:ta_client/core/widgets/custom_text_field.dart';
 import 'package:ta_client/features/register/bloc/register_bloc.dart';
 import 'package:ta_client/features/register/bloc/register_event.dart';
 import 'package:ta_client/features/register/bloc/register_state.dart';
@@ -55,7 +55,6 @@ class RegisterPage extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Align(
