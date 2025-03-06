@@ -1,28 +1,34 @@
+// login_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ta_client/core/services/auth_storage.dart';
 import 'package:ta_client/features/login/bloc/login_event.dart';
 import 'package:ta_client/features/login/bloc/login_state.dart';
+import 'package:ta_client/features/login/services/login_service.dart';
+// import 'package:ta_client/features/login/services/auth_service.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
-  LoginBloc() : super(LoginInitial());
+  LoginBloc({required this.loginService}) : super(LoginInitial()) {
+    on<LoginSubmitted>(_onLoginSubmitted);
+  }
 
-  /// Handles [LoginEvent]s by mapping them to [LoginState]s.
-  ///
-  /// When a [LoginSubmitted] event is received, this function yields a
-  /// [LoginLoading] state, simulates a login process asynchronously, and then
-  /// yields either a [LoginSuccess] or [LoginFailure] state. If any error occurs
-  /// during the simulation, a [LoginFailure] state is yielded with the error
-  /// message.
-  @override
-  Stream<LoginState> mapEventToState(LoginEvent event) async* {
-    if (event is LoginSubmitted) {
-      yield LoginLoading();
-      try {
-        // Simulate login logic
-        await Future.delayed(const Duration(seconds: 2));
-        yield LoginSuccess();
-      } catch (e) {
-        yield LoginFailure(e.toString());
+  final LoginService loginService;
+
+  Future<void> _onLoginSubmitted(
+    LoginSubmitted event,
+    Emitter<LoginState> emit,
+  ) async {
+    emit(LoginLoading());
+    try {
+      final token = await loginService.login(event.email, event.password);
+      if (token != null) {
+        // Save token for future API calls.
+        await AuthStorage().saveToken(token);
+        emit(LoginSuccess());
+      } else {
+        emit(const LoginFailure('Invalid credentials'));
       }
+    } catch (e) {
+      emit(LoginFailure(e.toString()));
     }
   }
 }
