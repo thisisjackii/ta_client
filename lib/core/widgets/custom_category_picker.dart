@@ -152,7 +152,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                         fontSize: 12,
                                                         fontVariations: [
                                                           FontVariation(
-                                                              'wght', 600),
+                                                              'wght', 600,),
                                                         ],
                                                       ),
                                                     ),
@@ -406,7 +406,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                                 fontVariations: [
                                                                   FontVariation(
                                                                       'wght',
-                                                                      600),
+                                                                      600,),
                                                                 ],
                                                               ),
                                                             ),
@@ -577,7 +577,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                                 fontVariations: [
                                                                   FontVariation(
                                                                       'wght',
-                                                                      600),
+                                                                      600,),
                                                                 ],
                                                               ),
                                                             ),
