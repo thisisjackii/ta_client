@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ta_client/core/widgets/custom_text_field.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:ta_client/core/widgets/custom_text_field.dart';
 
 class CustomCategoryPicker extends StatefulWidget {
   const CustomCategoryPicker({super.key});
@@ -62,7 +62,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                 width: 18,
                                 height: 18,
                               ),
-                              trailing: const Icon(Icons.navigate_next, color: Color(0xFF2A8C8B), size: 16,),
+                              trailing: const Icon(
+                                Icons.navigate_next,
+                                color: Color(0xFF2A8C8B),
+                                size: 16,
+                              ),
                               onTap: () {
                                 // Update selectedOption in the modal state
                                 setModalState(() {
@@ -90,7 +94,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                 width: 18,
                                 height: 18,
                               ),
-                              trailing: const Icon(Icons.navigate_next, color: Color(0xFFEF233C), size: 16,),
+                              trailing: const Icon(
+                                Icons.navigate_next,
+                                color: Color(0xFFEF233C),
+                                size: 16,
+                              ),
                               onTap: () {
                                 // Update selectedOption in the modal state
                                 setModalState(() {
@@ -118,7 +126,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                 width: 18,
                                 height: 18,
                               ),
-                              trailing: const Icon(Icons.navigate_next, color: Color(0xFF5A4CAF), size: 16,),
+                              trailing: const Icon(
+                                Icons.navigate_next,
+                                color: Color(0xFF5A4CAF),
+                                size: 16,
+                              ),
                               onTap: () {
                                 showDialog(
                                   context: context,
@@ -129,27 +141,31 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         child: SingleChildScrollView(
                                           child: Column(
                                             children: [
-                                              Row(children: [
-                                                Align(
-                                                  alignment: Alignment.centerLeft,
-                                                  child: Text(
-                                                    'Nama Kategori',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontVariations: [
-                                                        FontVariation('wght', 600),
-                                                      ],
+                                              Row(
+                                                children: [
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: Text(
+                                                      'Nama Kategori',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontVariations: [
+                                                          FontVariation(
+                                                              'wght', 600),
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                SizedBox(width: 35),
-                                                // Add spacing between the text and the text field
-                                                Expanded(
-                                                  child: CustomTextField(
-                                                    label: 'Nama Kategori',
+                                                  SizedBox(width: 35),
+                                                  // Add spacing between the text and the text field
+                                                  Expanded(
+                                                    child: CustomTextField(
+                                                      label: 'Nama Kategori',
+                                                    ),
                                                   ),
-                                                ),
-                                              ],),
+                                                ],
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -208,7 +224,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         setState(() {
                                           _controller.text = 'Option 1-A';
@@ -236,7 +256,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         setState(() {
                                           _controller.text = 'Option 1-A';
@@ -264,7 +288,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         setState(() {
                                           _controller.text = 'Option 1-A';
@@ -292,7 +320,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         setState(() {
                                           _controller.text = 'Option 1-A';
@@ -320,7 +352,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         setState(() {
                                           _controller.text = 'Option 1-A';
@@ -343,7 +379,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                           color: Colors.black87,
                                         ),
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         showDialog(
                                           context: context,
@@ -354,27 +394,34 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                 child: SingleChildScrollView(
                                                   child: Column(
                                                     children: [
-                                                      Row(children: [
-                                                        Align(
-                                                          alignment: Alignment.centerLeft,
-                                                          child: Text(
-                                                            'Nama Kategori',
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              fontVariations: [
-                                                                FontVariation('wght', 600),
-                                                              ],
+                                                      Row(
+                                                        children: [
+                                                          Align(
+                                                            alignment: Alignment
+                                                                .centerLeft,
+                                                            child: Text(
+                                                              'Nama Kategori',
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                fontVariations: [
+                                                                  FontVariation(
+                                                                      'wght',
+                                                                      600),
+                                                                ],
+                                                              ),
                                                             ),
                                                           ),
-                                                        ),
-                                                        SizedBox(width: 35),
-                                                        // Add spacing between the text and the text field
-                                                        Expanded(
-                                                          child: CustomTextField(
-                                                            label: 'Nama Kategori',
+                                                          SizedBox(width: 35),
+                                                          // Add spacing between the text and the text field
+                                                          Expanded(
+                                                            child:
+                                                                CustomTextField(
+                                                              label:
+                                                                  'Nama Kategori',
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ],),
+                                                        ],
+                                                      ),
                                                     ],
                                                   ),
                                                 ),
@@ -412,7 +459,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         setState(() {
                                           _controller.text = 'Option 1-A';
@@ -440,7 +491,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         setState(() {
                                           _controller.text = 'Option 1-A';
@@ -468,7 +523,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         setState(() {
                                           _controller.text = 'Option 1-A';
@@ -491,7 +550,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                           color: Colors.black87,
                                         ),
                                       ),
-                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(
+                                        Icons.navigate_next,
+                                        color: Colors.black87,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         showDialog(
                                           context: context,
@@ -502,27 +565,34 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                 child: SingleChildScrollView(
                                                   child: Column(
                                                     children: [
-                                                      Row(children: [
-                                                        Align(
-                                                          alignment: Alignment.centerLeft,
-                                                          child: Text(
-                                                            'Nama Kategori',
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              fontVariations: [
-                                                                FontVariation('wght', 600),
-                                                              ],
+                                                      Row(
+                                                        children: [
+                                                          Align(
+                                                            alignment: Alignment
+                                                                .centerLeft,
+                                                            child: Text(
+                                                              'Nama Kategori',
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                fontVariations: [
+                                                                  FontVariation(
+                                                                      'wght',
+                                                                      600),
+                                                                ],
+                                                              ),
                                                             ),
                                                           ),
-                                                        ),
-                                                        SizedBox(width: 35),
-                                                        // Add spacing between the text and the text field
-                                                        Expanded(
-                                                          child: CustomTextField(
-                                                            label: 'Nama Kategori',
+                                                          SizedBox(width: 35),
+                                                          // Add spacing between the text and the text field
+                                                          Expanded(
+                                                            child:
+                                                                CustomTextField(
+                                                              label:
+                                                                  'Nama Kategori',
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ],),
+                                                        ],
+                                                      ),
                                                     ],
                                                   ),
                                                 ),
@@ -545,7 +615,6 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                               ),
                             ),
                           ),
-
                         ),
                     ],
                   ),

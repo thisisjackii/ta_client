@@ -23,7 +23,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
       onTap: () async {
         if (widget.isDatePicker) {
           // Show Date Picker
-          var pickedDate = await showDatePicker(
+          final pickedDate = await showDatePicker(
             context: context,
             initialDate: DateTime.now(),
             firstDate: DateTime(2000),
@@ -36,7 +36,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
           }
         } else {
           // Show Time Picker
-          var pickedTime = await showTimePicker(
+          final pickedTime = await showTimePicker(
             context: context,
             initialTime: TimeOfDay.now(),
           );

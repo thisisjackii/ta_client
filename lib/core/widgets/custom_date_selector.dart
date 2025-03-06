@@ -4,11 +4,9 @@ import 'package:intl/intl.dart';
 class CustomDateSelector extends StatefulWidget {
 
   const CustomDateSelector({
-    Key? key,
-    required this.label,
+    required this.label, required this.onDateSelected, super.key,
     this.icons,
-    required this.onDateSelected,
-  }) : super(key: key);
+  });
   final String label;
   final IconData? icons;
   final Function(String) onDateSelected;
