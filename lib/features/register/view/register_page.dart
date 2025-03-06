@@ -41,7 +41,8 @@ class RegisterPage extends StatelessWidget {
       body: BlocListener<RegisterBloc, RegisterState>(
         listener: (context, state) {
           if (state is RegisterSuccess) {
-            Navigator.pushReplacementNamed(context, Routes.dashboard);
+            // Navigator.pushReplacementNamed(context, Routes.dashboard);
+            context.goNamed('/dashboard');
           } else if (state is RegisterFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.errorMessage)),

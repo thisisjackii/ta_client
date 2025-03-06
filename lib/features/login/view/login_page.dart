@@ -36,7 +36,8 @@ class LoginPage extends StatelessWidget {
       body: BlocListener<LoginBloc, LoginState>(
         listener: (context, state) {
           if (state is LoginSuccess) {
-            Navigator.pushReplacementNamed(context, Routes.dashboard);
+            // Navigate to dashboard using go_router (ensure route name 'dashboard' is configured).
+            context.goNamed('dashboard');
           } else if (state is LoginFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.errorMessage)),

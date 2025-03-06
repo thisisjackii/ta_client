@@ -1,45 +1,40 @@
 // routes.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ta_client/core/screens/screens.dart';
 
-class Routes {
-  static const welcome = '/';
-  static const login = '/login';
-  static const register = '/register';
-  static const otpVerification = '/otp-verification';
-  static const dashboard = '/dashboard';
+final String baseUrl = dotenv.env['BASE_URL'] ?? 'https://fallback.example.com';
 
-  /// This function generates a route based on the given [RouteSettings].
-  ///
-  /// If the route is not found, it logs a debug message and returns a [MaterialPageRoute]
-  /// with a [Scaffold] displaying a 'Page not found' [Text] widget.
-  ///
-  /// The supported routes are:
-  ///
-  /// - [welcome]: The welcome page.
-  /// - [login]: The login page.
-  /// - [register]: The register page.
-  /// - [otpVerification]: The OTP verification page.
-  /// - [dashboard]: The dashboard page.
-  static Route<dynamic> generateRoute(RouteSettings settings) {
-    switch (settings.name) {
-      case welcome:
-        return MaterialPageRoute(builder: (_) => WelcomePage.create());
-      case login:
-        return MaterialPageRoute(builder: (_) => LoginPage.create());
-      case register:
-        return MaterialPageRoute(builder: (_) => RegisterPage.create());
-      case otpVerification:
-        return MaterialPageRoute(builder: (_) => OtpVerificationPage.create());
-      case dashboard:
-        return MaterialPageRoute(builder: (_) => DashboardPage.create());
-      default:
-        debugPrint('Unknown route: ${settings.name}');
-        return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(child: Text('Page not found')),
-          ),
-        );
-    }
-  }
-}
+final GoRouter router = GoRouter(
+  routes: [
+    GoRoute(
+      path: '/',
+      name: 'welcome',
+      builder: (context, state) => WelcomePage.create(),
+    ),
+    GoRoute(
+      path: '/login',
+      name: 'login',
+      builder: (context, state) => LoginPage.create(baseUrl: baseUrl),
+    ),
+    GoRoute(
+      path: '/register',
+      name: 'register',
+      builder: (context, state) => RegisterPage.create(baseUrl: baseUrl),
+    ),
+    GoRoute(
+      path: '/otp-verification',
+      name: 'otpVerification',
+      builder: (context, state) => OtpVerificationPage.create(),
+    ),
+    GoRoute(
+      path: '/dashboard',
+      name: 'dashboard',
+      builder: (context, state) => DashboardPage.create(),
+    ),
+  ],
+  errorBuilder: (context, state) => const Scaffold(
+    body: Center(child: Text('Page not found')),
+  ),
+);

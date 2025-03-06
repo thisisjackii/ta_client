@@ -1,7 +1,7 @@
 // otp_verification_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ta_client/app/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ta_client/features/otp/bloc/otp_bloc.dart';
 import 'package:ta_client/features/otp/bloc/otp_event.dart';
 import 'package:ta_client/features/otp/bloc/otp_state.dart';
@@ -36,7 +36,7 @@ class OtpVerificationPage extends StatelessWidget {
       body: BlocListener<OtpBloc, OtpState>(
         listener: (context, state) {
           if (state is OtpSuccess) {
-            Navigator.pushReplacementNamed(context, Routes.dashboard);
+            context.goNamed('dashboard');
           } else if (state is OtpFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.errorMessage)),

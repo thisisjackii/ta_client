@@ -200,8 +200,7 @@ class _WelcomePageState extends State<WelcomePage>
                             horizontal: 24,
                           ),
                         ),
-                        onPressed: () => Navigator.pushNamed(
-                            context, '/login',), // Example route
+                        onPressed: () => context.pushNamed('login'),
                         child: const Text(
                           'Login',
                           style: TextStyle(fontSize: 16),
@@ -225,8 +224,7 @@ class _WelcomePageState extends State<WelcomePage>
                             horizontal: 24,
                           ),
                         ),
-                        onPressed: () => Navigator.pushNamed(
-                            context, '/register',), // Example route
+                        onPressed: () => context.pushNamed('register'),
                         child: const Text(
                           'Register',
                           style: TextStyle(fontSize: 16),
