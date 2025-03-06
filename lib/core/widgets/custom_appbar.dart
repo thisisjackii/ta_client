@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For formatting the selected date
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key, required this.isSelectionMode});
+  const CustomAppBar({required this.isSelectionMode, super.key});
   final ValueNotifier<bool> isSelectionMode;
 
   @override
@@ -28,7 +28,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    var selectedDate = await showDatePicker(
+    final selectedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2000), // Earliest date allowed

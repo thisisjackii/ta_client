@@ -72,7 +72,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                             Text('Subtitle 1',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 12)),
+                                    fontWeight: FontWeight.bold, fontSize: 12,),),
                           ],
                         ),
                         // Second Component
@@ -85,7 +85,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                             Text('Subtitle 2',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 12)),
+                                    fontWeight: FontWeight.bold, fontSize: 12,),),
                           ],
                         ),
                         // Third Component
@@ -98,7 +98,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                             Text('Subtitle 3',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 12)),
+                                    fontWeight: FontWeight.bold, fontSize: 12,),),
                           ],
                         ),
                       ],
@@ -146,7 +146,7 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: CustomBottomNavbar(
-          currentTab: _currentTab, onTabSelected: _onTabSelected),
+          currentTab: _currentTab, onTabSelected: _onTabSelected,),
     );
   }
 }

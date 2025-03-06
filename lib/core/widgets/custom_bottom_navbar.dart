@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class CustomBottomNavbar extends StatelessWidget {
   const CustomBottomNavbar({
-    Key? key,
+    super.key,
     required this.currentTab,
     required this.onTabSelected,
-  }) : super(key: key);
+  });
   final int currentTab;
   final Function(int) onTabSelected;
 

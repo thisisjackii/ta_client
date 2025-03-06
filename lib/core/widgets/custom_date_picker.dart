@@ -23,7 +23,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
       onTap: () async {
         if (widget.isDatePicker) {
           // Show Date Picker
-          DateTime? pickedDate = await showDatePicker(
+          var pickedDate = await showDatePicker(
             context: context,
             initialDate: DateTime.now(),
             firstDate: DateTime(2000),
@@ -36,7 +36,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
           }
         } else {
           // Show Time Picker
-          TimeOfDay? pickedTime = await showTimePicker(
+          var pickedTime = await showTimePicker(
             context: context,
             initialTime: TimeOfDay.now(),
           );
@@ -51,7 +51,6 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         child: CustomTextField(
           label: widget.label,
           onChanged: (value) {}, // No direct input allowed
-          isObscured: false,
           keyboardType: TextInputType.none, // Disables keyboard input
         ),
       ),

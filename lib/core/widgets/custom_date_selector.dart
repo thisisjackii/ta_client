@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class CustomDateSelector extends StatefulWidget {
-  final String label;
-  final IconData? icons;
-  final Function(String) onDateSelected;
 
   const CustomDateSelector({
     Key? key,
@@ -12,6 +9,9 @@ class CustomDateSelector extends StatefulWidget {
     this.icons,
     required this.onDateSelected,
   }) : super(key: key);
+  final String label;
+  final IconData? icons;
+  final Function(String) onDateSelected;
 
   @override
   _CustomDateSelectorState createState() => _CustomDateSelectorState();
@@ -21,7 +21,7 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
   DateTime? _selectedDate;
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
 
-  void _pickDate(BuildContext context) async {
+  Future<void> _pickDate(BuildContext context) async {
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),

@@ -21,8 +21,8 @@ class _CreatePageState extends State<CreatePage> {
   int _selectedIndex = 0;
   String _transactionType = 'Pemasukan';
   List<DataTab> get _listTextTabToggle => [
-    DataTab(title: "Pemasukan"),
-    DataTab(title: "Pengeluaran"),
+    DataTab(title: 'Pemasukan'),
+    DataTab(title: 'Pengeluaran'),
   ];
 
   @override
@@ -64,7 +64,6 @@ class _CreatePageState extends State<CreatePage> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
@@ -79,11 +78,11 @@ class _CreatePageState extends State<CreatePage> {
                 selectedTextStyle: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
-                    fontWeight: FontWeight.w700),
+                    fontWeight: FontWeight.w700,),
                 unSelectedTextStyle: const TextStyle(
                     color: Colors.black87,
                     fontSize: 12,
-                    fontWeight: FontWeight.w500),
+                    fontWeight: FontWeight.w500,),
                 dataTabs: _listTextTabToggle,
                 selectedLabelIndex: (index) {
                   setState(() {
@@ -96,13 +95,13 @@ class _CreatePageState extends State<CreatePage> {
               ),
             ),
 
-            CustomTextField(
+            const CustomTextField(
               label: 'Deskripsi',
               suffixType: SuffixType.camera,
             ),
             const SizedBox(height: 4),
-            Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              const Align(
+            const Row(children: [
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Total',
@@ -114,17 +113,17 @@ class _CreatePageState extends State<CreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 35),
+              SizedBox(width: 35),
               // Add spacing between the text and the text field
               Expanded(
                 child: CustomTextField(
                   label: 'Ketikan Total',
                 ),
               ),
-            ]),
+            ],),
             const SizedBox(height: 4),
-            Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              const Align(
+            const Row(children: [
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Kategori',
@@ -136,15 +135,15 @@ class _CreatePageState extends State<CreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               // Add spacing between the text and the text field
               Expanded(
                 child: CustomCategoryPicker(),
               ),
-            ]),
+            ],),
             const SizedBox(height: 4),
-            Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              const Align(
+            const Row(children: [
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Tanggal',
@@ -156,7 +155,7 @@ class _CreatePageState extends State<CreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 18),
+              SizedBox(width: 18),
               // Add spacing between the text and the text field
               Expanded(
                 child: CustomDatePicker(
@@ -170,15 +169,15 @@ class _CreatePageState extends State<CreatePage> {
                   isDatePicker: false,
                 ),
               ),
-            ]),
+            ],),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {},
               style: ButtonStyle(
                 shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                    )
+                        borderRadius: BorderRadius.circular(8),
+                    ),
                 ),
                 backgroundColor: WidgetStateProperty.all<Color>(
                   _selectedIndex == 0 ? Colors.blueAccent : Colors.redAccent,

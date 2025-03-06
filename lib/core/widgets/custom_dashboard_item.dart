@@ -21,8 +21,7 @@ class CustomDashboardItem {
 }
 
 class GroupedItems extends StatefulWidget {
-  const GroupedItems({Key? key, required this.isSelectionMode})
-      : super(key: key);
+  const GroupedItems({super.key, required this.isSelectionMode});
   final ValueNotifier<bool> isSelectionMode;
 
   @override

@@ -36,7 +36,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              "Kategori",
+                              'Kategori',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
@@ -49,12 +49,12 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              title: Text(
-                                "Aset",
+                              title: const Text(
+                                'Aset',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF2A8C8B),
+                                  color: Color(0xFF2A8C8B),
                                 ),
                               ),
                               leading: SvgPicture.asset(
@@ -62,11 +62,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                 width: 18,
                                 height: 18,
                               ),
-                              trailing: Icon(Icons.navigate_next, color: const Color(0xFF2A8C8B), size: 16,),
+                              trailing: const Icon(Icons.navigate_next, color: Color(0xFF2A8C8B), size: 16,),
                               onTap: () {
                                 // Update selectedOption in the modal state
                                 setModalState(() {
-                                  selectedOption = "Aset";
+                                  selectedOption = 'Aset';
                                 });
                               },
                             ),
@@ -78,11 +78,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               title: const Text(
-                                "Hutang",
+                                'Hutang',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFEF233C),
+                                  color: Color(0xFFEF233C),
                                 ),
                               ),
                               leading: SvgPicture.asset(
@@ -90,11 +90,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                 width: 18,
                                 height: 18,
                               ),
-                              trailing: Icon(Icons.navigate_next, color: const Color(0xFFEF233C), size: 16,),
+                              trailing: const Icon(Icons.navigate_next, color: Color(0xFFEF233C), size: 16,),
                               onTap: () {
                                 // Update selectedOption in the modal state
                                 setModalState(() {
-                                  selectedOption = "Hutang";
+                                  selectedOption = 'Hutang';
                                 });
                               },
                             ),
@@ -106,11 +106,11 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               title: const Text(
-                                "Lainnya",
+                                'Lainnya',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF5A4CAF),
+                                  color: Color(0xFF5A4CAF),
                                 ),
                               ),
                               leading: SvgPicture.asset(
@@ -118,19 +118,19 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                 width: 18,
                                 height: 18,
                               ),
-                              trailing: Icon(Icons.navigate_next, color: const Color(0xFF5A4CAF), size: 16,),
+                              trailing: const Icon(Icons.navigate_next, color: Color(0xFF5A4CAF), size: 16,),
                               onTap: () {
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
                                     return AlertDialog(
-                                      title: const Text("Lainnya"),
-                                      content: Expanded(
+                                      title: const Text('Lainnya'),
+                                      content: const Expanded(
                                         child: SingleChildScrollView(
                                           child: Column(
                                             children: [
-                                              Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                                const Align(
+                                              Row(children: [
+                                                Align(
                                                   alignment: Alignment.centerLeft,
                                                   child: Text(
                                                     'Nama Kategori',
@@ -142,14 +142,14 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                     ),
                                                   ),
                                                 ),
-                                                const SizedBox(width: 35),
+                                                SizedBox(width: 35),
                                                 // Add spacing between the text and the text field
                                                 Expanded(
                                                   child: CustomTextField(
                                                     label: 'Nama Kategori',
                                                   ),
                                                 ),
-                                              ]),
+                                              ],),
                                             ],
                                           ),
                                         ),
@@ -159,7 +159,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                           onPressed: () {
                                             Navigator.pop(context);
                                           },
-                                          child: const Text("Close"),
+                                          child: const Text('Close'),
                                         ),
                                       ],
                                     );
@@ -181,14 +181,14 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "$selectedOption Details",
+                                    '$selectedOption Details',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  if (selectedOption == "Aset") ...[
+                                  if (selectedOption == 'Aset') ...[
                                     ListTile(
                                       dense: true,
                                       tileColor: const Color(0xFFECECEC),
@@ -196,7 +196,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Tabungan Tunai",
+                                        'Tabungan Tunai',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -208,10 +208,10 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         setState(() {
-                                          _controller.text = "Option 1-A";
+                                          _controller.text = 'Option 1-A';
                                         });
                                         Navigator.pop(context);
                                       },
@@ -224,7 +224,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Uang di Dompet",
+                                        'Uang di Dompet',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -236,10 +236,10 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         setState(() {
-                                          _controller.text = "Option 1-A";
+                                          _controller.text = 'Option 1-A';
                                         });
                                         Navigator.pop(context);
                                       },
@@ -252,7 +252,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Investasi",
+                                        'Investasi',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -264,10 +264,10 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         setState(() {
-                                          _controller.text = "Option 1-A";
+                                          _controller.text = 'Option 1-A';
                                         });
                                         Navigator.pop(context);
                                       },
@@ -280,7 +280,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Kendaraan",
+                                        'Kendaraan',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -292,10 +292,10 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         setState(() {
-                                          _controller.text = "Option 1-A";
+                                          _controller.text = 'Option 1-A';
                                         });
                                         Navigator.pop(context);
                                       },
@@ -308,7 +308,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Mainan",
+                                        'Mainan',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -320,10 +320,10 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         setState(() {
-                                          _controller.text = "Option 1-A";
+                                          _controller.text = 'Option 1-A';
                                         });
                                         Navigator.pop(context);
                                       },
@@ -336,26 +336,26 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Lainnya",
+                                        'Lainnya',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black87,
                                         ),
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
                                             return AlertDialog(
-                                              title: const Text("Lainnya"),
-                                              content: Expanded(
+                                              title: const Text('Lainnya'),
+                                              content: const Expanded(
                                                 child: SingleChildScrollView(
                                                   child: Column(
                                                     children: [
-                                                      Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                                        const Align(
+                                                      Row(children: [
+                                                        Align(
                                                           alignment: Alignment.centerLeft,
                                                           child: Text(
                                                             'Nama Kategori',
@@ -367,14 +367,14 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                             ),
                                                           ),
                                                         ),
-                                                        const SizedBox(width: 35),
+                                                        SizedBox(width: 35),
                                                         // Add spacing between the text and the text field
                                                         Expanded(
                                                           child: CustomTextField(
                                                             label: 'Nama Kategori',
                                                           ),
                                                         ),
-                                                      ]),
+                                                      ],),
                                                     ],
                                                   ),
                                                 ),
@@ -384,7 +384,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                   onPressed: () {
                                                     Navigator.pop(context);
                                                   },
-                                                  child: const Text("Close"),
+                                                  child: const Text('Close'),
                                                 ),
                                               ],
                                             );
@@ -392,7 +392,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         );
                                       },
                                     ),
-                                  ] else if (selectedOption == "Hutang") ...[
+                                  ] else if (selectedOption == 'Hutang') ...[
                                     ListTile(
                                       dense: true,
                                       tileColor: const Color(0xFFECECEC),
@@ -400,7 +400,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Kartu Kredit",
+                                        'Kartu Kredit',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -412,10 +412,10 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         setState(() {
-                                          _controller.text = "Option 1-A";
+                                          _controller.text = 'Option 1-A';
                                         });
                                         Navigator.pop(context);
                                       },
@@ -428,7 +428,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Hutang Teman",
+                                        'Hutang Teman',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -440,10 +440,10 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         setState(() {
-                                          _controller.text = "Option 1-A";
+                                          _controller.text = 'Option 1-A';
                                         });
                                         Navigator.pop(context);
                                       },
@@ -456,7 +456,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Cicilan Kendaraan",
+                                        'Cicilan Kendaraan',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -468,10 +468,10 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         width: 18,
                                         height: 18,
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         setState(() {
-                                          _controller.text = "Option 1-A";
+                                          _controller.text = 'Option 1-A';
                                         });
                                         Navigator.pop(context);
                                       },
@@ -484,26 +484,26 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       title: const Text(
-                                        "Lainnya",
+                                        'Lainnya',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black87,
                                         ),
                                       ),
-                                      trailing: Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
+                                      trailing: const Icon(Icons.navigate_next, color: Colors.black87, size: 16,),
                                       onTap: () {
                                         showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
                                             return AlertDialog(
-                                              title: const Text("Lainnya"),
-                                              content: Expanded(
+                                              title: const Text('Lainnya'),
+                                              content: const Expanded(
                                                 child: SingleChildScrollView(
                                                   child: Column(
                                                     children: [
-                                                      Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                                                        const Align(
+                                                      Row(children: [
+                                                        Align(
                                                           alignment: Alignment.centerLeft,
                                                           child: Text(
                                                             'Nama Kategori',
@@ -515,14 +515,14 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                             ),
                                                           ),
                                                         ),
-                                                        const SizedBox(width: 35),
+                                                        SizedBox(width: 35),
                                                         // Add spacing between the text and the text field
                                                         Expanded(
                                                           child: CustomTextField(
                                                             label: 'Nama Kategori',
                                                           ),
                                                         ),
-                                                      ]),
+                                                      ],),
                                                     ],
                                                   ),
                                                 ),
@@ -532,7 +532,7 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
                                                   onPressed: () {
                                                     Navigator.pop(context);
                                                   },
-                                                  child: const Text("Close"),
+                                                  child: const Text('Close'),
                                                 ),
                                               ],
                                             );
@@ -559,7 +559,6 @@ class _CustomCategoryPickerState extends State<CustomCategoryPicker> {
         child: CustomTextField(
           label: 'Pilih Kategori',
           onChanged: (value) {}, // Prevent direct input
-          isObscured: false,
           keyboardType: TextInputType.none,
         ),
       ),

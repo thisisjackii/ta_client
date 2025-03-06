@@ -54,7 +54,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           fontSize: 12,         // Custom font size
           color: Colors.grey,   // Custom color
         ),
-        suffixIcon: _buildSuffixIcon()
+        suffixIcon: _buildSuffixIcon(),
       ),
       onChanged: widget.onChanged,
     );
@@ -78,7 +78,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         return IconButton(
           icon: const Icon(Icons.camera_alt, color: Colors.black26),
           onPressed: () {
-            print("Camera clicked at this moment");
+            print('Camera clicked at this moment');
           },
         );
       case SuffixType.none: // No suffix icon
