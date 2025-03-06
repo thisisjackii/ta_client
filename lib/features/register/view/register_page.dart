@@ -1,39 +1,59 @@
 // register_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ta_client/app/routes/routes.dart';
-import 'package:ta_client/core/widgets/custom_button.dart';
-import 'package:ta_client/core/widgets/custom_text_field.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ta_client/features/register/bloc/register_bloc.dart';
 import 'package:ta_client/features/register/bloc/register_event.dart';
 import 'package:ta_client/features/register/bloc/register_state.dart';
+import 'package:ta_client/features/register/models/register_model.dart';
+import 'package:ta_client/features/register/services/register_service.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
-  /// Creates a [RegisterPage] and wraps it in a [BlocProvider] that provides
-  /// a [RegisterBloc].
-  ///
-  /// This is a convenience method for creating a [RegisterPage] with a
-  /// [RegisterBloc] provider. It is intended to be used as a root widget in
-  /// a Flutter application.
-  static Widget create() {
+  static Widget create({required String baseUrl}) {
     return BlocProvider(
-      create: (context) => RegisterBloc(),
+      create: (context) =>
+          RegisterBloc(registerService: RegisterService(baseUrl: baseUrl)),
       child: const RegisterPage(),
     );
   }
 
-  /// Builds a [Scaffold] with a [Column] of [CustomTextField]s and a
-  /// [CustomButton] to register a new user.
-  ///
-  /// The [Column] contains three [CustomTextField]s for entering the user's
-  /// full name, email, and password. The [CustomButton] is used to submit the
-  /// registration form.
-  ///
-  /// This method is a convenience method for creating a [RegisterPage] with a
-  /// [RegisterBloc] provider. It is intended to be used as a root widget in
-  /// a Flutter application.
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  late RegisterService _registerService;
+
+  @override
+  void initState() {
+    super.initState();
+    _registerService = context.read<RegisterBloc>().registerService;
+    _loadCachedData();
+  }
+
+  Future<void> _loadCachedData() async {
+    _nameController.text = (await _registerService.getCachedName()) ?? '';
+    _emailController.text = (await _registerService.getCachedEmail()) ?? '';
+    _passwordController.text =
+        (await _registerService.getCachedPassword()) ?? '';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,34 +75,54 @@ class RegisterPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CustomTextField(
-                label: 'Full Name',
-                onChanged: (value) => context
-                    .read<RegisterBloc>()
-                    .add(RegisterNameChanged(value)),
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                label: 'Email',
-                keyboardType: TextInputType.emailAddress,
-                onChanged: (value) => context
-                    .read<RegisterBloc>()
-                    .add(RegisterEmailChanged(value)),
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                label: 'Password',
-                isObscured: true,
-                onChanged: (value) => context
-                    .read<RegisterBloc>()
-                    .add(RegisterPasswordChanged(value)),
-              ),
-              const SizedBox(height: 16),
-              CustomButton(
-                label: 'Register',
-                onPressed: () {
-                  context.read<RegisterBloc>().add(RegisterSubmitted());
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Full Name',
+                ),
+                onChanged: (value) {
+                  context.read<RegisterBloc>().add(RegisterNameChanged(value));
                 },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Email',
+                ),
+                onChanged: (value) {
+                  context.read<RegisterBloc>().add(RegisterEmailChanged(value));
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Password',
+                ),
+                onChanged: (value) {
+                  context
+                      .read<RegisterBloc>()
+                      .add(RegisterPasswordChanged(value));
+                },
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  final model = RegisterModel(
+                    name: _nameController.text.trim(),
+                    username: _usernameController.text.trim(),
+                    email: _emailController.text.trim(),
+                    phone: _phoneController.text.trim(),
+                    password: _passwordController.text.trim(),
+                  );
+                  context.read<RegisterBloc>().add(RegisterSubmitted(model));
+                },
+                child: const Text('Register'),
               ),
             ],
           ),
