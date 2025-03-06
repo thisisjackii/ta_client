@@ -1,0 +1,119 @@
+{
+  "@@locale": "id",
+  "appTitle": "Aplikasi Saya",
+  "@appTitle": {
+    "description": "Judul dari aplikasi",
+    "example": "Aplikasi Saya"
+  },
+  "welcomeMessage": "Selamat Datang di Aplikasi Saya",
+  "@welcomeMessage": {
+    "description": "Pesan selamat datang yang ditampilkan di halaman utama",
+    "example": "Selamat Datang di Aplikasi Saya"
+  },
+  "login": "Masuk",
+  "@login": {
+    "description": "Teks untuk tombol masuk",
+    "example": "Masuk",
+    "context": "Tindakan untuk masuk ke aplikasi"
+  },
+  "register": "Daftar",
+  "@register": {
+    "description": "Teks untuk tombol daftar",
+    "example": "Daftar",
+    "context": "Tindakan untuk mendaftar di aplikasi"
+  },
+  "dashboard": "Dasbor",
+  "@dashboard": {
+    "description": "Judul untuk halaman dasbor",
+    "example": "Dasbor"
+  },
+  "otpVerification": "Verifikasi OTP",
+  "@otpVerification": {
+    "description": "Judul untuk halaman verifikasi OTP",
+    "example": "Verifikasi OTP"
+  },
+  "email": "Surel",
+  "@email": {
+    "description": "Label untuk field surel",
+    "example": "joko@example.com"
+  },
+  "password": "Kata Sandi",
+  "@password": {
+    "description": "Label untuk field kata sandi",
+    "example": "••••••••"
+  },
+  "fullName": "Nama Lengkap",
+  "@fullName": {
+    "description": "Label untuk field nama lengkap",
+    "example": "Joko Widodo"
+  },
+  "invalidCredentials": "Kredensial tidak valid",
+  "@invalidCredentials": {
+    "description": "Pesan kesalahan untuk kredensial yang salah",
+    "example": "Kredensial tidak valid",
+    "context": "Ditampilkan saat login gagal karena email atau kata sandi salah"
+  },
+  "retry": "Coba Lagi",
+  "@retry": {
+    "description": "Teks tombol untuk mencoba kembali operasi",
+    "example": "Coba Lagi"
+  },
+  "logout": "Keluar",
+  "@logout": {
+    "description": "Teks tombol untuk keluar",
+    "example": "Keluar"
+  },
+  "savings": "Tabungan",
+  "@savings": {
+    "description": "Label untuk halaman atau bagian tabungan",
+    "example": "Tabungan"
+  },
+  "statistics": "Statistik",
+  "@statistics": {
+    "description": "Label untuk halaman atau bagian statistik",
+    "example": "Statistik"
+  },
+  "account": "Akun",
+  "@account": {
+    "description": "Label untuk halaman atau bagian akun",
+    "example": "Akun"
+  },
+  "error": "Kesalahan",
+  "@error": {
+    "description": "Label pesan kesalahan umum",
+    "example": "Terjadi kesalahan"
+  },
+  "loading": "Memuat...",
+  "@loading": {
+    "description": "Teks indikator saat konten sedang dimuat",
+    "example": "Memuat..."
+  },
+  "filter": "Saring",
+  "@filter": {
+    "description": "Label untuk opsi penyaringan",
+    "example": "Saring",
+    "context": "Digunakan untuk memicu penyaringan daftar"
+  },
+  "info": "Info",
+  "@info": {
+    "description": "Label untuk informasi atau detail",
+    "example": "Info",
+    "context": "Menunjukkan informasi tambahan"
+  },
+  "menu": "Menu",
+  "@menu": {
+    "description": "Label untuk opsi menu",
+    "example": "Menu"
+  },
+  "welcomeUser": "Selamat Datang, {username}!",
+  "@welcomeUser": {
+    "description": "Pesan ucapan selamat datang dengan username dinamis",
+    "placeholders": {
+      "username": {
+        "type": "String",
+        "example": "Joko"
+      }
+    },
+    "context": "Ditampilkan sebagai pesan ucapan selamat datang yang dipersonalisasi"
+  }
+}

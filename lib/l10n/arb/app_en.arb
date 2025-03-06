@@ -1,7 +1,119 @@
 {
-    "@@locale": "en",
-    "counterAppBarTitle": "Counter",
-    "@counterAppBarTitle": {
-        "description": "Text shown in the AppBar of the Counter Page"
-    }
+  "@@locale": "en",
+  "appTitle": "My App",
+  "@appTitle": {
+    "description": "The title of the application",
+    "example": "My App"
+  },
+  "welcomeMessage": "Welcome to My App",
+  "@welcomeMessage": {
+    "description": "A welcome message displayed on the home page",
+    "example": "Welcome to My App"
+  },
+  "login": "Login",
+  "@login": {
+    "description": "Text for the login button",
+    "example": "Login",
+    "context": "Action to log in to the app"
+  },
+  "register": "Register",
+  "@register": {
+    "description": "Text for the register button",
+    "example": "Register",
+    "context": "Action to sign up for the app"
+  },
+  "dashboard": "Dashboard",
+  "@dashboard": {
+    "description": "Title for the dashboard page",
+    "example": "Dashboard"
+  },
+  "otpVerification": "OTP Verification",
+  "@otpVerification": {
+    "description": "Title for the OTP verification page",
+    "example": "OTP Verification"
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Label for the email field",
+    "example": "john@example.com"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Label for the password field",
+    "example": "••••••••"
+  },
+  "fullName": "Full Name",
+  "@fullName": {
+    "description": "Label for the full name field",
+    "example": "John Doe"
+  },
+  "invalidCredentials": "Invalid credentials",
+  "@invalidCredentials": {
+    "description": "Error message for invalid login credentials",
+    "example": "Invalid credentials",
+    "context": "Shown when login fails due to wrong email or password"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Button text for retrying an operation",
+    "example": "Retry"
+  },
+  "logout": "Logout",
+  "@logout": {
+    "description": "Button text for logging out",
+    "example": "Logout"
+  },
+  "savings": "Savings",
+  "@savings": {
+    "description": "Label for the savings page or section",
+    "example": "Savings"
+  },
+  "statistics": "Statistics",
+  "@statistics": {
+    "description": "Label for the statistics page or section",
+    "example": "Statistics"
+  },
+  "account": "Account",
+  "@account": {
+    "description": "Label for the account page or section",
+    "example": "Account"
+  },
+  "error": "Error",
+  "@error": {
+    "description": "Generic error message label",
+    "example": "An error occurred"
+  },
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Indicator text when content is loading",
+    "example": "Loading..."
+  },
+  "filter": "Filter",
+  "@filter": {
+    "description": "Label for filtering options",
+    "example": "Filter",
+    "context": "Used to trigger filtering of a list"
+  },
+  "info": "Info",
+  "@info": {
+    "description": "Label for information or details",
+    "example": "Info",
+    "context": "Indicates additional information"
+  },
+  "menu": "Menu",
+  "@menu": {
+    "description": "Label for menu options",
+    "example": "Menu"
+  },
+  "welcomeUser": "Welcome, {username}!",
+  "@welcomeUser": {
+    "description": "Greeting message with a dynamic username",
+    "placeholders": {
+      "username": {
+        "type": "String",
+        "example": "John"
+      }
+    },
+    "context": "Displayed as a personalized welcome message"
+  }
 }
