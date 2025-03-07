@@ -1,6 +1,5 @@
-// create_page.dart
+// lib/features/create/view/create_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
 import 'package:ta_client/core/widgets/custom_date_picker.dart';
 import 'package:ta_client/core/widgets/custom_category_picker.dart';
@@ -68,13 +67,15 @@ class _CreatePageState extends State<CreatePage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(// Ensure full width
+            Center(
+              // Ensure full width
               child: ToggleSwitch(
-                minWidth: MediaQuery.of(context).size.width, // Adjust dynamically
+                minWidth:
+                    MediaQuery.of(context).size.width, // Adjust dynamically
                 cornerRadius: 10.0,
                 activeBgColors: [
                   [Colors.blue, Colors.blueAccent], // Pemasukan
-                  [Colors.red, Colors.redAccent]    // Pengeluaran
+                  [Colors.red, Colors.redAccent] // Pengeluaran
                 ],
                 activeFgColor: Colors.white,
                 inactiveBgColor: Colors.grey[300],
@@ -91,7 +92,6 @@ class _CreatePageState extends State<CreatePage> {
                 },
               ),
             ),
-
             CustomTextField(
               label: 'Deskripsi',
               suffixType: SuffixType.camera,
@@ -173,8 +173,8 @@ class _CreatePageState extends State<CreatePage> {
               style: ButtonStyle(
                 shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    )),
+                  borderRadius: BorderRadius.circular(8.0),
+                )),
                 backgroundColor: WidgetStateProperty.all<Color>(
                   _selectedIndex == 0 ? Colors.blueAccent : Colors.redAccent,
                 ),
