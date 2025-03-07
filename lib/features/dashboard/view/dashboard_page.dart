@@ -1,4 +1,4 @@
-// dashboard_page.dart
+// lib/features/dashboard/view/dashboard_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/features/dashboard/bloc/dashboard_bloc.dart';

@@ -1,3 +1,4 @@
+// lib/features/dashboard/bloc/dashboard_state.dart
 import 'package:equatable/equatable.dart';
 import 'package:ta_client/features/dashboard/models/dashboard_item.dart';
 
