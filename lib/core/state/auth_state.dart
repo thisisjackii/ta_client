@@ -1,3 +1,4 @@
+// lib/core/state/auth_state.dart
 import 'package:flutter/material.dart';
 
 class AuthState extends ChangeNotifier {
