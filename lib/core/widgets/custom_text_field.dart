@@ -1,5 +1,8 @@
 // lib/core/widgets/custom_text_field.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+enum SuffixType { none, eye, camera }
 
 class CustomTextField extends StatefulWidget {
   const CustomTextField({
@@ -10,6 +13,10 @@ class CustomTextField extends StatefulWidget {
     super.key,
     this.isObscured = false,
     this.keyboardType,
+    this.controller,
+    this.inputFormatters,
+    this.readOnly = false,
+    this.onTap,
   });
 
   final String label;
@@ -18,42 +25,49 @@ class CustomTextField extends StatefulWidget {
   final TextInputType? keyboardType;
   final void Function(String)? onChanged;
   final SuffixType suffixType;
+  final TextEditingController? controller;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool readOnly;
+  final VoidCallback? onTap;
+
+  @override
 
   @override
   _CustomTextFieldState createState() => _CustomTextFieldState();
 }
 
-enum SuffixType { none, eye, camera }
-
 class _CustomTextFieldState extends State<CustomTextField> {
   late bool _isObscured;
+  late TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
     _isObscured = widget.isObscured;
+    _controller = widget.controller ?? TextEditingController();
   }
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: _controller,
+      readOnly: widget.readOnly,
+      onTap: widget.onTap,
       obscureText: _isObscured,
       keyboardType: widget.keyboardType,
+      inputFormatters: widget.inputFormatters,
       decoration: InputDecoration(
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.blueGrey),
         ),
         prefixIcon: widget.icons != null
             ? Opacity(
-          opacity: 0.3,
-          child: Icon(widget.icons),
-        )
+                opacity: 0.3,
+                child: Icon(widget.icons),
+              )
             : null,
         hintText: widget.label,
-        hintStyle: const TextStyle(
-          fontSize: 12,         // Custom font size
-          color: Colors.grey,   // Custom color
-        ),
+        hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
         suffixIcon: _buildSuffixIcon(),
       ),
       onChanged: widget.onChanged,
@@ -62,7 +76,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   Widget? _buildSuffixIcon() {
     switch (widget.suffixType) {
-      case SuffixType.eye: // Obscure text toggle (password field)
+      case SuffixType.eye:
         return IconButton(
           icon: Icon(
             _isObscured ? Icons.visibility : Icons.visibility_off,
@@ -74,15 +88,14 @@ class _CustomTextFieldState extends State<CustomTextField> {
             });
           },
         );
-      case SuffixType.camera: // Camera icon
+      case SuffixType.camera:
         return IconButton(
           icon: const Icon(Icons.camera_alt, color: Colors.black26),
           onPressed: () {
             print('Camera clicked at this moment');
           },
         );
-      case SuffixType.none: // No suffix icon
-      default:
+      case SuffixType.none:
         return null;
     }
   }

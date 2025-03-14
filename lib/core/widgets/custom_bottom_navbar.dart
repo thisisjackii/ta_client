@@ -5,7 +5,7 @@ class CustomBottomNavbar extends StatelessWidget {
     required this.currentTab, required this.onTabSelected, super.key,
   });
   final int currentTab;
-  final Function(int) onTabSelected;
+  final void Function(int) onTabSelected;
 
   @override
   Widget build(BuildContext context) {

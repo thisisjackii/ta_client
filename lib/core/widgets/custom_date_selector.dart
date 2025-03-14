@@ -9,7 +9,7 @@ class CustomDateSelector extends StatefulWidget {
   });
   final String label;
   final IconData? icons;
-  final Function(String) onDateSelected;
+  final void Function(String) onDateSelected;
 
   @override
   _CustomDateSelectorState createState() => _CustomDateSelectorState();

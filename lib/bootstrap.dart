@@ -3,6 +3,9 @@ import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:ta_client/core/services/service_locator.dart';
+import 'package:ta_client/features/transaction/services/transaction_sync_service.dart';
 
 class AppBlocObserver extends BlocObserver {
   const AppBlocObserver();
@@ -27,7 +30,13 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
 
   Bloc.observer = const AppBlocObserver();
 
+  await Hive.initFlutter();
+  await Hive.openBox<dynamic>('transactionBox');
+
   // Add cross-flavor configuration here
+
+  setupServiceLocator();
+  sl<TransactionSyncService>().startListening();
 
   runApp(await builder());
 }

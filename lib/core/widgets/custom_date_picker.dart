@@ -1,5 +1,6 @@
 // lib/core/widgets/custom_date_picker.dart
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
 
 class CustomDatePicker extends StatefulWidget {
@@ -7,10 +8,14 @@ class CustomDatePicker extends StatefulWidget {
     required this.label,
     required this.isDatePicker,
     super.key,
+    this.onDateChanged,
+    this.onTimeChanged,
   });
 
   final String label;
   final bool isDatePicker;
+  final void Function(DateTime)? onDateChanged;
+  final void Function(TimeOfDay)? onTimeChanged;
 
   @override
   State<CustomDatePicker> createState() => _CustomDatePickerState();
@@ -18,12 +23,12 @@ class CustomDatePicker extends StatefulWidget {
 
 class _CustomDatePickerState extends State<CustomDatePicker> {
   final TextEditingController _controller = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
         if (widget.isDatePicker) {
-          // Show Date Picker
           final pickedDate = await showDatePicker(
             context: context,
             initialDate: DateTime.now(),
@@ -32,27 +37,33 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
           );
           if (pickedDate != null) {
             setState(() {
-              _controller.text = '${pickedDate.year}-${pickedDate.month}-${pickedDate.day}';
+              _controller.text = DateFormat('dd/MM/yyyy').format(pickedDate);
             });
+            if (widget.onDateChanged != null) {
+              widget.onDateChanged?.call(pickedDate);
+            }
           }
         } else {
-          // Show Time Picker
           final pickedTime = await showTimePicker(
             context: context,
             initialTime: TimeOfDay.now(),
           );
           if (pickedTime != null) {
             setState(() {
-              _controller.text = pickedTime.format(context); // Formats time to a readable string
+              _controller.text = pickedTime.format(context);
             });
+            if (widget.onTimeChanged != null) {
+              widget.onTimeChanged?.call(pickedTime);
+            }
           }
         }
       },
-      child: AbsorbPointer( // Prevents the keyboard from appearing
+      child: AbsorbPointer(
         child: CustomTextField(
+          controller: _controller,
           label: widget.label,
-          onChanged: (value) {}, // No direct input allowed
-          keyboardType: TextInputType.none, // Disables keyboard input
+          onChanged: (value) {},
+          keyboardType: TextInputType.none,
         ),
       ),
     );

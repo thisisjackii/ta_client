@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:ta_client/features/dashboard/models/dashboard_item.dart';
+import 'package:ta_client/features/transaction/models/transaction.dart';
 
 abstract class DashboardState extends Equatable {
   const DashboardState();
@@ -13,7 +13,7 @@ class DashboardLoading extends DashboardState {}
 class DashboardLoaded extends DashboardState {
   const DashboardLoaded(this.items);
 
-  final List<DashboardItem> items;
+  final List<Transaction> items;
 
   @override
   List<Object> get props => [items];
