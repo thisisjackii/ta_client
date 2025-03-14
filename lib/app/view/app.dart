@@ -6,13 +6,12 @@ import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/services/connectivity_service.dart';
 import 'package:ta_client/core/services/service_locator.dart';
 import 'package:ta_client/core/state/auth_state.dart';
+import 'package:ta_client/core/widgets/custom_route_observer.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_event.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart';
-
-final RouteObserver<PageRoute<dynamic>> routeObserver = RouteObserver<PageRoute<dynamic>>();
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -43,7 +42,7 @@ class App extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
-          navigatorObservers: [routeObserver],
+          navigatorObservers: [CustomRouteObserver()],
           theme: ThemeData(
             appBarTheme: AppBarTheme(
               backgroundColor: Theme.of(context).colorScheme.inversePrimary,

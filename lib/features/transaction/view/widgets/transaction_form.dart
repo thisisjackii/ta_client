@@ -233,9 +233,7 @@ class _TransactionFormState extends State<TransactionForm> {
                   amount: double.tryParse(amountController.text) ?? 0.0,
                 );
                 widget.onSubmit(transaction);
-                if (mode == TransactionFormMode.create) {
-                  Navigator.of(context).pop();
-                } else if (mode == TransactionFormMode.edit) {
+                if (mode == TransactionFormMode.edit) {
                   setState(() {
                     mode = TransactionFormMode.view;
                   });

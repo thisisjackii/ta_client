@@ -8,6 +8,7 @@ import 'package:ta_client/core/widgets/custom_bottom_navbar.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_event.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_state.dart';
+import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_grouped_items.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -25,25 +26,6 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     setState(() {
       _currentTab = index;
     });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
-  }
-
-  @override
-  void dispose() {
-    routeObserver.unsubscribe(this);
-    isSelectionMode.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didPopNext() {
-    // Called when coming back to this page.
-    context.read<DashboardBloc>().add(DashboardReloadRequested());
   }
 
   @override
@@ -87,8 +69,18 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add',
-        onPressed: () {
-          Navigator.pushNamed(context, Routes.createTransaction);
+        onPressed: () async {
+          final result =
+              await Navigator.pushNamed(context, Routes.createTransaction);
+          // If a new transaction is returned, add it to the dashboard immediately.
+          if (result is Transaction) {
+            context
+                .read<DashboardBloc>()
+                .add(DashboardItemAdded(result));
+          } else {
+            // If nothing returned, fall back to a full reload.
+            context.read<DashboardBloc>().add(DashboardReloadRequested());
+          }
         },
         shape: const CircleBorder(),
         backgroundColor: const Color(0xFF1D3B5A),

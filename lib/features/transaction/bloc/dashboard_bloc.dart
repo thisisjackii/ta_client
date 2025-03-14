@@ -14,6 +14,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     required this.transactionService,
   }) : super(DashboardLoading()) {
     on<DashboardReloadRequested>(_onReload);
+    on<DashboardItemAdded>(_onItemAdded);
     on<DashboardItemDeleted>(_onItemDeleted);
 
     // Load initial data
@@ -44,6 +45,22 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       emit(DashboardLoaded(items));
     } catch (e) {
       emit(DashboardError(e.toString()));
+    }
+  }
+
+  void _onItemAdded(
+    DashboardItemAdded event,
+    Emitter<DashboardState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is DashboardLoaded) {
+      // Optionally, sort or validate the list before emitting.
+      final updatedItems = List<Transaction>.from(currentState.items)
+        ..add(event.item);
+      emit(DashboardLoaded(updatedItems));
+    } else {
+      // If the dashboard isn’t loaded yet, trigger a full reload.
+      add(DashboardReloadRequested());
     }
   }
 

@@ -7,26 +7,30 @@ class TransactionState extends Equatable {
     this.isSuccess = false,
     this.errorMessage,
     this.operation,
+    this.createdTransaction,
   });
   final bool isLoading;
   final bool isSuccess;
   final String? errorMessage;
   final TransactionOperation? operation;
+  final Transaction? createdTransaction;
 
   TransactionState copyWith({
     bool? isLoading,
     bool? isSuccess,
     String? errorMessage,
     TransactionOperation? operation,
+    Transaction? createdTransaction,
   }) {
     return TransactionState(
       isLoading: isLoading ?? this.isLoading,
       isSuccess: isSuccess ?? this.isSuccess,
-      errorMessage: errorMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
       operation: operation ?? this.operation,
+      createdTransaction: createdTransaction ?? this.createdTransaction,
     );
   }
 
   @override
-  List<Object?> get props => [isLoading, isSuccess, errorMessage, operation];
+  List<Object?> get props => [isLoading, isSuccess, errorMessage, operation, createdTransaction];
 }

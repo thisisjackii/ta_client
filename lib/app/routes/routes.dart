@@ -16,23 +16,44 @@ class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case welcome:
-        return MaterialPageRoute(builder: (_) => WelcomePage.create());
+        return MaterialPageRoute(
+          builder: (_) => WelcomePage.create(),
+          settings: settings,
+        );
       case login:
-        return MaterialPageRoute(builder: (_) => LoginPage.create());
+        return MaterialPageRoute(
+          builder: (_) => LoginPage.create(),
+          settings: settings,
+        );
       case register:
-        return MaterialPageRoute(builder: (_) => RegisterPage.create());
+        return MaterialPageRoute(
+          builder: (_) => RegisterPage.create(),
+          settings: settings,
+        );
       case otpVerification:
-        return MaterialPageRoute(builder: (_) => OtpVerificationPage.create());
+        return MaterialPageRoute(
+          builder: (_) => OtpVerificationPage.create(),
+          settings: settings,
+        );
       case dashboard:
-        return MaterialPageRoute(builder: (_) => const DashboardPage());
+        return MaterialPageRoute(
+          builder: (_) => const DashboardPage(),
+          settings: settings,
+        );
       case createTransaction:
-        return MaterialPageRoute(builder: (_) => const CreateTransactionPage());
+        return MaterialPageRoute(
+          builder: (_) => const CreateTransactionPage(),
+          settings: settings,
+        );
       // case editTransaction:
       //   final transaction = settings.arguments! as Transaction;
       //   return MaterialPageRoute(builder: (_) => EditTransactionPage.create(transaction));
       case viewTransaction:
         final transaction = settings.arguments! as Transaction;
-        return MaterialPageRoute(builder: (_) => ViewTransactionPage(transaction: transaction));
+        return MaterialPageRoute(
+          builder: (_) => ViewTransactionPage(transaction: transaction),
+          settings: settings,
+        );
       default:
         debugPrint('Unknown route: ${settings.name}');
         return MaterialPageRoute(

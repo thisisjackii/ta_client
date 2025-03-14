@@ -10,6 +10,15 @@ abstract class DashboardEvent extends Equatable {
 
 class DashboardReloadRequested extends DashboardEvent {}
 
+class DashboardItemAdded extends DashboardEvent {
+  const DashboardItemAdded(this.item);
+
+  final Transaction item;
+
+  @override
+  List<Object> get props => [item];
+}
+
 class DashboardItemDeleted extends DashboardEvent {
   const DashboardItemDeleted(this.item);
 

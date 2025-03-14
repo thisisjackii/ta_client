@@ -54,7 +54,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
             t.date.difference(created.date).inSeconds.abs() < 1,
       );
       if (found) {
-        emit(state.copyWith(isLoading: false, isSuccess: true));
+        emit(state.copyWith(isLoading: false, isSuccess: true, createdTransaction: created));
       } else {
         throw Exception('New transaction not found in updated dashboard data.');
       }

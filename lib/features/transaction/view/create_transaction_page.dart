@@ -16,7 +16,7 @@ class CreateTransactionPage extends StatelessWidget {
             const SnackBar(content: Text('Transaction created successfully!')),
           );
           // Simply pop; DashboardPage's RouteAware (didPopNext) will trigger a reload.
-          Navigator.of(context).pop(true);
+          Navigator.of(context).pop(state.createdTransaction);
         } else if (state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: ${state.errorMessage}')),
