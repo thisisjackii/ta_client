@@ -6,7 +6,8 @@ import 'package:ta_client/core/widgets/custom_date_picker.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_form_mode.dart';
-import 'package:ta_client/features/transaction/view/widgets/transaction_type_toggle.dart';
+import 'package:ta_client/core/widgets/dropdown_field.dart';
+import 'package:ta_client/core/widgets/rupiah_formatter.dart';
 
 class TransactionForm extends StatefulWidget {
   const TransactionForm({
@@ -27,6 +28,16 @@ class TransactionForm extends StatefulWidget {
 }
 
 class _TransactionFormState extends State<TransactionForm> {
+  Color submitButtonColor = const Color(0xff2A8C8B);
+  final List<DropdownItem> dropdownItems = [
+    DropdownItem(label: 'Asset', icon: Icons.account_balance_wallet, color: const Color(0xff2A8C8B)),
+    DropdownItem(label: 'Liability', icon: Icons.account_balance, color: const Color(0xffEF233C)),
+    DropdownItem(label: 'Pemasukan', icon: Icons.add_card_rounded, color: const Color(0xff5A4CAF)),
+    DropdownItem(label: 'Pengeluaran', icon: Icons.local_activity_rounded, color: const Color(0xffD623AE)),
+  ];
+
+  String? selectedValue;
+
   late TransactionFormMode mode;
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
@@ -35,6 +46,7 @@ class _TransactionFormState extends State<TransactionForm> {
   String subcategory = '';
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
+  final int maxDescriptionLength = 100;
 
   @override
   void initState() {
@@ -74,29 +86,33 @@ class _TransactionFormState extends State<TransactionForm> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Transaction type toggle
-          Center(
-            child: TransactionTypeToggle(
-              selectedIndex: transactionType == 'Pemasukan' ? 0 : 1,
-              onToggle: isReadOnly
-                  ? (_) {}
-                  : (index) {
-                      setState(() {
-                        transactionType =
-                            index == 0 ? 'Pemasukan' : 'Pengeluaran';
-                      });
-                    },
-            ),
+          CustomDropdownField(
+            items: dropdownItems,
+            selectedValue: selectedValue,
+            onChanged: (item) {
+              setState(() {
+                selectedValue = item.label;
+                submitButtonColor = item.color;
+              });
+            },
           ),
           const SizedBox(height: 4),
-          CustomTextField(
-            label: 'Deskripsi',
-            controller: descriptionController,
-            readOnly: isReadOnly,
-            onTap: isReadOnly ? _switchToEdit : null,
-            suffixType: SuffixType.camera,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CustomTextField(
+                label: 'Deskripsi',
+                controller: descriptionController,
+                readOnly: isReadOnly,
+                onTap: isReadOnly ? _switchToEdit : null,
+                maxLength: maxDescriptionLength, // Limit length
+                maxLengthEnforcement: MaxLengthEnforcement.enforced, // Enforce limit
+              ),
+              const SizedBox(height: 4),
+            ],
           ),
           const SizedBox(height: 4),
+
           Row(
             children: [
               const Align(
@@ -109,14 +125,16 @@ class _TransactionFormState extends State<TransactionForm> {
                   ),
                 ),
               ),
-              const SizedBox(width: 35),
+              const SizedBox(width: 24),
               Expanded(
                 child: CustomTextField(
                   label: 'Enter Amount',
                   controller: amountController,
                   readOnly: isReadOnly,
                   keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  inputFormatters: [
+                    RupiahInputFormatter(),
+                  ],
                   onTap: isReadOnly ? _switchToEdit : null,
                 ),
               ),
@@ -135,7 +153,7 @@ class _TransactionFormState extends State<TransactionForm> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 20),
               Expanded(
                 child: CustomCategoryPicker(
                   selectedCategory: category,
@@ -165,7 +183,7 @@ class _TransactionFormState extends State<TransactionForm> {
                   ),
                 ),
               ),
-              const SizedBox(width: 18),
+              const SizedBox(width: 22),
               Expanded(
                 child: CustomDatePicker(
                   label: 'Tanggal',
@@ -208,41 +226,50 @@ class _TransactionFormState extends State<TransactionForm> {
               ],
             )
           else
-            ElevatedButton(
-              onPressed: () {
-                if (selectedDate == null) return;
-                DateTime combinedDate;
-                if (selectedTime != null) {
-                  combinedDate = DateTime(
-                    selectedDate!.year,
-                    selectedDate!.month,
-                    selectedDate!.day,
-                    selectedTime!.hour,
-                    selectedTime!.minute,
+            SizedBox(
+              width: double.infinity, // Makes the button take up full width
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: submitButtonColor,
+                ),
+                onPressed: () {
+                  if (selectedDate == null) return;
+                  DateTime combinedDate;
+                  if (selectedTime != null) {
+                    combinedDate = DateTime(
+                      selectedDate!.year,
+                      selectedDate!.month,
+                      selectedDate!.day,
+                      selectedTime!.hour,
+                      selectedTime!.minute,
+                    );
+                  } else {
+                    combinedDate = selectedDate!;
+                  }
+                  final transaction = Transaction(
+                    id: widget.transaction?.id ?? '',
+                    type: transactionType,
+                    description: descriptionController.text,
+                    date: combinedDate,
+                    category: category,
+                    subcategory: subcategory,
+                    amount: double.tryParse(amountController.text) ?? 0.0,
                   );
-                } else {
-                  combinedDate = selectedDate!;
-                }
-                final transaction = Transaction(
-                  id: widget.transaction?.id ?? '',
-                  type: transactionType,
-                  description: descriptionController.text,
-                  date: combinedDate,
-                  category: category,
-                  subcategory: subcategory,
-                  amount: double.tryParse(amountController.text) ?? 0.0,
-                );
-                widget.onSubmit(transaction);
-                if (mode == TransactionFormMode.edit) {
-                  setState(() {
-                    mode = TransactionFormMode.view;
-                  });
-                }
-              },
-              child: Text(
-                mode == TransactionFormMode.edit ? 'Confirm Edit' : 'Submit',
+                  widget.onSubmit(transaction);
+                  if (mode == TransactionFormMode.edit) {
+                    setState(() {
+                      mode = TransactionFormMode.view;
+                    });
+                  }
+                },
+                child: Text(
+                  mode == TransactionFormMode.edit ? 'Confirm Edit' : 'Submit',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                ),
               ),
             ),
+
+
         ],
       ),
     );

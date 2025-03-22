@@ -17,6 +17,8 @@ class CustomTextField extends StatefulWidget {
     this.inputFormatters,
     this.readOnly = false,
     this.onTap,
+    this.maxLength,
+    this.maxLengthEnforcement,
   });
 
   final String label;
@@ -29,6 +31,8 @@ class CustomTextField extends StatefulWidget {
   final List<TextInputFormatter>? inputFormatters;
   final bool readOnly;
   final VoidCallback? onTap;
+  final int? maxLength;
+  final MaxLengthEnforcement? maxLengthEnforcement;
 
   @override
 
@@ -56,6 +60,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
       obscureText: _isObscured,
       keyboardType: widget.keyboardType,
       inputFormatters: widget.inputFormatters,
+      maxLength: widget.maxLength,
+      maxLengthEnforcement: widget.maxLengthEnforcement,
       decoration: InputDecoration(
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.blueGrey),
