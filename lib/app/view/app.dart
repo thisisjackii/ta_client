@@ -8,7 +8,6 @@ import 'package:ta_client/core/services/service_locator.dart';
 import 'package:ta_client/core/state/auth_state.dart';
 import 'package:ta_client/core/widgets/custom_route_observer.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
-import 'package:ta_client/features/transaction/bloc/dashboard_event.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart';

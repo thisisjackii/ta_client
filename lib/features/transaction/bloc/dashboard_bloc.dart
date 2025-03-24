@@ -1,11 +1,13 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/core/services/connectivity_service.dart';
-import 'package:ta_client/features/transaction/bloc/dashboard_event.dart';
-import 'package:ta_client/features/transaction/bloc/dashboard_state.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart';
+
+part 'dashboard_event.dart';
+part 'dashboard_state.dart';
 
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   DashboardBloc({

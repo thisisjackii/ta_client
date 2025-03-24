@@ -1,5 +1,5 @@
-import 'package:equatable/equatable.dart';
-import 'package:ta_client/features/transaction/models/transaction.dart';
+// lib/features/transaction/bloc/dashboard_event.dart
+part of 'dashboard_bloc.dart';
 
 abstract class DashboardEvent extends Equatable {
   const DashboardEvent();
