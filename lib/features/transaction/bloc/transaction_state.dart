@@ -8,12 +8,14 @@ class TransactionState extends Equatable {
     this.errorMessage,
     this.operation,
     this.createdTransaction,
+    this.classifiedCategory,
   });
   final bool isLoading;
   final bool isSuccess;
   final String? errorMessage;
   final TransactionOperation? operation;
   final Transaction? createdTransaction;
+  final String? classifiedCategory; // e.g. raw value from API
 
   TransactionState copyWith({
     bool? isLoading,
@@ -21,6 +23,7 @@ class TransactionState extends Equatable {
     String? errorMessage,
     TransactionOperation? operation,
     Transaction? createdTransaction,
+    String? classifiedCategory,
   }) {
     return TransactionState(
       isLoading: isLoading ?? this.isLoading,
@@ -28,9 +31,10 @@ class TransactionState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       operation: operation ?? this.operation,
       createdTransaction: createdTransaction ?? this.createdTransaction,
+      classifiedCategory: classifiedCategory ?? this.classifiedCategory,
     );
   }
 
   @override
-  List<Object?> get props => [isLoading, isSuccess, errorMessage, operation, createdTransaction];
+  List<Object?> get props => [isLoading, isSuccess, errorMessage, operation, createdTransaction, classifiedCategory];
 }

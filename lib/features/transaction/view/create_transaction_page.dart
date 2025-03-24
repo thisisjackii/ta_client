@@ -52,6 +52,11 @@ class CreateTransactionPage extends StatelessWidget {
                 .read<TransactionBloc>()
                 .add(CreateTransactionRequested(transaction));
           },
+          onDescriptionChanged: (description) {
+            context
+                .read<TransactionBloc>()
+                .add(ClassifyTransactionRequested(description));
+          },
         ),
       ),
     );

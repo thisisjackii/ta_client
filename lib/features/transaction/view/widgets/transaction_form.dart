@@ -12,6 +12,7 @@ import 'package:ta_client/core/widgets/rupiah_formatter.dart';
 class TransactionForm extends StatefulWidget {
   const TransactionForm({
     required this.onSubmit,
+    this.onDescriptionChanged,
     super.key,
     this.mode = TransactionFormMode.create,
     this.transaction,
@@ -22,6 +23,7 @@ class TransactionForm extends StatefulWidget {
   final Transaction? transaction;
   final void Function(Transaction transaction) onSubmit;
   final VoidCallback? onDelete;
+  final void Function(String description)? onDescriptionChanged;
 
   @override
   _TransactionFormState createState() => _TransactionFormState();
@@ -30,10 +32,22 @@ class TransactionForm extends StatefulWidget {
 class _TransactionFormState extends State<TransactionForm> {
   Color submitButtonColor = const Color(0xff2A8C8B);
   final List<DropdownItem> dropdownItems = [
-    DropdownItem(label: 'Asset', icon: Icons.account_balance_wallet, color: const Color(0xff2A8C8B)),
-    DropdownItem(label: 'Liability', icon: Icons.account_balance, color: const Color(0xffEF233C)),
-    DropdownItem(label: 'Pemasukan', icon: Icons.add_card_rounded, color: const Color(0xff5A4CAF)),
-    DropdownItem(label: 'Pengeluaran', icon: Icons.local_activity_rounded, color: const Color(0xffD623AE)),
+    DropdownItem(
+        label: 'Asset',
+        icon: Icons.account_balance_wallet,
+        color: const Color(0xff2A8C8B)),
+    DropdownItem(
+        label: 'Liability',
+        icon: Icons.account_balance,
+        color: const Color(0xffEF233C)),
+    DropdownItem(
+        label: 'Pemasukan',
+        icon: Icons.add_card_rounded,
+        color: const Color(0xff5A4CAF)),
+    DropdownItem(
+        label: 'Pengeluaran',
+        icon: Icons.local_activity_rounded,
+        color: const Color(0xffD623AE)),
   ];
 
   String? selectedValue;
@@ -42,7 +56,12 @@ class _TransactionFormState extends State<TransactionForm> {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   String transactionType = 'Pemasukan';
-  String category = '';
+  // String category = '';
+  // Store raw predicted category (without emoji)
+  String rawPredictedCategory = '';
+  // For display, append the sparkle emoji
+  String get displayCategory =>
+      rawPredictedCategory.isNotEmpty ? '$rawPredictedCategory ✨' : '';
   String subcategory = '';
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
@@ -56,15 +75,25 @@ class _TransactionFormState extends State<TransactionForm> {
       transactionType = widget.transaction!.type;
       descriptionController.text = widget.transaction!.description;
       amountController.text = widget.transaction!.amount.toString();
-      category = widget.transaction!.category;
+      // category = widget.transaction!.category;
+      rawPredictedCategory = widget.transaction!.category;
       subcategory = widget.transaction!.subcategory;
       selectedDate = widget.transaction!.date;
       selectedTime = TimeOfDay.fromDateTime(widget.transaction!.date);
+    }
+    descriptionController.addListener(_onDescriptionChanged);
+  }
+
+  void _onDescriptionChanged() {
+    final text = descriptionController.text;
+    if (text.trim().isNotEmpty && widget.onDescriptionChanged != null) {
+      widget.onDescriptionChanged!(text);
     }
   }
 
   @override
   void dispose() {
+    descriptionController.removeListener(_onDescriptionChanged);
     descriptionController.dispose();
     amountController.dispose();
     super.dispose();
@@ -106,13 +135,13 @@ class _TransactionFormState extends State<TransactionForm> {
                 readOnly: isReadOnly,
                 onTap: isReadOnly ? _switchToEdit : null,
                 maxLength: maxDescriptionLength, // Limit length
-                maxLengthEnforcement: MaxLengthEnforcement.enforced, // Enforce limit
+                maxLengthEnforcement:
+                    MaxLengthEnforcement.enforced, // Enforce limit
               ),
               const SizedBox(height: 4),
             ],
           ),
           const SizedBox(height: 4),
-
           Row(
             children: [
               const Align(
@@ -156,13 +185,15 @@ class _TransactionFormState extends State<TransactionForm> {
               const SizedBox(width: 20),
               Expanded(
                 child: CustomCategoryPicker(
-                  selectedCategory: category,
+                  // selectedCategory: category,
+                  selectedCategory: displayCategory,
                   selectedSubCategory: subcategory,
                   onCategorySelected: isReadOnly
                       ? (cat, subCat) {}
                       : (cat, subCat) {
                           setState(() {
-                            category = cat;
+                            // category = cat;
+                            rawPredictedCategory = cat;
                             subcategory = subCat;
                           });
                         },
@@ -246,14 +277,16 @@ class _TransactionFormState extends State<TransactionForm> {
                   } else {
                     combinedDate = selectedDate!;
                   }
-                  final rawAmount = amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
+                  final rawAmount =
+                      amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
                   final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
                   final transaction = Transaction(
                     id: widget.transaction?.id ?? '',
                     type: transactionType,
                     description: descriptionController.text,
                     date: combinedDate,
-                    category: category,
+                    // category: category,
+                    category: rawPredictedCategory,
                     subcategory: subcategory,
                     amount: parsedAmount,
                   );
@@ -266,12 +299,11 @@ class _TransactionFormState extends State<TransactionForm> {
                 },
                 child: Text(
                   mode == TransactionFormMode.edit ? 'Confirm Edit' : 'Submit',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
             ),
-
-
         ],
       ),
     );

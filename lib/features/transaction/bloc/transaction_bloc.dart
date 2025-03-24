@@ -22,6 +22,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     on<CreateTransactionRequested>(_onCreate);
     on<UpdateTransactionRequested>(_onUpdate);
     on<DeleteTransactionRequested>(_onDelete);
+    on<ClassifyTransactionRequested>(_onClassify);
   }
   final TransactionRepository repository;
   final ConnectivityService connectivityService;
@@ -133,6 +134,26 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           errorMessage: e.toString(),
         ),
       );
+    }
+  }
+
+  Future<void> _onClassify(
+    ClassifyTransactionRequested event,
+    Emitter<TransactionState> emit,
+  ) async {
+    try {
+      // Optionally, you might set a loading flag for classification only:
+      emit(state.copyWith(isLoading: true));
+      final result = await transactionService.classifyTransaction(event.description);
+      // Here, result['category'] is the raw predicted value.
+      // For display purposes, you can append the sparkle in the UI.
+      emit(state.copyWith(
+          isLoading: false, classifiedCategory: result['category'] as String? ?? ""));
+    } catch (error) {
+      emit(state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString(),
+          classifiedCategory: null));
     }
   }
 }

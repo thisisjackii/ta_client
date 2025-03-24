@@ -10,10 +10,10 @@ class RupiahInputFormatter extends TextInputFormatter {
 
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    String digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final digitsOnly = newValue.text.replaceAll(RegExp('[^0-9]'), '');
 
     if (digitsOnly.isEmpty) return newValue.copyWith(text: '');
-    String formatted = _formatter.format(int.parse(digitsOnly));
+    final formatted = _formatter.format(int.parse(digitsOnly));
 
     return TextEditingValue(
       text: formatted,

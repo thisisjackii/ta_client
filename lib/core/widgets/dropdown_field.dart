@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 
 class DropdownItem {
+
+  DropdownItem({required this.label, required this.icon, required this.color});
   final String label;
   final IconData icon;
   final Color color;
-
-  DropdownItem({required this.label, required this.icon, required this.color});
 }
 
 class CustomDropdownField extends StatefulWidget {
-  final List<DropdownItem> items;
-  final String? selectedValue;
-  final Function(DropdownItem) onChanged;
 
   const CustomDropdownField({
-    Key? key,
+    super.key,
     required this.items,
     required this.selectedValue,
     required this.onChanged,
-  }) : super(key: key);
+  });
+  final List<DropdownItem> items;
+  final String? selectedValue;
+  final Function(DropdownItem) onChanged;
 
   @override
   _CustomDropdownFieldState createState() => _CustomDropdownFieldState();
@@ -36,8 +36,8 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 0),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(),
+      decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(
             color: Colors.grey, // Underline color
@@ -51,12 +51,12 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 isExpanded: true,
-                hint: Text('-- Pilih Jenis Akun --'),
+                hint: const Text('-- Pilih Jenis Akun --'),
                 value: currentSelected,
-                icon: Icon(Icons.arrow_drop_down),
+                icon: const Icon(Icons.arrow_drop_down),
                 onChanged: (value) {
                   setState(() {
-                    currentSelected = value!;
+                    currentSelected = value;
                     final selectedItem = widget.items.firstWhere((item) => item.label == value);
                     widget.onChanged(selectedItem);
                   });
@@ -67,7 +67,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                     child: Row(
                       children: [
                         Icon(item.icon, color: item.color, size: 20),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(item.label),
                       ],
                     ),

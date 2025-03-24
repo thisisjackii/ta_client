@@ -27,3 +27,11 @@ class DeleteTransactionRequested extends TransactionEvent {
   @override
   List<Object> get props => [transactionId];
 }
+
+class ClassifyTransactionRequested extends TransactionEvent {
+  const ClassifyTransactionRequested(this.description);
+  final String description;
+
+  @override
+  List<Object> get props => [description];
+}
