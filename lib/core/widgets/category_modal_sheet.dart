@@ -23,41 +23,176 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
         children: [
           // Column 1: Main Categories
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Kategori',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Kategori',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                _buildCategoryTile(
-                  label: 'Aset',
-                  backgroundColor: const Color(0xFFD4E8E8),
-                  titleColor: const Color(0xFF2A8C8B),
-                  iconAsset: 'assets/icons/mdi_property-tag.svg',
-                ),
-                const SizedBox(height: 12),
-                _buildCategoryTile(
-                  label: 'Hutang',
-                  backgroundColor: const Color(0xFFFCD3D8),
-                  titleColor: const Color(0xFFEF233C),
-                  iconAsset: 'assets/icons/material-symbols_credit-card.svg',
-                ),
-                const SizedBox(height: 12),
-                _buildCategoryTile(
-                  label: 'Lainnya',
-                  backgroundColor: const Color(0xFFDEDBEF),
-                  titleColor: const Color(0xFF5A4CAF),
-                  iconAsset: 'assets/icons/mdi_dots-horizontal.svg',
-                  onTap: () {
-                    _showCustomCategoryDialog(context);
-                  },
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Kas',
+                    backgroundColor: const Color(0xFFD4E8E8),
+                    titleColor: const Color(0xFF2A8C8B),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Piutang',
+                    backgroundColor: const Color(0xFFD4E8E8),
+                    titleColor: const Color(0xFF2A8C8B),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Bangunan',
+                    backgroundColor: const Color(0xFFD4E8E8),
+                    titleColor: const Color(0xFF2A8C8B),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Tanah',
+                    backgroundColor: const Color(0xFFD4E8E8),
+                    titleColor: const Color(0xFF2A8C8B),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Peralatan',
+                    backgroundColor: const Color(0xFFD4E8E8),
+                    titleColor: const Color(0xFF2A8C8B),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Surat Berharga',
+                    backgroundColor: const Color(0xFFD4E8E8),
+                    titleColor: const Color(0xFF2A8C8B),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Investasi Alternatif',
+                    backgroundColor: const Color(0xFFD4E8E8),
+                    titleColor: const Color(0xFF2A8C8B),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Aset Pribadi',
+                    backgroundColor: const Color(0xFFD4E8E8),
+                    titleColor: const Color(0xFF2A8C8B),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Hutang',
+                    backgroundColor: const Color(0xFFFCD3D8),
+                    titleColor: const Color(0xFFEF233C),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Perjanjian Tertulis',
+                    backgroundColor: const Color(0xFFFCD3D8),
+                    titleColor: const Color(0xFFEF233C),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Mortgage Payable',
+                    backgroundColor: const Color(0xFFFCD3D8),
+                    titleColor: const Color(0xFFEF233C),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Pendapatan Pekerjaan',
+                    backgroundColor: const Color(0xFFDEDBEF),
+                    titleColor: const Color(0xFF5A4CAF),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Pendapatan Investasi',
+                    backgroundColor: const Color(0xFFDEDBEF),
+                    titleColor: const Color(0xFF5A4CAF),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Pendapatan Bunga',
+                    backgroundColor: const Color(0xFFDEDBEF),
+                    titleColor: const Color(0xFF5A4CAF),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Keuntungan Aset',
+                    backgroundColor: const Color(0xFFDEDBEF),
+                    titleColor: const Color(0xFF5A4CAF),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Pendapatan Jasa',
+                    backgroundColor: const Color(0xFFDEDBEF),
+                    titleColor: const Color(0xFF5A4CAF),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Tabungan',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Makanan & Minuman',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Hadiah & Donasi',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Transportasi',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Kesehatan & Medis',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Perawatan & Pakaian',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Hiburan & Rekreasi',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Pendidikan',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Kewajiban Finansial',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategoryTile(
+                    label: 'Perumahan',
+                    backgroundColor: const Color(0xFFF7D3EF),
+                    titleColor: const Color(0xFFD623AE),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
             ),
           ),
           const VerticalDivider(),
@@ -75,7 +210,7 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
     required String label,
     required Color backgroundColor,
     required Color titleColor,
-    required String iconAsset,
+    IconData? icon,
     VoidCallback? onTap,
   }) {
     return ListTile(
@@ -92,11 +227,13 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
           color: titleColor,
         ),
       ),
-      leading: SvgPicture.asset(
-        iconAsset,
-        width: 18,
-        height: 18,
-      ),
+      leading: icon != null
+          ? Icon(
+        icon,
+        color: Colors.black, // Default color if not provided
+        size: 18,
+      )
+          : null, // No icon if null
       trailing: const Icon(
         Icons.navigate_next,
         color: Colors.black,
@@ -113,67 +250,374 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
 
   Widget _buildSubCategories(BuildContext context, String mainCategory) {
     var subCategoryTiles = <Widget>[];
-    if (mainCategory == 'Aset') {
+    if (mainCategory == 'Kas') {
       subCategoryTiles = [
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
-          label: 'Tabungan Tunai',
-          iconAsset: 'assets/icons/material-symbols_savings-rounded.svg',
+          label: 'Uang Tunai',
+          icon: Icons.money_rounded,
         ),
+        const SizedBox(height: 12),
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
-          label: 'Uang di Dompet',
-          iconAsset: 'assets/icons/material-symbols_wallet.svg',
+          label: 'Rekening Bank',
+          icon: Icons.account_balance_rounded,
         ),
+        const SizedBox(height: 12),
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
-          label: 'Investasi',
-          iconAsset: 'assets/icons/material-symbols_money-bag-rounded.svg',
+          label: 'E-Wallet',
+          icon: Icons.wallet,
         ),
+      ];
+    } else if (mainCategory == 'Piutang') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Piutang',
+          icon: Icons.balance,
+        ),
+      ];
+    } else if (mainCategory == 'Bangunan') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Rumah',
+          icon: Icons.house_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Apartemen',
+          icon: Icons.apartment_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Ruko',
+          icon: Icons.warehouse_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Kios',
+          icon: Icons.storefront_rounded,
+        ),
+      ];
+    } else if (mainCategory == 'Tanah') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Properti Sewa',
+          icon: Icons.vpn_key,
+        ),
+      ];
+    } else if (mainCategory == 'Peralatan') {
+      subCategoryTiles = [
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
           label: 'Kendaraan',
-          iconAsset: 'assets/icons/mdi_car-sports-utility-vehicle.svg',
+          icon: Icons.directions_car,
         ),
+        const SizedBox(height: 12),
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
-          label: 'Mainan',
-          iconAsset: 'assets/icons/material-symbols_smart-toy-rounded.svg',
+          label: 'Elektronik',
+          icon: Icons.electric_bolt_rounded,
         ),
+        const SizedBox(height: 12),
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
-          label: 'Lainnya',
-          iconAsset: '',
-          onTap: () {
-            _showCustomCategoryDialog(context);
-          },
+          label: 'Furnitur',
+          icon: Icons.table_bar_rounded,
+        ),
+      ];
+    } else if (mainCategory == 'Surat Berharga') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Saham',
+          icon: Icons.data_thresholding,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Obligasi',
+          icon: Icons.account_balance_outlined,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Reksadana',
+          icon: Icons.attach_money,
+        ),
+      ];
+    } else if (mainCategory == 'Investasi Alternatif') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Kripto',
+          icon: Icons.currency_bitcoin,
+        ),
+      ];
+    } else if (mainCategory == 'Aset Pribadi') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Koleksi',
+          icon: Icons.shopping_bag_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Perhiasan',
+          icon: Icons.diamond,
         ),
       ];
     } else if (mainCategory == 'Hutang') {
       subCategoryTiles = [
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
-          label: 'Kartu Kredit',
-          iconAsset: 'assets/icons/material-symbols_credit-card-blk.svg',
+          label: 'Saldo Kartu Kredit',
+          icon: Icons.credit_card_outlined,
         ),
+        const SizedBox(height: 12),
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
-          label: 'Hutang Teman',
-          iconAsset: 'assets/icons/mdi_people.svg',
+          label: 'Tagihan',
+          icon: Icons.sticky_note_2,
         ),
+        const SizedBox(height: 12),
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
-          label: 'Cicilan Kendaraan',
-          iconAsset:
-              'assets/icons/fluent_vehicle-car-profile-ltr-clock-16-filled.svg',
+          label: 'Cicilan',
+          icon: Icons.timelapse_outlined,
         ),
+        const SizedBox(height: 12),
         _buildSubCategoryTile(
           mainCategory: selectedOption!,
-          label: 'Lainnya',
-          iconAsset: '',
-          onTap: () {
-            _showCustomCategoryDialog(context);
-          },
+          label: 'Pajak',
+          icon: Icons.note_sharp,
+        ),
+      ];
+    } else if (mainCategory == 'Perjanjian Tertulis') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Pinjaman',
+          icon: Icons.key_rounded,
+        ),
+      ];
+    } else if (mainCategory == 'Mortgage Payable') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Pinjaman Properti',
+          icon: Icons.vpn_key_outlined,
+        ),
+      ];
+    } else if (mainCategory == 'Pendapatan Pekerjaan') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Gaji',
+          icon: Icons.money_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Upah',
+          icon: Icons.attach_money,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'bonus',
+          icon: Icons.add_box,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'comission',
+          icon: Icons.handshake_rounded,
+        ),
+      ];
+    } else if (mainCategory == 'Pendapatan Investasi') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Dividen',
+          icon: Icons.add_card_outlined,
+        ),
+      ];
+    } else if (mainCategory == 'Pendapatan Bunga') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Dividen',
+          icon: Icons.add_card_outlined,
+        ),
+      ];
+    } else if (mainCategory == 'Keuntungan Aset') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Untung Modal',
+          icon: Icons.monetization_on_outlined,
+        ),
+      ];
+    } else if (mainCategory == 'Pendapatan Jasa') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Freelance',
+          icon: Icons.monitor,
+        ),
+      ];
+    } else if (mainCategory == 'Tabungan') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Tabungan',
+          icon: Icons.attach_money,
+        ),
+      ];
+    } else if (mainCategory == 'Makanan & Minuman') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Makanan',
+          icon: Icons.food_bank,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Minuman',
+          icon: Icons.emoji_food_beverage,
+        ),
+      ];
+    } else if (mainCategory == 'Hadiah & Donasi') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Hadiah',
+          icon: Icons.card_giftcard_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Donasi',
+          icon: Icons.shopping_bag,
+        ),
+      ];
+    } else if (mainCategory == 'Transportasi') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Kendaraan Pribadi',
+          icon: Icons.directions_car,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Transportasi Umum',
+          icon: Icons.train_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Bahan bakar',
+          icon: Icons.local_gas_station_rounded,
+        ),
+      ];
+    } else if (mainCategory == 'Kesehatan & Medis') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Kesehatan',
+          icon: Icons.health_and_safety,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Medis',
+          icon: Icons.medical_information,
+        ),
+      ];
+    } else if (mainCategory == 'Perawatan & Pakaian') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Perawatan Pribadi',
+          icon: Icons.child_care_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Pakaian',
+          icon: Icons.person,
+        ),
+      ];
+    } else if (mainCategory == 'Hiburan & Rekreasi') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Hiburan',
+          icon: Icons.videogame_asset,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Rekreasi',
+          icon: Icons.sports_basketball_rounded,
+        ),
+      ];
+    } else if (mainCategory == 'Pendidikan') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Pendidikan',
+          icon: Icons.menu_book_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Pembelajaran',
+          icon: Icons.school,
+        ),
+      ];
+    } else if (mainCategory == 'Kewajiban Finansial') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Bayar pinjaman',
+          icon: Icons.attach_money_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Bayar pajak',
+          icon: Icons.monetization_on_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Bayar asuransi',
+          icon: Icons.shield,
+        ),
+      ];
+    } else if (mainCategory == 'Perumahan') {
+      subCategoryTiles = [
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Perumahan',
+          icon: Icons.house_siding_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildSubCategoryTile(
+          mainCategory: selectedOption!,
+          label: 'Kebutuhan Sehari-hari',
+          icon: Icons.lightbulb,
         ),
       ];
     }
@@ -198,7 +642,7 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
   Widget _buildSubCategoryTile({
     required String mainCategory,
     required String label,
-    required String iconAsset,
+    IconData? icon,
     VoidCallback? onTap,
   }) {
     return ListTile(
@@ -215,13 +659,13 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
           color: Colors.black87,
         ),
       ),
-      leading: iconAsset.isNotEmpty
-          ? SvgPicture.asset(
-              iconAsset,
-              width: 18,
-              height: 18,
-            )
-          : null,
+      leading: icon != null
+          ? Icon(
+        icon,
+        color: Colors.black, // Default color if not provided
+        size: 18,
+      )
+          : null, // No icon if null
       trailing: const Icon(
         Icons.navigate_next,
         color: Colors.black87,
