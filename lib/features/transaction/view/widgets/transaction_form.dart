@@ -246,6 +246,8 @@ class _TransactionFormState extends State<TransactionForm> {
                   } else {
                     combinedDate = selectedDate!;
                   }
+                  final rawAmount = amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
+                  final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
                   final transaction = Transaction(
                     id: widget.transaction?.id ?? '',
                     type: transactionType,
@@ -253,7 +255,7 @@ class _TransactionFormState extends State<TransactionForm> {
                     date: combinedDate,
                     category: category,
                     subcategory: subcategory,
-                    amount: double.tryParse(amountController.text) ?? 0.0,
+                    amount: parsedAmount,
                   );
                   widget.onSubmit(transaction);
                   if (mode == TransactionFormMode.edit) {

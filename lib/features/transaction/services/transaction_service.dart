@@ -66,4 +66,25 @@ class TransactionService {
       );
     }
   }
+
+  Future<Map<String, dynamic>> classifyTransaction(String description) async {
+    final url = Uri.parse('$baseUrl/transactions/classify'); // Adjust URL as needed
+    debugPrint('Classifying transaction with description: $description');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'text': description}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      debugPrint('Classification result: $data');
+      return data;
+    } else {
+      throw Exception(
+        'Failed to classify transaction. Status code: ${response.statusCode}. Response body: ${response.body}',
+      );
+    }
+  }
 }
