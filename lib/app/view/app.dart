@@ -48,7 +48,7 @@ class App extends StatelessWidget {
             ),
             useMaterial3: true,
           ),
-          initialRoute: Routes.dashboard,
+          initialRoute: Routes.filter,
           onGenerateRoute: Routes.generateRoute,
         ),
       ),

@@ -6,3 +6,4 @@ export '../../features/transaction/view/create_transaction_page.dart';
 export '../../features/transaction/view/dashboard_page.dart';
 export '../../features/transaction/view/view_transaction_page.dart';
 export '../../features/welcome/view/welcome_page.dart';
+export '../../features/filter/view/filter_page.dart';
