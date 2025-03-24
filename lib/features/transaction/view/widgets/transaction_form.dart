@@ -8,6 +8,7 @@ import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_form_mode.dart';
 import 'package:ta_client/core/widgets/dropdown_field.dart';
 import 'package:ta_client/core/widgets/rupiah_formatter.dart';
+import 'package:intl/intl.dart';
 
 class TransactionForm extends StatefulWidget {
   const TransactionForm({
@@ -67,6 +68,12 @@ class _TransactionFormState extends State<TransactionForm> {
   TimeOfDay? selectedTime;
   final int maxDescriptionLength = 100;
 
+  final NumberFormat _rupiahFormatter = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp. ',
+    decimalDigits: 0,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -74,7 +81,8 @@ class _TransactionFormState extends State<TransactionForm> {
     if (widget.transaction != null) {
       transactionType = widget.transaction!.type;
       descriptionController.text = widget.transaction!.description;
-      amountController.text = widget.transaction!.amount.toString();
+      // amountController.text = widget.transaction!.amount.toString();
+      amountController.text = _rupiahFormatter.format(widget.transaction!.amount.toInt());
       // category = widget.transaction!.category;
       rawPredictedCategory = widget.transaction!.category;
       subcategory = widget.transaction!.subcategory;
@@ -147,7 +155,7 @@ class _TransactionFormState extends State<TransactionForm> {
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Amount',
+                  'Total',
                   style: TextStyle(
                     fontSize: 12,
                     fontVariations: [FontVariation('wght', 600)],
@@ -157,7 +165,7 @@ class _TransactionFormState extends State<TransactionForm> {
               const SizedBox(width: 24),
               Expanded(
                 child: CustomTextField(
-                  label: 'Enter Amount',
+                  label: 'Enter Total',
                   controller: amountController,
                   readOnly: isReadOnly,
                   keyboardType: TextInputType.number,

@@ -18,7 +18,7 @@ class Transaction {
         date: DateTime.parse(json['date'] as String? ?? '').toLocal(),
         category: json['category'] as String? ?? '',
         subcategory: json['subcategory'] as String? ?? '',
-        amount: json['amount'] as double? ?? 0.0,
+        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
       );
     } on FormatException catch (e) {
       throw ArgumentError('Invalid date format: ${e.message}');
