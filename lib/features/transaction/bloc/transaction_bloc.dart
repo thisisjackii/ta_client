@@ -148,12 +148,11 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       // Here, result['category'] is the raw predicted value.
       // For display purposes, you can append the sparkle in the UI.
       emit(state.copyWith(
-          isLoading: false, classifiedCategory: result['category'] as String? ?? ""));
+          isLoading: false, classifiedCategory: result['category'] as String? ?? '',),);
     } catch (error) {
       emit(state.copyWith(
           isLoading: false,
-          errorMessage: error.toString(),
-          classifiedCategory: null));
+          errorMessage: error.toString(),),);
     }
   }
 }

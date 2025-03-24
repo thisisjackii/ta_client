@@ -19,14 +19,16 @@ class ViewTransactionPage extends StatelessWidget {
           if (state.operation == TransactionOperation.update) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                  content: Text('Transaction updated successfully!'),),
+                content: Text('Transaction updated successfully!'),
+              ),
             );
             // Replace current page with a new Dashboard page so that data is refreshed.
             Navigator.of(context).pushReplacementNamed(Routes.dashboard);
           } else if (state.operation == TransactionOperation.delete) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                  content: Text('Transaction deleted successfully!'),),
+                content: Text('Transaction deleted successfully!'),
+              ),
             );
             Navigator.of(context).pushReplacementNamed(Routes.dashboard);
           }

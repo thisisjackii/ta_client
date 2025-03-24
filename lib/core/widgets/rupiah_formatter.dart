@@ -14,11 +14,11 @@ class RupiahInputFormatter extends TextInputFormatter {
     final digitsOnly = newValue.text.replaceAll(RegExp('[^0-9]'), '');
 
     // If empty, return empty text
-    if (digitsOnly.isEmpty) return TextEditingValue(text: '');
+    if (digitsOnly.isEmpty) return const TextEditingValue();
 
     // Parse digits safely
-    final int number = int.parse(digitsOnly);
-    final String formatted = _formatter.format(number);
+    final number = int.parse(digitsOnly);
+    final formatted = _formatter.format(number);
 
     return TextEditingValue(
       text: formatted,

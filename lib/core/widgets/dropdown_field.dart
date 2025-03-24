@@ -11,10 +11,7 @@ class DropdownItem {
 class CustomDropdownField extends StatefulWidget {
 
   const CustomDropdownField({
-    super.key,
-    required this.items,
-    required this.selectedValue,
-    required this.onChanged,
+    required this.items, required this.selectedValue, required this.onChanged, super.key,
   });
   final List<DropdownItem> items;
   final String? selectedValue;

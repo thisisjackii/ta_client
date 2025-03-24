@@ -1,14 +1,14 @@
 // lib/features/transaction/view/widgets/transaction_form.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:ta_client/core/widgets/custom_category_picker.dart';
 import 'package:ta_client/core/widgets/custom_date_picker.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
-import 'package:ta_client/features/transaction/models/transaction.dart';
-import 'package:ta_client/features/transaction/view/widgets/transaction_form_mode.dart';
 import 'package:ta_client/core/widgets/dropdown_field.dart';
 import 'package:ta_client/core/widgets/rupiah_formatter.dart';
-import 'package:intl/intl.dart';
+import 'package:ta_client/features/transaction/models/transaction.dart';
+import 'package:ta_client/features/transaction/view/widgets/transaction_form_mode.dart';
 
 class TransactionForm extends StatefulWidget {
   const TransactionForm({
@@ -36,19 +36,19 @@ class _TransactionFormState extends State<TransactionForm> {
     DropdownItem(
         label: 'Asset',
         icon: Icons.account_balance_wallet,
-        color: const Color(0xff2A8C8B)),
+        color: const Color(0xff2A8C8B),),
     DropdownItem(
         label: 'Liability',
         icon: Icons.account_balance,
-        color: const Color(0xffEF233C)),
+        color: const Color(0xffEF233C),),
     DropdownItem(
         label: 'Pemasukan',
         icon: Icons.add_card_rounded,
-        color: const Color(0xff5A4CAF)),
+        color: const Color(0xff5A4CAF),),
     DropdownItem(
         label: 'Pengeluaran',
         icon: Icons.local_activity_rounded,
-        color: const Color(0xffD623AE)),
+        color: const Color(0xffD623AE),),
   ];
 
   String? selectedValue;
@@ -286,7 +286,7 @@ class _TransactionFormState extends State<TransactionForm> {
                     combinedDate = selectedDate!;
                   }
                   final rawAmount =
-                      amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
+                      amountController.text.replaceAll(RegExp('[^0-9]'), '');
                   final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
                   final transaction = Transaction(
                     id: widget.transaction?.id ?? '',
@@ -307,8 +307,8 @@ class _TransactionFormState extends State<TransactionForm> {
                 },
                 child: Text(
                   mode == TransactionFormMode.edit ? 'Confirm Edit' : 'Submit',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.white,),
                 ),
               ),
             ),
