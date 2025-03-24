@@ -10,12 +10,16 @@ class CustomDatePicker extends StatefulWidget {
     super.key,
     this.onDateChanged,
     this.onTimeChanged,
+    this.initialDate,
+    this.initialTime,
   });
 
   final String label;
   final bool isDatePicker;
   final void Function(DateTime)? onDateChanged;
   final void Function(TimeOfDay)? onTimeChanged;
+  final DateTime? initialDate;
+  final TimeOfDay? initialTime;
 
   @override
   State<CustomDatePicker> createState() => _CustomDatePickerState();
@@ -25,13 +29,28 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
   final TextEditingController _controller = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.isDatePicker && widget.initialDate != null) {
+      _controller.text = DateFormat('dd/MM/yyyy').format(widget.initialDate!);
+    } else if (!widget.isDatePicker && widget.initialTime != null) {
+      // Using addPostFrameCallback to ensure context is ready for formatting.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _controller.text = widget.initialTime!.format(context);
+        });
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
         if (widget.isDatePicker) {
           final pickedDate = await showDatePicker(
             context: context,
-            initialDate: DateTime.now(),
+            initialDate: widget.initialDate ?? DateTime.now(),
             firstDate: DateTime(2000),
             lastDate: DateTime(2100),
           );
@@ -46,7 +65,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         } else {
           final pickedTime = await showTimePicker(
             context: context,
-            initialTime: TimeOfDay.now(),
+            initialTime: widget.initialTime ?? TimeOfDay.now(),
           );
           if (pickedTime != null) {
             setState(() {

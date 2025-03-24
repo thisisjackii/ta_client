@@ -19,9 +19,35 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   int _currentTab = 0;
   final ValueNotifier<bool> isSelectionMode = ValueNotifier(false);
 
+  // Track the selected month-year. We only care about year and month.
+  DateTime selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
+  // Method to filter and sort transactions by selected month and by newest first.
+  List<Transaction> _filterAndSortTransactions(List<Transaction> transactions) {
+    // Filter transactions for the selected month
+    final filtered = transactions
+        .where(
+          (t) =>
+              t.date.year == selectedMonth.year &&
+              t.date.month == selectedMonth.month,
+        )
+        .toList()
+
+      // Sort in descending order: newest first.
+      ..sort((a, b) => b.date.compareTo(a.date));
+    return filtered;
+  }
+
   void _onTabSelected(int index) {
     setState(() {
       _currentTab = index;
+    });
+  }
+
+  // A callback to update the selected month from the AppBar
+  void updateSelectedMonth(DateTime newMonth) {
+    setState(() {
+      selectedMonth = DateTime(newMonth.year, newMonth.month);
     });
   }
 
@@ -30,14 +56,18 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     return Scaffold(
       appBar: CustomAppBar(
         isSelectionMode: isSelectionMode,
+        selectedMonth: selectedMonth,
+        onMonthChanged: updateSelectedMonth,
       ),
       body: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
           if (state is DashboardLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is DashboardLoaded) {
+            // Filter and sort before passing to widget.
+            final filteredItems = _filterAndSortTransactions(state.items);
             return TransactionGroupedItemsWidget(
-              items: state.items,
+              items: filteredItems,
               isSelectionMode: isSelectionMode,
             );
           } else if (state is DashboardError) {

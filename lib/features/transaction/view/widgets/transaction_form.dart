@@ -34,21 +34,25 @@ class _TransactionFormState extends State<TransactionForm> {
   Color submitButtonColor = const Color(0xff2A8C8B);
   final List<DropdownItem> dropdownItems = [
     DropdownItem(
-        label: 'Asset',
-        icon: Icons.account_balance_wallet,
-        color: const Color(0xff2A8C8B),),
+      label: 'Asset',
+      icon: Icons.account_balance_wallet,
+      color: const Color(0xff2A8C8B),
+    ),
     DropdownItem(
-        label: 'Liability',
-        icon: Icons.account_balance,
-        color: const Color(0xffEF233C),),
+      label: 'Liability',
+      icon: Icons.account_balance,
+      color: const Color(0xffEF233C),
+    ),
     DropdownItem(
-        label: 'Pemasukan',
-        icon: Icons.add_card_rounded,
-        color: const Color(0xff5A4CAF),),
+      label: 'Pemasukan',
+      icon: Icons.add_card_rounded,
+      color: const Color(0xff5A4CAF),
+    ),
     DropdownItem(
-        label: 'Pengeluaran',
-        icon: Icons.local_activity_rounded,
-        color: const Color(0xffD623AE),),
+      label: 'Pengeluaran',
+      icon: Icons.local_activity_rounded,
+      color: const Color(0xffD623AE),
+    ),
   ];
 
   String? selectedValue;
@@ -80,9 +84,11 @@ class _TransactionFormState extends State<TransactionForm> {
     mode = widget.mode;
     if (widget.transaction != null) {
       transactionType = widget.transaction!.type;
+      selectedValue = widget.transaction!.type;
       descriptionController.text = widget.transaction!.description;
       // amountController.text = widget.transaction!.amount.toString();
-      amountController.text = _rupiahFormatter.format(widget.transaction!.amount.toInt());
+      amountController.text =
+          _rupiahFormatter.format(widget.transaction!.amount.toInt());
       // category = widget.transaction!.category;
       rawPredictedCategory = widget.transaction!.category;
       subcategory = widget.transaction!.subcategory;
@@ -101,8 +107,9 @@ class _TransactionFormState extends State<TransactionForm> {
 
   @override
   void dispose() {
-    descriptionController..removeListener(_onDescriptionChanged)
-    ..dispose();
+    descriptionController
+      ..removeListener(_onDescriptionChanged)
+      ..dispose();
     amountController.dispose();
     super.dispose();
   }
@@ -125,12 +132,18 @@ class _TransactionFormState extends State<TransactionForm> {
         children: [
           CustomDropdownField(
             items: dropdownItems,
-            selectedValue: selectedValue,
+            // selectedValue: selectedValue,
+            selectedValue: transactionType,
             onChanged: (item) {
-              setState(() {
-                selectedValue = item.label;
-                submitButtonColor = item.color;
-              });
+              // Update only in edit mode
+              if (mode == TransactionFormMode.edit) {
+                setState(() {
+                  selectedValue = item.label;
+                  transactionType = item
+                      .label; // Update transactionType based on the dropdown selection
+                  submitButtonColor = item.color;
+                });
+              }
             },
           ),
           const SizedBox(height: 4),
@@ -227,6 +240,7 @@ class _TransactionFormState extends State<TransactionForm> {
                 child: CustomDatePicker(
                   label: 'Tanggal',
                   isDatePicker: true,
+                  initialDate: selectedDate,
                   onDateChanged: isReadOnly
                       ? null
                       : (date) {
@@ -240,6 +254,7 @@ class _TransactionFormState extends State<TransactionForm> {
                 child: CustomDatePicker(
                   label: 'Waktu',
                   isDatePicker: false,
+                  initialTime: selectedTime,
                   onTimeChanged: isReadOnly
                       ? null
                       : (time) {
@@ -308,7 +323,9 @@ class _TransactionFormState extends State<TransactionForm> {
                 child: Text(
                   mode == TransactionFormMode.edit ? 'Confirm Edit' : 'Submit',
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.white,),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),

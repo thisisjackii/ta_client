@@ -15,7 +15,7 @@ class CustomDropdownField extends StatefulWidget {
   });
   final List<DropdownItem> items;
   final String? selectedValue;
-  final Function(DropdownItem) onChanged;
+  final void Function(DropdownItem) onChanged;
 
   @override
   _CustomDropdownFieldState createState() => _CustomDropdownFieldState();
@@ -33,7 +33,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(),
+      padding: EdgeInsets.zero,
       decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(

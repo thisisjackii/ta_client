@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For formatting the selected date
+import 'package:month_picker_dialog/month_picker_dialog.dart';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
-  const CustomAppBar({required this.isSelectionMode, super.key});
+  const CustomAppBar({
+    required this.isSelectionMode,
+    required this.selectedMonth,
+    required this.onMonthChanged,
+    super.key,
+  });
   final ValueNotifier<bool> isSelectionMode;
+  final DateTime selectedMonth;
+  final ValueChanged<DateTime> onMonthChanged;
 
   @override
   _CustomAppBarState createState() => _CustomAppBarState();
@@ -13,38 +21,37 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _CustomAppBarState extends State<CustomAppBar> {
-  late String titleText; // Title text that will dynamically change
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize with the current date
-    titleText = DateFormat.yMMMd().format(DateTime.now());
-
-    // Listen to changes in the selection mode
-    widget.isSelectionMode.addListener(() {
-      setState(() {}); // Update the AppBar whenever selection mode changes
-    });
+  // Helper to add or subtract months safely.
+  DateTime _changeMonth(DateTime date, int change) {
+    var newYear = date.year;
+    var newMonth = date.month + change;
+    if (newMonth > 12) {
+      newYear += (newMonth - 1) ~/ 12;
+      newMonth = ((newMonth - 1) % 12) + 1;
+    } else if (newMonth < 1) {
+      newYear -= ((1 - newMonth) ~/ 12) + 1;
+      newMonth = 12 - ((1 - newMonth) % 12);
+    }
+    return DateTime(newYear, newMonth);
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final selectedDate = await showDatePicker(
+  Future<void> _pickMonth(BuildContext context) async {
+    final selected = await showMonthPicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000), // Earliest date allowed
-      lastDate: DateTime(2100), // Latest date allowed
+      initialDate: widget.selectedMonth,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
     );
-
-    if (selectedDate != null) {
-      setState(() {
-        // Update the title to the selected date
-        titleText = DateFormat.yMMMd().format(selectedDate);
-      });
+    if (selected != null) {
+      widget.onMonthChanged(DateTime(selected.year, selected.month));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Format the displayed month as 'MMM yyyy' (e.g., Jan 2025)
+    final monthYearText = DateFormat('MMM yyyy').format(widget.selectedMonth);
+
     return AppBar(
       automaticallyImplyLeading: false, // Removes default leading button
       title: Row(
@@ -59,13 +66,15 @@ class _CustomAppBarState extends State<CustomAppBar> {
             IconButton(
               icon: const Icon(Icons.navigate_before),
               onPressed: () {
-                // Handle navigate back action
+                // Subtract one month
+                final newMonth = _changeMonth(widget.selectedMonth, -1);
+                widget.onMonthChanged(newMonth);
               },
             ),
             GestureDetector(
-              onTap: () => _selectDate(context), // Show date picker on tap
+              onTap: () => _pickMonth(context),
               child: Text(
-                ' $titleText ',
+                monthYearText,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -76,7 +85,9 @@ class _CustomAppBarState extends State<CustomAppBar> {
             IconButton(
               icon: const Icon(Icons.navigate_next),
               onPressed: () {
-                // Handle navigate forward action
+                // Add one month
+                final newMonth = _changeMonth(widget.selectedMonth, 1);
+                widget.onMonthChanged(newMonth);
               },
             ),
           ],
