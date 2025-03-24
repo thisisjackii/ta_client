@@ -1,4 +1,4 @@
-// lib/features/transaction/bloc/transaction_bloc.dart
+// lib/features/transaction/bloc/transaction_event.dart
 part of 'transaction_bloc.dart';
 
 abstract class TransactionEvent extends Equatable {

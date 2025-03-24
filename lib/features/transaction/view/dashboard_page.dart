@@ -72,13 +72,13 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
           final result =
               await Navigator.pushNamed(context, Routes.createTransaction);
           // If a new transaction is returned, add it to the dashboard immediately.
-          if (result is Transaction) {
-            context
-                .read<DashboardBloc>()
-                .add(DashboardItemAdded(result));
-          } else {
-            // If nothing returned, fall back to a full reload.
-            context.read<DashboardBloc>().add(DashboardReloadRequested());
+          if (context.mounted) {
+            if (result is Transaction) {
+              context.read<DashboardBloc>().add(DashboardItemAdded(result));
+            } else {
+              // If nothing returned, fall back to a full reload.
+              context.read<DashboardBloc>().add(DashboardReloadRequested());
+            }
           }
         },
         shape: const CircleBorder(),

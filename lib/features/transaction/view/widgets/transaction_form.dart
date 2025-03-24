@@ -101,8 +101,8 @@ class _TransactionFormState extends State<TransactionForm> {
 
   @override
   void dispose() {
-    descriptionController.removeListener(_onDescriptionChanged);
-    descriptionController.dispose();
+    descriptionController..removeListener(_onDescriptionChanged)
+    ..dispose();
     amountController.dispose();
     super.dispose();
   }
