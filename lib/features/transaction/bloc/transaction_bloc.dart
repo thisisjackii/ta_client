@@ -55,7 +55,8 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
             t.date.difference(created.date).inSeconds.abs() < 1,
       );
       if (found) {
-        emit(state.copyWith(isLoading: false, isSuccess: true, createdTransaction: created));
+        emit(state.copyWith(
+            isLoading: false, isSuccess: true, createdTransaction: created));
       } else {
         throw Exception('New transaction not found in updated dashboard data.');
       }
@@ -144,15 +145,23 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     try {
       // Optionally, you might set a loading flag for classification only:
       emit(state.copyWith(isLoading: true));
-      final result = await transactionService.classifyTransaction(event.description);
+      final result =
+          await transactionService.classifyTransaction(event.description);
       // Here, result['category'] is the raw predicted value.
       // For display purposes, you can append the sparkle in the UI.
-      emit(state.copyWith(
-          isLoading: false, classifiedCategory: result['category'] as String? ?? '',),);
-    } catch (error) {
-      emit(state.copyWith(
+      emit(
+        state.copyWith(
           isLoading: false,
-          errorMessage: error.toString(),),);
+          classifiedCategory: result['category'] as String? ?? '',
+        ),
+      );
+    } catch (error) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString(),
+        ),
+      );
     }
   }
 }

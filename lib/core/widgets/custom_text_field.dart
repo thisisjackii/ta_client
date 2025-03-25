@@ -20,6 +20,7 @@ class CustomTextField extends StatefulWidget {
     this.maxLength,
     this.maxLengthEnforcement,
     this.validator,
+    this.focusNode, // Added optional FocusNode
   });
 
   final String label;
@@ -35,8 +36,7 @@ class CustomTextField extends StatefulWidget {
   final int? maxLength;
   final MaxLengthEnforcement? maxLengthEnforcement;
   final String? Function(String?)? validator;
-
-  @override
+  final FocusNode? focusNode; // New parameter
 
   @override
   _CustomTextFieldState createState() => _CustomTextFieldState();
@@ -56,6 +56,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      focusNode: widget.focusNode, // Pass the focus node to the TextFormField
       controller: _controller,
       readOnly: widget.readOnly,
       onTap: widget.onTap,
