@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:ta_client/core/widgets/custom_date_picker.dart';
 import 'package:ta_client/core/widgets/dropdown_field.dart';
 
@@ -51,7 +50,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
       child: Column(
         children: [
           CustomDropdownField(
-            label: "Tipe Akun",
+            label: 'Tipe Akun',
             items: dropdownItems,
             selectedValue: selectedValue,
             onChanged: (item) {
@@ -68,11 +67,11 @@ class _FilterFormPageState extends State<FilterFormPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4.0),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 4),
                 child: Text(
                   'Pilih Kategori',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -123,11 +122,11 @@ class _FilterFormPageState extends State<FilterFormPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4.0),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 4),
                 child: Text(
                   'Tanggal',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -172,9 +171,9 @@ class _FilterFormPageState extends State<FilterFormPage> {
               ),
               onPressed: () {
               },
-              child: Text(
+              child: const Text(
                 'Filter',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold, color: Colors.white,),
               ),
             ),

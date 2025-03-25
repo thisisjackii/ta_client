@@ -1,6 +1,5 @@
 // lib/core/widgets/category_modal_sheet.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
 
 class CategoryModalSheet extends StatefulWidget {
@@ -643,7 +642,6 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
     required String mainCategory,
     required String label,
     IconData? icon,
-    VoidCallback? onTap,
   }) {
     return ListTile(
       dense: true,

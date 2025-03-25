@@ -1,4 +1,5 @@
 // screens/screens.dart
+export '../../features/filter/view/filter_page.dart';
 export '../../features/login/view/login_page.dart';
 export '../../features/otp/view/otp_verification_page.dart';
 export '../../features/register/view/register_page.dart';
@@ -6,4 +7,3 @@ export '../../features/transaction/view/create_transaction_page.dart';
 export '../../features/transaction/view/dashboard_page.dart';
 export '../../features/transaction/view/view_transaction_page.dart';
 export '../../features/welcome/view/welcome_page.dart';
-export '../../features/filter/view/filter_page.dart';

@@ -365,7 +365,7 @@ class _TransactionFormState extends State<TransactionForm> {
               ),
           ],
         ),
-      )
+      ),
     );
   }
 }

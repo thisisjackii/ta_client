@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:ta_client/features/filter/view/widgets/filter_form_page.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class FilterPage extends StatelessWidget {
   const FilterPage({super.key});
@@ -30,7 +29,7 @@ class FilterPage extends StatelessWidget {
           ),
         ],
       ),
-      body: FilterFormPage()
+      body: const FilterFormPage(),
     );
   }
 }

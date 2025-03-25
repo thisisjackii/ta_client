@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class DropdownItem {
 
-  DropdownItem({required this.label, this.icon, required this.color});
+  DropdownItem({required this.label, required this.color, this.icon});
   final String label;
   final IconData? icon;
   final Color color;
@@ -38,7 +38,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
       children: [
         if (widget.label != null)
           Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
+            padding: const EdgeInsets.only(bottom: 4),
             child: Text(
               widget.label!,
               style: const TextStyle(
