@@ -19,6 +19,7 @@ class CustomTextField extends StatefulWidget {
     this.onTap,
     this.maxLength,
     this.maxLengthEnforcement,
+    this.validator,
   });
 
   final String label;
@@ -33,6 +34,7 @@ class CustomTextField extends StatefulWidget {
   final VoidCallback? onTap;
   final int? maxLength;
   final MaxLengthEnforcement? maxLengthEnforcement;
+  final String? Function(String?)? validator;
 
   @override
 
@@ -53,7 +55,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return TextFormField(
       controller: _controller,
       readOnly: widget.readOnly,
       onTap: widget.onTap,
@@ -62,6 +64,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       inputFormatters: widget.inputFormatters,
       maxLength: widget.maxLength,
       maxLengthEnforcement: widget.maxLengthEnforcement,
+      validator: widget.validator,
       decoration: InputDecoration(
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.blueGrey),

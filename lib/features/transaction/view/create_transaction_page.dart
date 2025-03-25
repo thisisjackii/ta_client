@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_form.dart';
+import 'package:quickalert/quickalert.dart';
 
 class CreateTransactionPage extends StatelessWidget {
   const CreateTransactionPage({super.key});
@@ -12,14 +13,20 @@ class CreateTransactionPage extends StatelessWidget {
     return BlocListener<TransactionBloc, TransactionState>(
       listener: (context, state) {
         if (state.isSuccess && state.operation == TransactionOperation.create) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Transaction created successfully!')),
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: 'Oops...',
+            text: 'Sorry, something went wrong',
           );
           // Simply pop; DashboardPage's RouteAware (didPopNext) will trigger a reload.
           Navigator.of(context).pop(state.createdTransaction);
         } else if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${state.errorMessage}')),
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: 'Oops...',
+            text: 'Error: ${state.errorMessage}',
           );
         }
       },
@@ -40,8 +47,6 @@ class CreateTransactionPage extends StatelessWidget {
             Row(
               children: [
                 IconButton(icon: const Icon(Icons.info), onPressed: () {}),
-                IconButton(
-                    icon: const Icon(Icons.bookmark_add), onPressed: () {},),
               ],
             ),
           ],

@@ -56,7 +56,7 @@ class _TransactionFormState extends State<TransactionForm> {
   ];
 
   String? selectedValue;
-
+  final _formKey = GlobalKey<FormState>();
   late TransactionFormMode mode;
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
@@ -128,209 +128,244 @@ class _TransactionFormState extends State<TransactionForm> {
     final isReadOnly = mode == TransactionFormMode.view;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          CustomDropdownField(
-            items: dropdownItems,
-            // selectedValue: selectedValue,
-            selectedValue: transactionType,
-            onChanged: (item) {
-              // Update only in edit mode
-              if (mode == TransactionFormMode.edit) {
-                setState(() {
-                  selectedValue = item.label;
-                  transactionType = item
-                      .label; // Update transactionType based on the dropdown selection
-                  submitButtonColor = item.color;
-                });
-              }
-            },
-          ),
-          const SizedBox(height: 4),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CustomTextField(
-                label: 'Deskripsi',
-                controller: descriptionController,
-                readOnly: isReadOnly,
-                onTap: isReadOnly ? _switchToEdit : null,
-                maxLength: maxDescriptionLength, // Limit length
-                maxLengthEnforcement:
-                    MaxLengthEnforcement.enforced, // Enforce limit
-              ),
-              const SizedBox(height: 4),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Total',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontVariations: [FontVariation('wght', 600)],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: CustomTextField(
-                  label: 'Enter Total',
-                  controller: amountController,
-                  readOnly: isReadOnly,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    RupiahInputFormatter(),
-                  ],
-                  onTap: isReadOnly ? _switchToEdit : null,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Kategori',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontVariations: [FontVariation('wght', 600)],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: CustomCategoryPicker(
-                  // selectedCategory: category,
-                  selectedCategory: displayCategory,
-                  selectedSubCategory: subcategory,
-                  onCategorySelected: isReadOnly
-                      ? (cat, subCat) {}
-                      : (cat, subCat) {
-                          setState(() {
-                            // category = cat;
-                            rawPredictedCategory = cat;
-                            subcategory = subCat;
-                          });
-                        },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Tanggal',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontVariations: [FontVariation('wght', 600)],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 22),
-              Expanded(
-                child: CustomDatePicker(
-                  label: 'Tanggal',
-                  isDatePicker: true,
-                  initialDate: selectedDate,
-                  onDateChanged: isReadOnly
-                      ? null
-                      : (date) {
-                          setState(() {
-                            selectedDate = date;
-                          });
-                        },
-                ),
-              ),
-              Expanded(
-                child: CustomDatePicker(
-                  label: 'Waktu',
-                  isDatePicker: false,
-                  initialTime: selectedTime,
-                  onTimeChanged: isReadOnly
-                      ? null
-                      : (time) {
-                          setState(() {
-                            selectedTime = time;
-                          });
-                        },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          if (isReadOnly)
-            // In view mode, no submit button – tapping a field switches to edit.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            CustomDropdownField(
+              items: dropdownItems,
+              // selectedValue: selectedValue,
+              selectedValue: transactionType,
+              onChanged: (item) {
+                // Update only in edit mode
+                if (mode == TransactionFormMode.edit) {
+                  setState(() {
+                    selectedValue = item.label;
+                    transactionType = item
+                        .label; // Update transactionType based on the dropdown selection
+                    submitButtonColor = item.color;
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 4),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Optionally add a Delete button.
-                ElevatedButton(
-                  onPressed: widget.onDelete,
-                  child: const Text('Delete'),
+                CustomTextField(
+                  label: 'Deskripsi',
+                  controller: descriptionController,
+                  readOnly: isReadOnly,
+                  onTap: isReadOnly ? _switchToEdit : null,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Field cannot be empty';
+                    }
+                    return null;
+                  },
+                  maxLength: maxDescriptionLength, // Limit length
+                  maxLengthEnforcement:
+                  MaxLengthEnforcement.enforced, // Enforce limit
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Total',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontVariations: [FontVariation('wght', 600)],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  child: CustomTextField(
+                    label: 'Enter Total',
+                    controller: amountController,
+                    readOnly: isReadOnly,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      RupiahInputFormatter(),
+                    ],
+                    onTap: isReadOnly ? _switchToEdit : null,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field cannot be empty';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
               ],
-            )
-          else
-            SizedBox(
-              width: double.infinity, // Makes the button take up full width
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: submitButtonColor,
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Kategori',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontVariations: [FontVariation('wght', 600)],
+                    ),
+                  ),
                 ),
-                onPressed: () {
-                  if (selectedDate == null) return;
-                  DateTime combinedDate;
-                  if (selectedTime != null) {
-                    combinedDate = DateTime(
-                      selectedDate!.year,
-                      selectedDate!.month,
-                      selectedDate!.day,
-                      selectedTime!.hour,
-                      selectedTime!.minute,
+                const SizedBox(width: 20),
+                Expanded(
+                  child: CustomCategoryPicker(
+                    // selectedCategory: category,
+                    selectedCategory: displayCategory,
+                    selectedSubCategory: subcategory,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field cannot be empty';
+                      }
+                      return null;
+                    },
+                    onCategorySelected: isReadOnly
+                        ? (cat, subCat) {}
+                        : (cat, subCat) {
+                      setState(() {
+                        // category = cat;
+                        rawPredictedCategory = cat;
+                        subcategory = subCat;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Tanggal',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontVariations: [FontVariation('wght', 600)],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 22),
+                Expanded(
+                  child: CustomDatePicker(
+                    label: 'Tanggal',
+                    isDatePicker: true,
+                    initialDate: selectedDate,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field cannot be empty';
+                      }
+                      return null;
+                    },
+                    onDateChanged: isReadOnly
+                        ? null
+                        : (date) {
+                      setState(() {
+                        selectedDate = date;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: CustomDatePicker(
+                    label: 'Waktu',
+                    isDatePicker: false,
+                    initialTime: selectedTime,
+                    onTimeChanged: isReadOnly
+                        ? null
+                        : (time) {
+                      setState(() {
+                        selectedTime = time;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            if (isReadOnly)
+            // In view mode, no submit button – tapping a field switches to edit.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Optionally add a Delete button.
+                  ElevatedButton(
+                    onPressed: widget.onDelete,
+                    child: const Text('Delete'),
+                  ),
+                ],
+              )
+            else
+              SizedBox(
+                width: double.infinity, // Makes the button take up full width
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: submitButtonColor,
+                  ),
+                  onPressed: () {
+                    if (!_formKey.currentState!.validate()) {
+                      return; // Stops execution if validation fails
+                    }
+
+                    if (selectedDate == null) return;
+
+                    DateTime combinedDate;
+                    if (selectedTime != null) {
+                      combinedDate = DateTime(
+                        selectedDate!.year,
+                        selectedDate!.month,
+                        selectedDate!.day,
+                        selectedTime!.hour,
+                        selectedTime!.minute,
+                      );
+                    } else {
+                      combinedDate = selectedDate!;
+                    }
+
+                    final rawAmount = amountController.text.replaceAll(RegExp('[^0-9]'), '');
+                    final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
+
+                    final transaction = Transaction(
+                      id: widget.transaction?.id ?? '',
+                      type: transactionType,
+                      description: descriptionController.text,
+                      date: combinedDate,
+                      category: rawPredictedCategory,
+                      subcategory: subcategory,
+                      amount: parsedAmount,
                     );
-                  } else {
-                    combinedDate = selectedDate!;
-                  }
-                  final rawAmount =
-                      amountController.text.replaceAll(RegExp('[^0-9]'), '');
-                  final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
-                  final transaction = Transaction(
-                    id: widget.transaction?.id ?? '',
-                    type: transactionType,
-                    description: descriptionController.text,
-                    date: combinedDate,
-                    // category: category,
-                    category: rawPredictedCategory,
-                    subcategory: subcategory,
-                    amount: parsedAmount,
-                  );
-                  widget.onSubmit(transaction);
-                  if (mode == TransactionFormMode.edit) {
-                    setState(() {
-                      mode = TransactionFormMode.view;
-                    });
-                  }
-                },
-                child: Text(
-                  mode == TransactionFormMode.edit ? 'Confirm Edit' : 'Submit',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+
+                    widget.onSubmit(transaction);
+
+                    if (mode == TransactionFormMode.edit) {
+                      setState(() {
+                        mode = TransactionFormMode.view;
+                      });
+                    }
+                  },
+
+                  child: Text(
+                    mode == TransactionFormMode.edit ? 'Confirm Edit' : 'Submit',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
+          ],
+        ),
+      )
     );
   }
 }
