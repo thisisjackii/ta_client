@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:quickalert/quickalert.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_form.dart';
@@ -17,20 +18,24 @@ class ViewTransactionPage extends StatelessWidget {
       listener: (context, state) {
         if (state.isSuccess) {
           if (state.operation == TransactionOperation.update) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Transaction updated successfully!'),
-              ),
+            QuickAlert.show(
+              context: context,
+              type: QuickAlertType.success,
+              text: 'Transaction updated successfully!',
             );
             // Replace current page with a new Dashboard page so that data is refreshed.
-            Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+            Future.delayed(Duration(seconds: 1), () {
+              Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+            });
           } else if (state.operation == TransactionOperation.delete) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Transaction deleted successfully!'),
-              ),
+            QuickAlert.show(
+              context: context,
+              type: QuickAlertType.success,
+              text: 'Transaction deleted successfully!',
             );
-            Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+            Future.delayed(Duration(seconds: 1), () {
+              Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+            });
           }
         } else if (state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(

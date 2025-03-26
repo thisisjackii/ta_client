@@ -133,7 +133,7 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.category,
+                    item.category.length > 10 ? '${item.category.substring(0, 10)}...' : item.category,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 10,
@@ -141,7 +141,7 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.subcategory,
+                    item.subcategory.length > 10 ? '${item.subcategory.substring(0, 10)}...' : item.subcategory,
                     style: const TextStyle(fontSize: 8, color: Colors.grey),
                   ),
                 ],
@@ -150,7 +150,7 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.type,
+                    item.type.length > 15 ? '${item.type.substring(0, 15)}...' : item.type,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -158,11 +158,14 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.description,
+                    item.description.length > 10
+                        ? '${item.description.substring(0, 10)}...'
+                        : item.description,
                     style: const TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ],
               ),
+
               Text(
                 'Rp.${item.amount}',
                 style:

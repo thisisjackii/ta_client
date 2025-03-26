@@ -1,6 +1,7 @@
 // lib/features/transaction/view/create_transaction_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ta_client/app/routes/routes.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_form.dart';
@@ -15,12 +16,13 @@ class CreateTransactionPage extends StatelessWidget {
         if (state.isSuccess && state.operation == TransactionOperation.create) {
           QuickAlert.show(
             context: context,
-            type: QuickAlertType.error,
-            title: 'Oops...',
-            text: 'Sorry, something went wrong',
+            type: QuickAlertType.success,
+            text: 'Transaction Completed Successfully!',
           );
           // Simply pop; DashboardPage's RouteAware (didPopNext) will trigger a reload.
-          Navigator.of(context).pop(state.createdTransaction);
+          Future.delayed(Duration(seconds: 1), () {
+            Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+          });
         } else if (state.errorMessage != null) {
           QuickAlert.show(
             context: context,
