@@ -143,12 +143,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     Emitter<TransactionState> emit,
   ) async {
     try {
-      // Optionally, you might set a loading flag for classification only:
       emit(state.copyWith(isLoading: true));
       final result =
           await transactionService.classifyTransaction(event.description);
-      // Here, result['category'] is the raw predicted value.
-      // For display purposes, you can append the sparkle in the UI.
       emit(
         state.copyWith(
           isLoading: false,

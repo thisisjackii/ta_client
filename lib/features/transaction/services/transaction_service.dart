@@ -68,7 +68,7 @@ class TransactionService {
   }
 
   Future<Map<String, dynamic>> classifyTransaction(String description) async {
-    final url = Uri.parse('$baseUrl/transactions/classify'); // Adjust URL as needed
+    final url = Uri.parse('$baseUrl/transactions/classify');
     debugPrint('Classifying transaction with description: $description');
 
     final response = await http.post(

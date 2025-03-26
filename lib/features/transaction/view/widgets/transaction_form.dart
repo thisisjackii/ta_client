@@ -1,12 +1,15 @@
 // lib/features/transaction/view/widgets/transaction_form.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:ta_client/core/constants/category_mapping.dart'; // New mapping file
 import 'package:ta_client/core/widgets/custom_category_picker.dart';
 import 'package:ta_client/core/widgets/custom_date_picker.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
 import 'package:ta_client/core/widgets/dropdown_field.dart';
 import 'package:ta_client/core/widgets/rupiah_formatter.dart';
+import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_form_mode.dart';
 
@@ -61,12 +64,9 @@ class _TransactionFormState extends State<TransactionForm> {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   String transactionType = 'Pemasukan';
-  // String category = '';
-  // Store raw predicted category (without emoji)
+  // Parent category field
   String rawPredictedCategory = '';
-  // For display, append the sparkle emoji
-  String get displayCategory =>
-      rawPredictedCategory.isNotEmpty ? '$rawPredictedCategory ✨' : '';
+  // Subcategory field
   String subcategory = '';
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
@@ -78,6 +78,17 @@ class _TransactionFormState extends State<TransactionForm> {
     decimalDigits: 0,
   );
 
+  // This getter builds the display label based on the parent and subcategory.
+  String get displayCategory {
+    if (rawPredictedCategory.isNotEmpty) {
+      if (subcategory.isNotEmpty) {
+        return '$rawPredictedCategory / $subcategory';
+      }
+      return rawPredictedCategory;
+    }
+    return 'Pilih Kategori';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -86,10 +97,8 @@ class _TransactionFormState extends State<TransactionForm> {
       transactionType = widget.transaction!.type;
       selectedValue = widget.transaction!.type;
       descriptionController.text = widget.transaction!.description;
-      // amountController.text = widget.transaction!.amount.toString();
       amountController.text =
           _rupiahFormatter.format(widget.transaction!.amount.toInt());
-      // category = widget.transaction!.category;
       rawPredictedCategory = widget.transaction!.category;
       subcategory = widget.transaction!.subcategory;
       selectedDate = widget.transaction!.date;
@@ -123,76 +132,65 @@ class _TransactionFormState extends State<TransactionForm> {
     }
   }
 
+  /// Helper function: Given a subcategory string, return its parent category
+  /// by scanning through the categoryMapping.
+  String findParentCategory(String sub) {
+    final normalizedSub = sub.trim().toLowerCase();
+    for (final entry in categoryMapping.entries) {
+      for (final cat in entry.value) {
+        if (cat.trim().toLowerCase() == normalizedSub) {
+          return entry.key;
+        }
+      }
+    }
+    debugPrint('No parent found for subcategory: "$sub"');
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isReadOnly = mode == TransactionFormMode.view;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            CustomDropdownField(
-              items: dropdownItems,
-              // selectedValue: selectedValue,
-              selectedValue: transactionType,
-              onChanged: (item) {
-                // Update only in edit mode
-                if (mode == TransactionFormMode.edit) {
-                  setState(() {
-                    selectedValue = item.label;
-                    transactionType = item
-                        .label; // Update transactionType based on the dropdown selection
-                    submitButtonColor = item.color;
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 4),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CustomTextField(
-                  label: 'Deskripsi',
-                  controller: descriptionController,
-                  readOnly: isReadOnly,
-                  onTap: isReadOnly ? _switchToEdit : null,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Field cannot be empty';
-                    }
-                    return null;
-                  },
-                  maxLength: maxDescriptionLength, // Limit length
-                  maxLengthEnforcement:
-                  MaxLengthEnforcement.enforced, // Enforce limit
-                ),
-                const SizedBox(height: 4),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Total',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontVariations: [FontVariation('wght', 600)],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: CustomTextField(
-                    label: 'Enter Total',
-                    controller: amountController,
+    return BlocListener<TransactionBloc, TransactionState>(
+        listener: (context, state) {
+          if (state.classifiedCategory != null &&
+              state.classifiedCategory!.isNotEmpty) {
+            final predictedSub = state.classifiedCategory!;
+            debugPrint('Raw classification result: "$predictedSub"');
+            final predictedParent = findParentCategory(predictedSub);
+            debugPrint('Found parent category: "$predictedParent" for "$predictedSub"');
+            setState(() {
+              rawPredictedCategory = predictedParent;
+              subcategory = '$predictedSub ✨';
+            });
+          }
+        },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              CustomDropdownField(
+                items: dropdownItems,
+                selectedValue: transactionType,
+                onChanged: (item) {
+                  if (mode == TransactionFormMode.edit) {
+                    setState(() {
+                      selectedValue = item.label;
+                      transactionType = item.label;
+                      submitButtonColor = item.color;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 4),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomTextField(
+                    label: 'Deskripsi',
+                    controller: descriptionController,
                     readOnly: isReadOnly,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      RupiahInputFormatter(),
-                    ],
                     onTap: isReadOnly ? _switchToEdit : null,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -200,170 +198,205 @@ class _TransactionFormState extends State<TransactionForm> {
                       }
                       return null;
                     },
+                    maxLength: maxDescriptionLength,
+                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Kategori',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontVariations: [FontVariation('wght', 600)],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: CustomCategoryPicker(
-                    // selectedCategory: category,
-                    selectedCategory: displayCategory,
-                    selectedSubCategory: subcategory,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field cannot be empty';
-                      }
-                      return null;
-                    },
-                    onCategorySelected: isReadOnly
-                        ? (cat, subCat) {}
-                        : (cat, subCat) {
-                      setState(() {
-                        // category = cat;
-                        rawPredictedCategory = cat;
-                        subcategory = subCat;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Tanggal',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontVariations: [FontVariation('wght', 600)],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 22),
-                Expanded(
-                  child: CustomDatePicker(
-                    label: 'Tanggal',
-                    isDatePicker: true,
-                    initialDate: selectedDate,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field cannot be empty';
-                      }
-                      return null;
-                    },
-                    onDateChanged: isReadOnly
-                        ? null
-                        : (date) {
-                      setState(() {
-                        selectedDate = date;
-                      });
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: CustomDatePicker(
-                    label: 'Waktu',
-                    isDatePicker: false,
-                    initialTime: selectedTime,
-                    onTimeChanged: isReadOnly
-                        ? null
-                        : (time) {
-                      setState(() {
-                        selectedTime = time;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            if (isReadOnly)
-            // In view mode, no submit button – tapping a field switches to edit.
+                  const SizedBox(height: 4),
+                ],
+              ),
+              const SizedBox(height: 4),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Optionally add a Delete button.
-                  ElevatedButton(
-                    onPressed: widget.onDelete,
-                    child: const Text('Delete'),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Total',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontVariations: [FontVariation('wght', 600)],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: CustomTextField(
+                      label: 'Enter Total',
+                      controller: amountController,
+                      readOnly: isReadOnly,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        RupiahInputFormatter(),
+                      ],
+                      onTap: isReadOnly ? _switchToEdit : null,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field cannot be empty';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
                 ],
-              )
-            else
-              SizedBox(
-                width: double.infinity, // Makes the button take up full width
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: submitButtonColor,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Kategori',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontVariations: [FontVariation('wght', 600)],
+                      ),
+                    ),
                   ),
-                  onPressed: () {
-                    if (!_formKey.currentState!.validate()) {
-                      return; // Stops execution if validation fails
-                    }
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: CustomCategoryPicker(
+                      selectedCategory: rawPredictedCategory,
+                      selectedSubCategory: subcategory,
+                      onCategorySelected: isReadOnly
+                          ? (cat, subCat) {}
+                          : (cat, subCat) {
+                        // When manually selected, update without appending sparkle.
+                        setState(() {
+                          rawPredictedCategory = cat;
+                          subcategory = subCat;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Tanggal',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontVariations: [FontVariation('wght', 600)],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 22),
+                  Expanded(
+                    child: CustomDatePicker(
+                      label: 'Tanggal',
+                      isDatePicker: true,
+                      initialDate: selectedDate,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field cannot be empty';
+                        }
+                        return null;
+                      },
+                      onDateChanged: isReadOnly
+                          ? null
+                          : (date) {
+                        setState(() {
+                          selectedDate = date;
+                        });
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: CustomDatePicker(
+                      label: 'Waktu',
+                      isDatePicker: false,
+                      initialTime: selectedTime,
+                      onTimeChanged: isReadOnly
+                          ? null
+                          : (time) {
+                        setState(() {
+                          selectedTime = time;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (isReadOnly)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: widget.onDelete,
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: submitButtonColor,
+                    ),
+                    onPressed: () {
+                      if (!_formKey.currentState!.validate()) {
+                        return;
+                      }
 
-                    if (selectedDate == null) return;
+                      if (selectedDate == null) return;
 
-                    DateTime combinedDate;
-                    if (selectedTime != null) {
-                      combinedDate = DateTime(
-                        selectedDate!.year,
-                        selectedDate!.month,
-                        selectedDate!.day,
-                        selectedTime!.hour,
-                        selectedTime!.minute,
+                      DateTime combinedDate;
+                      if (selectedTime != null) {
+                        combinedDate = DateTime(
+                          selectedDate!.year,
+                          selectedDate!.month,
+                          selectedDate!.day,
+                          selectedTime!.hour,
+                          selectedTime!.minute,
+                        );
+                      } else {
+                        combinedDate = selectedDate!;
+                      }
+
+                      final rawAmount = amountController.text
+                          .replaceAll(RegExp('[^0-9]'), '');
+                      final parsedAmount =
+                          double.tryParse(rawAmount) ?? 0.0;
+
+                      // Remove sparkle before sending the transaction.
+                      final cleanSubcategory =
+                      subcategory.replaceAll(' ✨', '');
+
+                      final transaction = Transaction(
+                        id: widget.transaction?.id ?? '',
+                        type: transactionType,
+                        description: descriptionController.text,
+                        date: combinedDate,
+                        category: rawPredictedCategory,
+                        subcategory: cleanSubcategory,
+                        amount: parsedAmount,
                       );
-                    } else {
-                      combinedDate = selectedDate!;
-                    }
 
-                    final rawAmount = amountController.text.replaceAll(RegExp('[^0-9]'), '');
-                    final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
+                      widget.onSubmit(transaction);
 
-                    final transaction = Transaction(
-                      id: widget.transaction?.id ?? '',
-                      type: transactionType,
-                      description: descriptionController.text,
-                      date: combinedDate,
-                      category: rawPredictedCategory,
-                      subcategory: subcategory,
-                      amount: parsedAmount,
-                    );
-
-                    widget.onSubmit(transaction);
-
-                    if (mode == TransactionFormMode.edit) {
-                      setState(() {
-                        mode = TransactionFormMode.view;
-                      });
-                    }
-                  },
-
-                  child: Text(
-                    mode == TransactionFormMode.edit ? 'Confirm Edit' : 'Submit',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      if (mode == TransactionFormMode.edit) {
+                        setState(() {
+                          mode = TransactionFormMode.view;
+                        });
+                      }
+                    },
+                    child: Text(
+                      mode == TransactionFormMode.edit
+                          ? 'Confirm Edit'
+                          : 'Submit',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

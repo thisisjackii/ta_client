@@ -19,7 +19,12 @@ class CustomCategoryPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FormField<String>(
-      validator: validator, // Attach validator here
+        validator: (_) {
+          if (selectedCategory.isEmpty || selectedSubCategory.isEmpty) {
+            return 'Field cannot be empty';
+          }
+          return null;
+        }, // Attach validator here
       builder: (FormFieldState<String> field) {
         return GestureDetector(
           onTap: () {
