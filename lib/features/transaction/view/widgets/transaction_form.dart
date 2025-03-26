@@ -37,12 +37,12 @@ class _TransactionFormState extends State<TransactionForm> {
   Color submitButtonColor = const Color(0xff2A8C8B);
   final List<DropdownItem> dropdownItems = [
     DropdownItem(
-      label: 'Asset',
+      label: 'Aset',
       icon: Icons.account_balance_wallet,
       color: const Color(0xff2A8C8B),
     ),
     DropdownItem(
-      label: 'Liability',
+      label: 'Liabilitas',
       icon: Icons.account_balance,
       color: const Color(0xffEF233C),
     ),
@@ -57,13 +57,12 @@ class _TransactionFormState extends State<TransactionForm> {
       color: const Color(0xffD623AE),
     ),
   ];
-
+  String transactionType = '';
   String? selectedValue;
   final _formKey = GlobalKey<FormState>();
   late TransactionFormMode mode;
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
-  String transactionType = 'Pemasukan';
   // Parent category field
   String rawPredictedCategory = '';
   // Subcategory field
@@ -103,6 +102,9 @@ class _TransactionFormState extends State<TransactionForm> {
       subcategory = widget.transaction!.subcategory;
       selectedDate = widget.transaction!.date;
       selectedTime = TimeOfDay.fromDateTime(widget.transaction!.date);
+    } else {
+      transactionType = dropdownItems.first.label;
+      selectedValue = dropdownItems.first.label;
     }
     descriptionController.addListener(_onDescriptionChanged);
   }
@@ -174,13 +176,11 @@ class _TransactionFormState extends State<TransactionForm> {
                 items: dropdownItems,
                 selectedValue: transactionType,
                 onChanged: (item) {
-                  if (mode == TransactionFormMode.edit) {
-                    setState(() {
-                      selectedValue = item.label;
-                      transactionType = item.label;
-                      submitButtonColor = item.color;
-                    });
-                  }
+                  setState(() {
+                    selectedValue = item.label;
+                    transactionType = item.label;
+                    submitButtonColor = item.color;
+                  });
                 },
               ),
               const SizedBox(height: 4),

@@ -17,17 +17,15 @@ class FilterPage extends StatelessWidget {
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.of(context).pop(),
             ),
+            Text(
+              'Filter',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            )
           ],
         ),
-        actions: [
-          Row(
-            children: [
-              IconButton(icon: const Icon(Icons.info), onPressed: () {}),
-              IconButton(
-                icon: const Icon(Icons.bookmark_add), onPressed: () {},),
-            ],
-          ),
-        ],
       ),
       body: const FilterFormPage(),
     );

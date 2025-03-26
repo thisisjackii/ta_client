@@ -13,6 +13,7 @@ class Routes {
   // static const editTransaction = '/edit-transaction';
   static const viewTransaction = '/view-transaction';
   static const filter = '/filter';
+  static const statistik = '/statistik';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -49,6 +50,11 @@ class Routes {
       case filter:
         return MaterialPageRoute(
           builder: (_) => const FilterPage(),
+          settings: settings,
+        );
+      case statistik:
+        return MaterialPageRoute(
+          builder: (_) => StatisticPieChart(),
           settings: settings,
         );
       // case editTransaction:

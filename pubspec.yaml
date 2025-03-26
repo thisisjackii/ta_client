@@ -26,6 +26,7 @@ dependencies:
   flutter_gen: ^5.10.0
   month_picker_dialog: ^6.0.2
   quickalert: ^1.1.0
+  fl_chart: ^0.70.2
 
 dev_dependencies:
   bloc_test: ^10.0.0

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For formatting the selected date
 import 'package:month_picker_dialog/month_picker_dialog.dart';
+import 'package:ta_client/app/routes/routes.dart';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -113,15 +114,30 @@ class _CustomAppBarState extends State<CustomAppBar> {
               IconButton(
                 icon: const Icon(Icons.filter_alt_rounded),
                 onPressed: () {
-                  // Handle notifications action
+                  Navigator.pushNamed(context, Routes.filter);
                 },
               ),
-              IconButton(
+              PopupMenuButton<String>(
                 icon: const Icon(Icons.menu),
-                onPressed: () {
-                  // Handle account action
+                onSelected: (value) {
+                  if (value == 'statistic') {
+                    Navigator.pushNamed(context, Routes.statistik);
+                  } else if (value == 'download_pdf') {
+                    // Handle Download PDF action (leave blank for now)
+                  }
                 },
-              ),
+                itemBuilder: (BuildContext context) => [
+                  const PopupMenuItem(
+                    value: 'statistic',
+                    child: Text('Statistic'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'download_pdf',
+                    child: Text('Download PDF File ...'),
+                  ),
+                ],
+              )
+
             ],
           ),
       ],
