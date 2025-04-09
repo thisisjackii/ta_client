@@ -19,7 +19,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     on<DashboardItemAdded>(_onItemAdded);
     on<DashboardItemDeleted>(_onItemDeleted);
 
-    // Load initial data
+    // Load initial data.
     add(DashboardReloadRequested());
   }
 
@@ -28,15 +28,13 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   final TransactionService transactionService;
 
   Future<void> _onReload(
-    DashboardReloadRequested event,
-    Emitter<DashboardState> emit,
-  ) async {
+      DashboardReloadRequested event,
+      Emitter<DashboardState> emit,
+      ) async {
     emit(DashboardLoading());
     try {
       final online = await connectivityService.isOnline;
-      debugPrint(
-        "DashboardBloc: Connectivity is ${online ? 'online' : 'offline'}",
-      );
+      debugPrint("DashboardBloc: Connectivity is ${online ? 'online' : 'offline'}");
       List<Transaction> items;
       if (online) {
         items = await transactionService.fetchTransactions();
@@ -50,26 +48,17 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
   }
 
-  void _onItemAdded(
-    DashboardItemAdded event,
-    Emitter<DashboardState> emit,
-  ) {
+  void _onItemAdded(DashboardItemAdded event, Emitter<DashboardState> emit) {
     final currentState = state;
     if (currentState is DashboardLoaded) {
-      // Optionally, sort or validate the list before emitting.
-      final updatedItems = List<Transaction>.from(currentState.items)
-        ..add(event.item);
+      final updatedItems = List<Transaction>.from(currentState.items)..add(event.item);
       emit(DashboardLoaded(updatedItems));
     } else {
-      // If the dashboard isn’t loaded yet, trigger a full reload.
       add(DashboardReloadRequested());
     }
   }
 
-  void _onItemDeleted(
-    DashboardItemDeleted event,
-    Emitter<DashboardState> emit,
-  ) {
+  void _onItemDeleted(DashboardItemDeleted event, Emitter<DashboardState> emit) {
     final currentState = state;
     if (currentState is DashboardLoaded) {
       final updatedItems = List.of(currentState.items)..remove(event.item);

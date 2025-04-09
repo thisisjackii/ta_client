@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // For formatting the selected date
+import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:ta_client/app/routes/routes.dart';
 
@@ -8,11 +8,13 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.isSelectionMode,
     required this.selectedMonth,
     required this.onMonthChanged,
+    required this.onFilterChanged, // New callback to send filter criteria upward.
     super.key,
   });
   final ValueNotifier<bool> isSelectionMode;
   final DateTime selectedMonth;
   final ValueChanged<DateTime> onMonthChanged;
+  final ValueChanged<Map<String, dynamic>?> onFilterChanged;
 
   @override
   _CustomAppBarState createState() => _CustomAppBarState();
@@ -22,7 +24,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _CustomAppBarState extends State<CustomAppBar> {
-  // Helper to add or subtract months safely.
+  // Helper to safely add or subtract months.
   DateTime _changeMonth(DateTime date, int change) {
     var newYear = date.year;
     var newMonth = date.month + change;
@@ -50,11 +52,10 @@ class _CustomAppBarState extends State<CustomAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    // Format the displayed month as 'MMM yyyy' (e.g., Jan 2025)
     final monthYearText = DateFormat('MMM yyyy').format(widget.selectedMonth);
 
     return AppBar(
-      automaticallyImplyLeading: false, // Removes default leading button
+      automaticallyImplyLeading: false,
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -67,7 +68,6 @@ class _CustomAppBarState extends State<CustomAppBar> {
             IconButton(
               icon: const Icon(Icons.navigate_before),
               onPressed: () {
-                // Subtract one month
                 final newMonth = _changeMonth(widget.selectedMonth, -1);
                 widget.onMonthChanged(newMonth);
               },
@@ -79,14 +79,13 @@ class _CustomAppBarState extends State<CustomAppBar> {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black, // Adjust text color if needed
+                  color: Colors.black,
                 ),
               ),
             ),
             IconButton(
               icon: const Icon(Icons.navigate_next),
               onPressed: () {
-                // Add one month
                 final newMonth = _changeMonth(widget.selectedMonth, 1);
                 widget.onMonthChanged(newMonth);
               },
@@ -99,7 +98,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
           IconButton(
             icon: const Icon(Icons.close),
             onPressed: () {
-              widget.isSelectionMode.value = false; // Exit selection mode
+              widget.isSelectionMode.value = false;
             },
           )
         else
@@ -108,13 +107,17 @@ class _CustomAppBarState extends State<CustomAppBar> {
               IconButton(
                 icon: const Icon(Icons.info),
                 onPressed: () {
-                  // Handle settings action
+                  // Handle settings action if needed.
                 },
               ),
               IconButton(
                 icon: const Icon(Icons.filter_alt_rounded),
-                onPressed: () {
-                  Navigator.pushNamed(context, Routes.filter);
+                onPressed: () async {
+                  final result = await Navigator.pushNamed(context, Routes.filter);
+                  if (result != null && result is Map<String, dynamic>) {
+                    // Propagate filter criteria upward.
+                    widget.onFilterChanged(result);
+                  }
                 },
               ),
               PopupMenuButton<String>(
@@ -123,7 +126,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                   if (value == 'statistic') {
                     Navigator.pushNamed(context, Routes.statistik);
                   } else if (value == 'download_pdf') {
-                    // Handle Download PDF action (leave blank for now)
+                    // Handle Download PDF action (if implemented).
                   }
                 },
                 itemBuilder: (BuildContext context) => [
@@ -136,8 +139,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                     child: Text('Download PDF File ...'),
                   ),
                 ],
-              )
-
+              ),
             ],
           ),
       ],

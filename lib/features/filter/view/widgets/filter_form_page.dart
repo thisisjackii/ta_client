@@ -15,30 +15,61 @@ class _FilterFormPageState extends State<FilterFormPage> {
     DropdownItem(
       label: 'Asset',
       icon: Icons.account_balance_wallet,
-      color: const Color(0xff2A8C8B),),
+      color: const Color(0xff2A8C8B),
+    ),
     DropdownItem(
       label: 'Liability',
       icon: Icons.account_balance,
-      color: const Color(0xffEF233C),),
+      color: const Color(0xffEF233C),
+    ),
     DropdownItem(
       label: 'Pemasukan',
       icon: Icons.add_card_rounded,
-      color: const Color(0xff5A4CAF),),
+      color: const Color(0xff5A4CAF),
+    ),
     DropdownItem(
       label: 'Pengeluaran',
       icon: Icons.local_activity_rounded,
-      color: const Color(0xffD623AE),),
+      color: const Color(0xffD623AE),
+    ),
   ];
 
   final Map<String, List<String>> childItemsMap = {
-    'Asset': ['Kas', 'Piutang', 'Bangunan', 'Tanah', 'Peralatan', 'Surat Berharga', 'Investasi Alternatif', 'Aset Pribadi'],
+    'Asset': [
+      'Kas',
+      'Piutang',
+      'Bangunan',
+      'Tanah',
+      'Peralatan',
+      'Surat Berharga',
+      'Investasi Alternatif',
+      'Aset Pribadi'
+    ],
     'Liability': ['Hutang', 'Perjanjian Tertulis', 'Mortgage Payable'],
-    'Pemasukan': ['Pendapatan Pekerjaan', 'Pendapatan Investasi', 'Pendapatan Bunga', 'Keuntungan Aset', 'Pendapatan Jasa'],
-    'Pengeluaran': ['Tabungan', 'Makanan & Minuman', 'Hadiah & Donasi', 'Transportasi', 'Kesehatan & Medis', 'Perawatan & Pakaian', 'Hiburan & Rekreasi', 'Pendidikan', 'Kewajiban Finansial', 'Perumahan'],
+    'Pemasukan': [
+      'Pendapatan Pekerjaan',
+      'Pendapatan Investasi',
+      'Pendapatan Bunga',
+      'Keuntungan Aset',
+      'Pendapatan Jasa'
+    ],
+    'Pengeluaran': [
+      'Tabungan',
+      'Makanan & Minuman',
+      'Hadiah & Donasi',
+      'Transportasi',
+      'Kesehatan & Medis',
+      'Perawatan & Pakaian',
+      'Hiburan & Rekreasi',
+      'Pendidikan',
+      'Kewajiban Finansial',
+      'Perumahan'
+    ],
   };
 
-  DateTime? selectedDate;
-  TimeOfDay? selectedTime;
+  // Use two date pickers for a date range.
+  DateTime? startDate;
+  DateTime? endDate;
   String? selectedValue;
   List<String> filteredChildItems = [];
   String? selectedChild;
@@ -49,6 +80,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // Parent category dropdown.
           CustomDropdownField(
             label: 'Tipe Akun',
             items: dropdownItems,
@@ -63,7 +95,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
             },
           ),
           const SizedBox(height: 24),
-
+          // Child category dropdown.
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -83,7 +115,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
                 decoration: const BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.grey, // Underline color
+                      color: Colors.grey,
                       width: 1.5,
                     ),
                   ),
@@ -98,8 +130,8 @@ class _FilterFormPageState extends State<FilterFormPage> {
                           isExpanded: true,
                           items: (filteredChildItems.isNotEmpty
                               ? filteredChildItems
-                              : childItemsMap.values.expand((e) => e).toList()
-                          ).map((child) {
+                              : childItemsMap.values.expand((e) => e).toList())
+                              .map((child) {
                             return DropdownMenuItem<String>(
                               value: child,
                               child: Text(child),
@@ -119,13 +151,14 @@ class _FilterFormPageState extends State<FilterFormPage> {
             ],
           ),
           const SizedBox(height: 24),
+          // Date range picker: Start Date and End Date.
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Padding(
                 padding: EdgeInsets.only(bottom: 4),
                 child: Text(
-                  'Tanggal',
+                  'Pilih Rentang Tanggal',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -137,22 +170,23 @@ class _FilterFormPageState extends State<FilterFormPage> {
                 children: [
                   Expanded(
                     child: CustomDatePicker(
-                      label: 'Tanggal',
+                      label: 'Start Date',
                       isDatePicker: true,
                       onDateChanged: (date) {
                         setState(() {
-                          selectedDate = date;
+                          startDate = date;
                         });
                       },
                     ),
                   ),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: CustomDatePicker(
-                      label: 'Waktu',
-                      isDatePicker: false,
-                      onTimeChanged: (time) {
+                      label: 'End Date',
+                      isDatePicker: true,
+                      onDateChanged: (date) {
                         setState(() {
-                          selectedTime = time;
+                          endDate = date;
                         });
                       },
                     ),
@@ -161,20 +195,26 @@ class _FilterFormPageState extends State<FilterFormPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 24),
+          // Submit button returns the filter criteria.
           SizedBox(
-            width: double.infinity, // Makes the button take up full width
+            width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: submitButtonColor,
               ),
               onPressed: () {
+                final filters = {
+                  'parent': selectedValue,
+                  'child': selectedChild,
+                  'startDate': startDate,
+                  'endDate': endDate,
+                };
+                Navigator.pop(context, filters);
               },
               child: const Text(
                 'Filter',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.white,),
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
           ),
