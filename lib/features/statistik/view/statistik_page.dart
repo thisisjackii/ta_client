@@ -1,8 +1,11 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
+import 'package:flutter/material.dart' hide BoxDecoration, BoxShadow;
+import 'package:flutter_inset_shadow/flutter_inset_shadow.dart';
 
 class StatisticPieChart extends StatefulWidget {
   const StatisticPieChart({super.key});
@@ -17,6 +20,7 @@ class StatisticPieChart extends StatefulWidget {
 
 class _StatisticPieChartState extends State<StatisticPieChart> {
   String selectedType = 'Aset';
+  DateTime selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
   @override
   Widget build(BuildContext context) {
@@ -25,22 +29,35 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
         backgroundColor: const Color(0xffFBFDFF),
         automaticallyImplyLeading: false,
         title: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                const Text(
+                  'Statistik',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              'Statistik',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+            TextButton.icon(
+              onPressed: _pickMonth,
+              icon: const Icon(Icons.calendar_today, size: 16),
+              label: Text(
+                DateFormat.yMMMM().format(selectedMonth),
+                style: const TextStyle(color: Colors.black),
               ),
-            )
+            ),
           ],
         ),
       ),
+
       body: Column(
         children: [
           DropdownButton<String>(
@@ -60,31 +77,47 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
             },
           ),
           Expanded(
-            child: BlocBuilder<DashboardBloc, DashboardState>(
-              builder: (context, state) {
-                if (state is DashboardLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (state is DashboardLoaded) {
-                  return state.items.isEmpty
-                      ? const Center(
-                          child: Text(
-                          'No Data',
-                          style: TextStyle(color: Colors.black),
-                        )) // Show "No Data" if empty
-                      : _buildPieChart(state.items);
-                } else if (state is DashboardError) {
-                  return Center(child: Text('Error: ${state.errorMessage}'));
-                }
-                return Center(
-                  child: Text(
-                    'No Data',
-                    style: TextStyle(
-                        color: Colors.black), // Set text color to black
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
-                );
-              },
+                ],
+              ),
+              child: BlocBuilder<DashboardBloc, DashboardState>(
+                builder: (context, state) {
+                  if (state is DashboardLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is DashboardLoaded) {
+                    return state.items.isEmpty
+                        ? const Center(
+                      child: Text(
+                        'No Data',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    )
+                        : _buildPieChart(state.items);
+                  } else if (state is DashboardError) {
+                    return Center(child: Text('Error: ${state.errorMessage}'));
+                  }
+                  return const Center(
+                    child: Text(
+                      'No Data',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
+
         ],
       ),
     );
@@ -92,8 +125,12 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
 
   Widget _buildPieChart(List<Transaction> transactions) {
     // Filter transactions by selected type
-    final filteredTransactions =
-        transactions.where((t) => t.type == selectedType).toList();
+    final filteredTransactions = transactions.where((t) {
+      final isSameMonth = t.date.year == selectedMonth.year &&
+          t.date.month == selectedMonth.month;
+      return t.type == selectedType && isSameMonth;
+    }).toList();
+
 
     if (filteredTransactions.isEmpty) {
       return const Center(
@@ -136,6 +173,9 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
       );
     }).toList();
 
+    Offset distance = Offset(2,2);
+    double blur = 4.0;
+
     return Column(
       children: [
         SizedBox(
@@ -149,33 +189,61 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
           ),
         ),
         const SizedBox(height: 16), // Spacing
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
-          children: categoryMap.entries.map((entry) {
-            final double percentage = (entry.value / totalAmount) * 100;
+        Container(
+          margin: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: blur,
+                offset: -distance,
+                color: Colors.white,
+                inset: true
+              ),
+              BoxShadow(
+                  blurRadius: blur,
+                  offset: distance,
+                  color: Color(0xFFA7A9AF),
+                  inset: true
+              ),
+            ],
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: categoryMap.entries.map((entry) {
+                final double percentage = (entry.value / totalAmount) * 100;
 
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: _getCategoryColor(entry.key),
-                    shape: BoxShape.circle,
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: _getCategoryColor(entry.key),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${entry.key} (${percentage.toStringAsFixed(1)}%)',
+                        style: const TextStyle(color: Colors.black),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${entry.key} (${percentage.toStringAsFixed(1)}%)',
-                  style: const TextStyle(color: Colors.black),
-                ),
-              ],
-            );
-          }).toList(),
+                );
+              }).toList(),
+            ),
+          ),
         ),
+
+
       ],
     );
   }
@@ -192,4 +260,21 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
     ];
     return colors[category.hashCode % colors.length];
   }
+
+  void _pickMonth() async {
+    final picked = await showMonthPicker(
+      context: context,
+      initialDate: selectedMonth,
+      firstDate: DateTime(DateTime.now().year - 5),
+      lastDate: DateTime(DateTime.now().year + 5),
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedMonth = DateTime(picked.year, picked.month);
+      });
+    }
+  }
+
+
 }

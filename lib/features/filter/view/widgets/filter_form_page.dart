@@ -13,12 +13,12 @@ class _FilterFormPageState extends State<FilterFormPage> {
   Color submitButtonColor = const Color(0xff2A8C8B);
   final List<DropdownItem> dropdownItems = [
     DropdownItem(
-      label: 'Asset',
+      label: 'Aset',
       icon: Icons.account_balance_wallet,
       color: const Color(0xff2A8C8B),
     ),
     DropdownItem(
-      label: 'Liability',
+      label: 'Liabilitas',
       icon: Icons.account_balance,
       color: const Color(0xffEF233C),
     ),
@@ -35,7 +35,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
   ];
 
   final Map<String, List<String>> childItemsMap = {
-    'Asset': [
+    'Aset': [
       'Kas',
       'Piutang',
       'Bangunan',
@@ -45,7 +45,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
       'Investasi Alternatif',
       'Aset Pribadi'
     ],
-    'Liability': ['Hutang', 'Perjanjian Tertulis', 'Mortgage Payable'],
+    'Liabilitas': ['Hutang', 'Perjanjian Tertulis', 'Mortgage Payable'],
     'Pemasukan': [
       'Pendapatan Pekerjaan',
       'Pendapatan Investasi',

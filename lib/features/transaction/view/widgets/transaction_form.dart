@@ -172,18 +172,6 @@ class _TransactionFormState extends State<TransactionForm> {
           key: _formKey,
           child: Column(
             children: [
-              CustomDropdownField(
-                items: dropdownItems,
-                selectedValue: transactionType,
-                onChanged: (item) {
-                  setState(() {
-                    selectedValue = item.label;
-                    transactionType = item.label;
-                    submitButtonColor = item.color;
-                  });
-                },
-              ),
-              const SizedBox(height: 4),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -203,6 +191,18 @@ class _TransactionFormState extends State<TransactionForm> {
                   ),
                   const SizedBox(height: 4),
                 ],
+              ),
+              const SizedBox(height: 4),
+              CustomDropdownField(
+                items: dropdownItems,
+                selectedValue: transactionType,
+                onChanged: (item) {
+                  setState(() {
+                    selectedValue = item.label;
+                    transactionType = item.label;
+                    submitButtonColor = item.color;
+                  });
+                },
               ),
               const SizedBox(height: 4),
               Row(
