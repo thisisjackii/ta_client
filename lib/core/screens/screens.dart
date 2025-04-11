@@ -12,3 +12,4 @@ export '../../features/evaluation/view/evaluation_intro_page.dart';
 export '../../features/evaluation/view/evaluation_date_page.dart';
 export '../../features/evaluation/view/evaluation_dashboard_page.dart';
 export '../../features/evaluation/view/evaluation_detail_page.dart';
+export '../../features/evaluation/view/evaluation_history_page.dart';

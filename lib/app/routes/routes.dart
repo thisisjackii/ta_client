@@ -18,6 +18,7 @@ class Routes {
   static const evaluationDateSelection = '/evaluation-date-selection';
   static const evaluationDashboard = '/evaluation-dashboard';
   static const evaluationDetail = '/evaluation-detail';
+  static const evaluationHistory = '/evaluation-history';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -82,7 +83,11 @@ class Routes {
           builder: (_) => EvaluationDetailPage(id: id),
           settings: settings,
         );
-
+      case evaluationHistory:
+        return MaterialPageRoute(
+          builder: (_) => EvaluationHistoryPage(),
+          settings: settings,
+        );
       // case editTransaction:
       //   final transaction = settings.arguments! as Transaction;
       //   return MaterialPageRoute(builder: (_) => EditTransactionPage.create(transaction));

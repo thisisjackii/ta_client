@@ -17,7 +17,24 @@ class EvaluationDashboard extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Evaluation Dashboard'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Evaluasi',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.restart_alt_rounded),
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, Routes.evaluationHistory);
+              print('Returned from EvaluationIntro: $result');
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
