@@ -28,6 +28,7 @@ dependencies:
   quickalert: ^1.1.0
   fl_chart: ^0.70.2
   flutter_inset_shadow: ^2.0.3
+  another_xlider: ^3.0.2
 
 dev_dependencies:
   bloc_test: ^10.0.0
@@ -52,3 +53,4 @@ flutter:
     - assets/icons/mdi_dots-horizontal.svg
     - assets/icons/mdi_people.svg
     - assets/icons/mdi_property-tag.svg
+    - assets/img/10078322.png

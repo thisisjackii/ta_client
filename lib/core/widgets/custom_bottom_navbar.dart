@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:ta_client/app/routes/routes.dart';
 
 class CustomBottomNavbar extends StatelessWidget {
   const CustomBottomNavbar({
@@ -26,10 +28,14 @@ class CustomBottomNavbar extends StatelessWidget {
                 onTap: () => onTabSelected(0),
               ),
               _TabItem(
-                label: 'Tabung',
-                icon: Icons.menu_book,
+                label: 'Evaluasi',
+                icon: Icons.saved_search_rounded,
                 isSelected: currentTab == 1,
-                onTap: () => onTabSelected(1),
+                onTap: () async {
+                  final result = await Navigator.pushNamed(context, Routes.evaluationIntro);
+                  // Do something with the result if needed
+                  print('Returned from EvaluationIntro: $result');
+                },
               ),
             ]),
             _buildTabItems([

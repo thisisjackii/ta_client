@@ -8,3 +8,7 @@ export '../../features/transaction/view/dashboard_page.dart';
 export '../../features/transaction/view/view_transaction_page.dart';
 export '../../features/welcome/view/welcome_page.dart';
 export '../../features/statistik/view/statistik_page.dart';
+export '../../features/evaluation/view/evaluation_intro_page.dart';
+export '../../features/evaluation/view/evaluation_date_page.dart';
+export '../../features/evaluation/view/evaluation_dashboard_page.dart';
+export '../../features/evaluation/view/evaluation_detail_page.dart';

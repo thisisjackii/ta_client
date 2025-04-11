@@ -14,6 +14,10 @@ class Routes {
   static const viewTransaction = '/view-transaction';
   static const filter = '/filter';
   static const statistik = '/statistik';
+  static const evaluationIntro = '/evaluation-intro';
+  static const evaluationDateSelection = '/evaluation-date-selection';
+  static const evaluationDashboard = '/evaluation-dashboard';
+  static const evaluationDetail = '/evaluation-detail';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -57,6 +61,28 @@ class Routes {
           builder: (_) => StatisticPieChart(),
           settings: settings,
         );
+      case evaluationIntro:
+        return MaterialPageRoute(
+          builder: (_) => EvaluationIntro(),
+          settings: settings,
+        );
+      case evaluationDateSelection:
+        return MaterialPageRoute(
+          builder: (_) => EvaluationDateSelection(),
+          settings: settings,
+        );
+      case evaluationDashboard:
+        return MaterialPageRoute(
+          builder: (_) => EvaluationDashboard(),
+          settings: settings,
+        );
+      case evaluationDetail:
+        final id = settings.arguments as String;
+        return MaterialPageRoute(
+          builder: (_) => EvaluationDetailPage(id: id),
+          settings: settings,
+        );
+
       // case editTransaction:
       //   final transaction = settings.arguments! as Transaction;
       //   return MaterialPageRoute(builder: (_) => EditTransactionPage.create(transaction));
