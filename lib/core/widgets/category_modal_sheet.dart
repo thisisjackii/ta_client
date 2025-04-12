@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ta_client/core/constants/category_mapping.dart';
 
 class CategoryModalSheet extends StatefulWidget {
-  const CategoryModalSheet({required this.onCategorySelected, Key? key})
-      : super(key: key);
+  const CategoryModalSheet({required this.onCategorySelected, super.key});
   final void Function(String, String) onCategorySelected;
 
   @override

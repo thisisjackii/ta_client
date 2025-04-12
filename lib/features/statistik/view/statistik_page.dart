@@ -1,21 +1,21 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/material.dart' hide BoxDecoration, BoxShadow;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_inset_shadow/flutter_inset_shadow.dart';
+import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
-import 'package:flutter/material.dart' hide BoxDecoration, BoxShadow;
-import 'package:flutter_inset_shadow/flutter_inset_shadow.dart';
 
 class StatisticPieChart extends StatefulWidget {
   const StatisticPieChart({super.key});
 
+  @override
+  _StatisticPieChartState createState() => _StatisticPieChartState();
+
   static Widget create() {
     return const StatisticPieChart();
   }
-
-  @override
-  _StatisticPieChartState createState() => _StatisticPieChartState();
 }
 
 class _StatisticPieChartState extends State<StatisticPieChart> {
@@ -57,16 +57,17 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
           ],
         ),
       ),
-
       body: Column(
         children: [
           DropdownButton<String>(
             value: selectedType,
             items: ['Aset', 'Liabilitas', 'Pemasukan', 'Pengeluaran']
-                .map((type) => DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    ))
+                .map(
+                  (type) => DropdownMenuItem(
+                    value: type,
+                    child: Text(type),
+                  ),
+                )
                 .toList(),
             onChanged: (value) {
               if (value != null) {
@@ -98,11 +99,11 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
                   } else if (state is DashboardLoaded) {
                     return state.items.isEmpty
                         ? const Center(
-                      child: Text(
-                        'No Data',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    )
+                            child: Text(
+                              'No Data',
+                              style: TextStyle(color: Colors.black),
+                            ),
+                          )
                         : _buildPieChart(state.items);
                   } else if (state is DashboardError) {
                     return Center(child: Text('Error: ${state.errorMessage}'));
@@ -117,7 +118,6 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
               ),
             ),
           ),
-
         ],
       ),
     );
@@ -131,7 +131,6 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
       return t.type == selectedType && isSameMonth;
     }).toList();
 
-
     if (filteredTransactions.isEmpty) {
       return const Center(
         child: Text(
@@ -143,7 +142,7 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
 
     // Group filtered transactions by category
     final categoryMap = <String, double>{};
-    for (var transaction in filteredTransactions) {
+    for (final transaction in filteredTransactions) {
       categoryMap.update(
         transaction.category,
         (value) => value + transaction.amount,
@@ -152,12 +151,12 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
     }
 
     // Calculate total amount for percentage calculation
-    final double totalAmount =
-        categoryMap.values.fold(0, (sum, amount) => sum + amount);
+    final totalAmount =
+        categoryMap.values.fold<double>(0, (sum, amount) => sum + amount);
 
     // Generate pie chart sections with percentages
-    final List<PieChartSectionData> sections = categoryMap.entries.map((entry) {
-      final double percentage = (entry.value / totalAmount) * 100;
+    final sections = categoryMap.entries.map((entry) {
+      final percentage = (entry.value / totalAmount) * 100;
 
       return PieChartSectionData(
         value: entry.value,
@@ -173,8 +172,8 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
       );
     }).toList();
 
-    Offset distance = Offset(2,2);
-    double blur = 4.0;
+    const distance = Offset(2, 2);
+    const blur = 4.0;
 
     return Column(
       children: [
@@ -197,16 +196,16 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                blurRadius: blur,
+                blurRadius: 4,
                 offset: -distance,
                 color: Colors.white,
-                inset: true
+                inset: true,
               ),
-              BoxShadow(
-                  blurRadius: blur,
-                  offset: distance,
-                  color: Color(0xFFA7A9AF),
-                  inset: true
+              const BoxShadow(
+                blurRadius: blur,
+                offset: distance,
+                color: Color(0xFFA7A9AF),
+                inset: true,
               ),
             ],
           ),
@@ -215,7 +214,7 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: categoryMap.entries.map((entry) {
-                final double percentage = (entry.value / totalAmount) * 100;
+                final percentage = (entry.value / totalAmount) * 100;
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -242,8 +241,6 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
             ),
           ),
         ),
-
-
       ],
     );
   }
@@ -261,7 +258,7 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
     return colors[category.hashCode % colors.length];
   }
 
-  void _pickMonth() async {
+  Future<void> _pickMonth() async {
     final picked = await showMonthPicker(
       context: context,
       initialDate: selectedMonth,
@@ -275,6 +272,4 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
       });
     }
   }
-
-
 }

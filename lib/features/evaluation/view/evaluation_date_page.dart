@@ -1,7 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:ta_client/core/widgets/custom_date_picker.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/widgets/custom_date_picker.dart';
 
 class EvaluationDateSelection extends StatefulWidget {
   const EvaluationDateSelection({super.key});
@@ -17,9 +18,7 @@ class _EvaluationDateSelectionState extends State<EvaluationDateSelection> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _showDatePickerModal();
-    });
+    Future.delayed(const Duration(milliseconds: 500), _showDatePickerModal);
   }
 
   void _showDatePickerModal() {

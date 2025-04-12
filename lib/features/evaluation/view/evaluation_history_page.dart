@@ -35,7 +35,7 @@ class EvaluationHistoryPage extends StatelessWidget {
         title: const Text('Riwayat Evaluasi'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -56,7 +56,7 @@ class EvaluationHistoryPage extends StatelessWidget {
                     ),
                     elevation: 2,
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(16),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -106,7 +106,7 @@ class EvaluationHistoryPage extends StatelessWidget {
                                 ),
                               ],
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),

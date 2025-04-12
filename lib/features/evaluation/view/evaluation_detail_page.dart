@@ -4,9 +4,9 @@ import 'package:ta_client/features/evaluation/view/widgets/custom_slider_single_
 import 'package:ta_client/features/evaluation/view/widgets/slider_limit_type.dart';
 
 class EvaluationDetailPage extends StatefulWidget {
-  final String id;
 
-  const EvaluationDetailPage({super.key, required this.id});
+  const EvaluationDetailPage({required this.id, super.key});
+  final String id;
 
   @override
   State<EvaluationDetailPage> createState() => _EvaluationDetailPageState();
@@ -85,8 +85,8 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: const [
+                          const Row(
+                            children: [
                               Icon(Icons.bar_chart),
                               SizedBox(width: 8),
                               Text('Statistik Rasio', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -111,17 +111,17 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                         const Divider(),
 
                         const SizedBox(height: 8),
-                        Row(
+                        const Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
+                          children: [
                             Text('Jumlah Transaksi', style: TextStyle(fontSize: 14)),
                             Text('42 transaksi', style: TextStyle(fontWeight: FontWeight.w500)),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Row(
+                        const Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
+                          children: [
                             Text('Rata-rata Per Bulan', style: TextStyle(fontSize: 14)),
                             Text('14 transaksi', style: TextStyle(fontWeight: FontWeight.w500)),
                           ],

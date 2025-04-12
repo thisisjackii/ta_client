@@ -1,8 +1,8 @@
 // lib/features/transaction/view/view_transaction_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ta_client/app/routes/routes.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_form.dart';
@@ -24,7 +24,7 @@ class ViewTransactionPage extends StatelessWidget {
               text: 'Transaction updated successfully!',
             );
             // Replace current page with a new Dashboard page so that data is refreshed.
-            Future.delayed(Duration(seconds: 1), () {
+            Future.delayed(const Duration(seconds: 1), () {
               Navigator.of(context).pushReplacementNamed(Routes.dashboard);
             });
           } else if (state.operation == TransactionOperation.delete) {
@@ -33,7 +33,7 @@ class ViewTransactionPage extends StatelessWidget {
               type: QuickAlertType.success,
               text: 'Transaction deleted successfully!',
             );
-            Future.delayed(Duration(seconds: 1), () {
+            Future.delayed(const Duration(seconds: 1), () {
               Navigator.of(context).pushReplacementNamed(Routes.dashboard);
             });
           }

@@ -6,7 +6,7 @@ class EvaluationIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color submitButtonColor = const Color(0xff237BF5);
+    const submitButtonColor = Color(0xff237BF5);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xffA7D1FF),
@@ -36,7 +36,6 @@ class EvaluationIntro extends StatelessWidget {
         children: [
           // Top Half: Full-width image (no padding)
           Expanded(
-            flex: 1,
             child: Image.asset(
               'assets/img/10078322.png',
               width: double.infinity,
@@ -46,9 +45,8 @@ class EvaluationIntro extends StatelessWidget {
 
           // Bottom Half: Centered texts & button, spaced around
           Expanded(
-            flex: 1,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,7 +74,7 @@ class EvaluationIntro extends StatelessWidget {
                       child: const Text(
                         'Mulai',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.white),
+                            fontWeight: FontWeight.bold, color: Colors.white,),
                       ),
                     ),
                   ),

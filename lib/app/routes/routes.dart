@@ -59,33 +59,33 @@ class Routes {
         );
       case statistik:
         return MaterialPageRoute(
-          builder: (_) => StatisticPieChart(),
+          builder: (_) => const StatisticPieChart(),
           settings: settings,
         );
       case evaluationIntro:
         return MaterialPageRoute(
-          builder: (_) => EvaluationIntro(),
+          builder: (_) => const EvaluationIntro(),
           settings: settings,
         );
       case evaluationDateSelection:
         return MaterialPageRoute(
-          builder: (_) => EvaluationDateSelection(),
+          builder: (_) => const EvaluationDateSelection(),
           settings: settings,
         );
       case evaluationDashboard:
         return MaterialPageRoute(
-          builder: (_) => EvaluationDashboard(),
+          builder: (_) => const EvaluationDashboard(),
           settings: settings,
         );
       case evaluationDetail:
-        final id = settings.arguments as String;
+        final id = settings.arguments! as String;
         return MaterialPageRoute(
           builder: (_) => EvaluationDetailPage(id: id),
           settings: settings,
         );
       case evaluationHistory:
         return MaterialPageRoute(
-          builder: (_) => EvaluationHistoryPage(),
+          builder: (_) => const EvaluationHistoryPage(),
           settings: settings,
         );
       // case editTransaction:

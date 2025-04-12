@@ -6,7 +6,7 @@ class EvaluationDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> evaluationData = [
+    final evaluationData = <Map<String, String>>[
       {'id': '0', 'yourRatio': '3 Bulan', 'idealRatio': '3 - 6 Bulan'},
       {'id': '1', 'yourRatio': '8%', 'idealRatio': '> 15%'},
       {'id': '2', 'yourRatio': '75%', 'idealRatio': '≤ 50%'},
@@ -17,10 +17,10 @@ class EvaluationDashboard extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Evaluasi',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
@@ -47,8 +47,8 @@ class EvaluationDashboard extends StatelessWidget {
           const SizedBox(height: 8),
 
           // [THE DATE RANGE WITH ICON]
-          Row(
-            children: const [
+          const Row(
+            children: [
               Icon(Icons.date_range, size: 16, color: Colors.grey),
               SizedBox(width: 4),
               Text(
@@ -67,7 +67,7 @@ class EvaluationDashboard extends StatelessWidget {
             itemBuilder: (context, index) {
               final data = evaluationData[index];
 
-              final List<String> ratioLabels = [
+              final ratioLabels = <String>[
                 'Rasio Likuiditas',
                 'Rasio aset lancar terhadap kekayaan bersih',
                 'Rasio utang terhadap aset',

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:ta_client/app/routes/routes.dart';
 
 class CustomBottomNavbar extends StatelessWidget {

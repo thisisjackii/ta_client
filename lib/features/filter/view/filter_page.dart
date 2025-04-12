@@ -23,7 +23,7 @@ class FilterPage extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
-            )
+            ),
           ],
         ),
       ),

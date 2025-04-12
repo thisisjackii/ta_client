@@ -31,60 +31,6 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   // Store filter criteria from the filter form.
   Map<String, dynamic>? filterCriteria;
 
-  // Callback to update the selected month.
-  void updateSelectedMonth(DateTime newMonth) {
-    setState(() {
-      selectedMonth = DateTime(newMonth.year, newMonth.month);
-    });
-  }
-
-  // Callback to update filter criteria (received from CustomAppBar).
-  void updateFilterCriteria(Map<String, dynamic>? criteria) {
-    setState(() {
-      filterCriteria = criteria;
-    });
-  }
-
-  // Filter and sort transactions using the selected month and filter criteria.
-  List<Transaction> _filterAndSortTransactions(List<Transaction> transactions) {
-    List<Transaction> filtered = transactions.where((t) {
-      // Apply the month filter.
-      bool monthMatch = t.date.year == selectedMonth.year && t.date.month == selectedMonth.month;
-
-      // Apply parent category filter.
-      bool parentMatch = filterCriteria == null || filterCriteria!['parent'] == null
-          ? true
-          : t.type == filterCriteria!['parent'];
-
-      // Apply child category filter.
-      // (Assuming your Transaction model has a property 'category')
-      bool childMatch = filterCriteria == null || filterCriteria!['child'] == null
-          ? true
-          : t.category == filterCriteria!['child'];
-
-      // Apply date range filter.
-      DateTime? startDate = filterCriteria?['startDate'] as DateTime?;
-      DateTime? endDate = filterCriteria?['endDate'] as DateTime?;
-      bool dateMatch = true;
-      if (startDate != null && endDate != null) {
-        // t.date must be between startDate and endDate (inclusive).
-        dateMatch = !t.date.isBefore(startDate) && !t.date.isAfter(endDate);
-      }
-
-      return monthMatch && parentMatch && childMatch && dateMatch;
-    }).toList();
-
-    // Sort descending: newest first.
-    filtered.sort((a, b) => b.date.compareTo(a.date));
-    return filtered;
-  }
-
-  void _onTabSelected(int index) {
-    setState(() {
-      _currentTab = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,14 +47,15 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
           } else if (state is DashboardLoaded) {
             final filteredItems = _filterAndSortTransactions(state.items);
             final totalPemasukan = filteredItems
-                .where((t) => t.type == "Pemasukan")
+                .where((t) => t.type == 'Pemasukan')
                 .fold<double>(0, (sum, t) => sum + t.amount);
             final totalPengeluaran = filteredItems
-                .where((t) => t.type == "Pengeluaran")
+                .where((t) => t.type == 'Pengeluaran')
                 .fold<double>(0, (sum, t) => sum + t.amount);
             final totalAkhir = totalPemasukan - totalPengeluaran;
             final formattedPemasukan = _rupiahFormatter.format(totalPemasukan);
-            final formattedPengeluaran = _rupiahFormatter.format(totalPengeluaran);
+            final formattedPengeluaran =
+                _rupiahFormatter.format(totalPengeluaran);
             final formattedAkhir = _rupiahFormatter.format(totalAkhir);
 
             return Column(
@@ -120,26 +67,56 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                     children: [
                       Column(
                         children: [
-                          const Text("Total Pemasukan",
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
-                          Text(formattedPemasukan,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Total Pemasukan',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                          Text(
+                            formattedPemasukan,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                       Column(
                         children: [
-                          const Text("Total Pengeluaran",
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
-                          Text(formattedPengeluaran,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Total Pengeluaran',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                          Text(
+                            formattedPengeluaran,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                       Column(
                         children: [
-                          const Text("Total",
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
-                          Text(formattedAkhir,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Total',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                          Text(
+                            formattedAkhir,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -158,10 +135,15 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(state.errorMessage, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    state.errorMessage,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => context.read<DashboardBloc>().add(DashboardReloadRequested()),
+                    onPressed: () => context
+                        .read<DashboardBloc>()
+                        .add(DashboardReloadRequested()),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -175,7 +157,8 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add',
         onPressed: () async {
-          final result = await Navigator.pushNamed(context, Routes.createTransaction);
+          final result =
+              await Navigator.pushNamed(context, Routes.createTransaction);
           if (context.mounted) {
             if (result is Transaction) {
               context.read<DashboardBloc>().add(DashboardItemAdded(result));
@@ -194,5 +177,62 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
         onTabSelected: _onTabSelected,
       ),
     );
+  }
+
+  // Callback to update filter criteria (received from CustomAppBar).
+  void updateFilterCriteria(Map<String, dynamic>? criteria) {
+    setState(() {
+      filterCriteria = criteria;
+    });
+  }
+
+  // Callback to update the selected month.
+  void updateSelectedMonth(DateTime newMonth) {
+    setState(() {
+      selectedMonth = DateTime(newMonth.year, newMonth.month);
+    });
+  }
+
+  // Filter and sort transactions using the selected month and filter criteria.
+  List<Transaction> _filterAndSortTransactions(List<Transaction> transactions) {
+    final filtered = transactions.where((t) {
+      // Apply the month filter.
+      final monthMatch = t.date.year == selectedMonth.year &&
+          t.date.month == selectedMonth.month;
+
+      // Apply parent category filter.
+      final parentMatch =
+          filterCriteria == null || filterCriteria!['parent'] == null
+              ? true
+              : t.type == filterCriteria!['parent'];
+
+      // Apply child category filter.
+      // (Assuming your Transaction model has a property 'category')
+      final childMatch =
+          filterCriteria == null || filterCriteria!['child'] == null
+              ? true
+              : t.category == filterCriteria!['child'];
+
+      // Apply date range filter.
+      final startDate = filterCriteria?['startDate'] as DateTime?;
+      final endDate = filterCriteria?['endDate'] as DateTime?;
+      var dateMatch = true;
+      if (startDate != null && endDate != null) {
+        // t.date must be between startDate and endDate (inclusive).
+        dateMatch = !t.date.isBefore(startDate) && !t.date.isAfter(endDate);
+      }
+
+      return monthMatch && parentMatch && childMatch && dateMatch;
+    }).toList();
+
+    // Sort descending: newest first.
+    filtered.sort((a, b) => b.date.compareTo(a.date));
+    return filtered;
+  }
+
+  void _onTabSelected(int index) {
+    setState(() {
+      _currentTab = index;
+    });
   }
 }

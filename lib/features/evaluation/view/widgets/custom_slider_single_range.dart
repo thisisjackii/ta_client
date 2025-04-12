@@ -1,35 +1,33 @@
-import 'package:flutter/material.dart';
 import 'package:another_xlider/another_xlider.dart';
 import 'package:another_xlider/models/handler.dart';
-import 'package:another_xlider/models/slider_step.dart';
 import 'package:another_xlider/models/tooltip/tooltip.dart';
 import 'package:another_xlider/models/tooltip/tooltip_box.dart';
 import 'package:another_xlider/models/trackbar.dart';
+import 'package:flutter/material.dart';
 import 'package:ta_client/features/evaluation/view/widgets/slider_limit_type.dart';
 
 class CustomSliderSingleRange extends StatelessWidget {
+  const CustomSliderSingleRange({
+    required this.yourRatio,
+    required this.limit,
+    required this.limitType,
+    super.key,
+  });
   final double yourRatio;
   final double limit;
   final SliderLimitType limitType;
 
-  const CustomSliderSingleRange({
-    super.key,
-    required this.yourRatio,
-    required this.limit,
-    required this.limitType,
-  });
-
   @override
   Widget build(BuildContext context) {
     // Determine min and max to center the ideal limit
-    double range = 30; // Half the range to extend left and right
-    double min = (limit - range).clamp(0, double.infinity);
-    double max = limit + range;
+    const double range = 30; // Half the range to extend left and right
+    final min = (limit - range).clamp(0, double.infinity);
+    final max = limit + range;
 
-    double clampedRatio = yourRatio.clamp(min, max);
+    final clampedRatio = yourRatio.clamp(min, max);
 
     // Determine if user's ratio is ideal
-    bool isIdeal = switch (limitType) {
+    final isIdeal = switch (limitType) {
       SliderLimitType.lessThan => yourRatio < limit,
       SliderLimitType.lessThanEqual => yourRatio <= limit,
       SliderLimitType.moreThan => yourRatio > limit,
@@ -48,10 +46,9 @@ class CustomSliderSingleRange extends StatelessWidget {
         // Slider
         FlutterSlider(
           key: ValueKey('single_slider_$yourRatio'),
-          values: [clampedRatio],
-          min: min,
+          values: [clampedRatio.toDouble()],
+          min: min.toDouble(),
           max: max,
-          step: FlutterSliderStep(step: 1),
           jump: true,
           disabled: true,
           handler: FlutterSliderHandler(
@@ -91,7 +88,10 @@ class CustomSliderSingleRange extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('${min.toInt()}%', style: const TextStyle(fontSize: 12)),
-            Text('${limit.toInt()}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(
+              '${limit.toInt()}%',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
             Text('${max.toInt()}%', style: const TextStyle(fontSize: 12)),
           ],
         ),
@@ -118,5 +118,3 @@ class CustomSliderSingleRange extends StatelessWidget {
     }
   }
 }
-
-

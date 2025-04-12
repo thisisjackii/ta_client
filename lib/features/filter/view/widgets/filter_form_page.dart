@@ -43,7 +43,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
       'Peralatan',
       'Surat Berharga',
       'Investasi Alternatif',
-      'Aset Pribadi'
+      'Aset Pribadi',
     ],
     'Liabilitas': ['Hutang', 'Perjanjian Tertulis', 'Mortgage Payable'],
     'Pemasukan': [
@@ -51,7 +51,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
       'Pendapatan Investasi',
       'Pendapatan Bunga',
       'Keuntungan Aset',
-      'Pendapatan Jasa'
+      'Pendapatan Jasa',
     ],
     'Pengeluaran': [
       'Tabungan',
@@ -63,7 +63,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
       'Hiburan & Rekreasi',
       'Pendidikan',
       'Kewajiban Finansial',
-      'Perumahan'
+      'Perumahan',
     ],
   };
 

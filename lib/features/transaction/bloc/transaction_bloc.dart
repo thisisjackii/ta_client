@@ -56,7 +56,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       );
       if (found) {
         emit(state.copyWith(
-            isLoading: false, isSuccess: true, createdTransaction: created));
+            isLoading: false, isSuccess: true, createdTransaction: created,),);
       } else {
         throw Exception('New transaction not found in updated dashboard data.');
       }

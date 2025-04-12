@@ -1,20 +1,17 @@
-import 'package:flutter/material.dart';
 import 'package:another_xlider/another_xlider.dart';
 import 'package:another_xlider/models/handler.dart';
-import 'package:another_xlider/models/slider_step.dart';
 import 'package:another_xlider/models/tooltip/tooltip.dart';
 import 'package:another_xlider/models/tooltip/tooltip_box.dart';
 import 'package:another_xlider/models/trackbar.dart';
+import 'package:flutter/material.dart';
 
 class CustomSliderDoubleRange extends StatelessWidget {
-  final double yourRatioValue;
-  final String id;
 
   const CustomSliderDoubleRange({
-    super.key,
-    required this.yourRatioValue,
-    required this.id,
+    required this.yourRatioValue, required this.id, super.key,
   });
+  final double yourRatioValue;
+  final String id;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +31,6 @@ class CustomSliderDoubleRange extends StatelessWidget {
               values: [yourRatioValue],
               max: 7,
               min: 2,
-              step: FlutterSliderStep(step: 1),
               jump: true,
               handler: FlutterSliderHandler(
                 decoration: const BoxDecoration(),
@@ -71,12 +67,12 @@ class CustomSliderDoubleRange extends StatelessWidget {
             const Positioned(
               top: 42,
               left: 48,
-              child: Text("3 Bulan", style: TextStyle(fontSize: 12)),
+              child: Text('3 Bulan', style: TextStyle(fontSize: 12)),
             ),
             const Positioned(
               top: 42,
               right: 48,
-              child: Text("6 Bulan", style: TextStyle(fontSize: 12)),
+              child: Text('6 Bulan', style: TextStyle(fontSize: 12)),
             ),
           ],
         ),
