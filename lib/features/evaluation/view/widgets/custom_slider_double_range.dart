@@ -1,15 +1,20 @@
 import 'package:another_xlider/another_xlider.dart';
 import 'package:another_xlider/models/handler.dart';
+import 'package:another_xlider/models/handler_animation.dart';
+import 'package:another_xlider/models/hatch_mark.dart';
+import 'package:another_xlider/models/hatch_mark_label.dart';
 import 'package:another_xlider/models/tooltip/tooltip.dart';
 import 'package:another_xlider/models/tooltip/tooltip_box.dart';
 import 'package:another_xlider/models/trackbar.dart';
 import 'package:flutter/material.dart';
 
 class CustomSliderDoubleRange extends StatelessWidget {
-
   const CustomSliderDoubleRange({
-    required this.yourRatioValue, required this.id, super.key,
+    required this.yourRatioValue,
+    required this.id,
+    super.key,
   });
+
   final double yourRatioValue;
   final String id;
 
@@ -23,58 +28,98 @@ class CustomSliderDoubleRange extends StatelessWidget {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        Stack(
-          alignment: Alignment.topCenter,
-          children: [
-            FlutterSlider(
-              key: ValueKey('slider_${id}_$yourRatioValue'),
-              values: [yourRatioValue],
-              max: 7,
-              min: 2,
-              jump: true,
-              handler: FlutterSliderHandler(
-                decoration: const BoxDecoration(),
-                child: const Icon(Icons.circle, color: Colors.grey),
-              ),
-              trackBar: FlutterSliderTrackBar(
-                inactiveTrackBarHeight: 12,
-                activeTrackBarHeight: 12,
-                inactiveTrackBar: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  gradient: const LinearGradient(
-                    colors: [
-                      Colors.redAccent,
-                      Colors.green,
-                      Colors.grey,
-                    ],
-                    stops: [0.2, 0.7, 1.0],
-                  ),
+        SizedBox(
+          height: 60,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Bottom Slider: Visual Range
+              FlutterSlider(
+                values: [3, 6],
+                rangeSlider: true,
+                max: 7,
+                min: 2,
+                disabled: true,
+                handler: FlutterSliderHandler(
+                  decoration: const BoxDecoration(),
+                  child: const Icon(Icons.circle, color: Colors.transparent),
                 ),
-              ),
-              tooltip: FlutterSliderTooltip(
-                alwaysShowTooltip: true,
-                format: (value) => '${value.split('.')[0]} bulan',
-                textStyle: const TextStyle(color: Colors.black),
-                boxStyle: FlutterSliderTooltipBox(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                rightHandler: FlutterSliderHandler(
+                  decoration: const BoxDecoration(),
+                  child: const Icon(Icons.circle, color: Colors.transparent),
+                ),
+                trackBar: FlutterSliderTrackBar(
+                  activeTrackBarHeight: 12,
+                  inactiveTrackBarHeight: 12,
+                  inactiveTrackBar: BoxDecoration(
+                    color: Colors.grey[300],
                     borderRadius: BorderRadius.circular(4),
                   ),
+                  activeTrackBar: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    gradient: const LinearGradient(
+                      colors: [Colors.orange, Colors.green, Colors.orange],
+                      stops: [0.05, 0.5, 0.95],
+                    ),
+                  ),
+                ),
+                tooltip: FlutterSliderTooltip(
+                  alwaysShowTooltip: true,
+                  textStyle: const TextStyle(color: Colors.black),
+                  boxStyle: FlutterSliderTooltipBox(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  custom: (dynamic value) {
+                    final int intValue = int.parse(value.toString().split('.')[0]);
+                    return Text('$intValue Bulan');
+                  },
                 ),
               ),
-              disabled: true,
-            ),
-            const Positioned(
-              top: 42,
-              left: 48,
-              child: Text('3 Bulan', style: TextStyle(fontSize: 12)),
-            ),
-            const Positioned(
-              top: 42,
-              right: 48,
-              child: Text('6 Bulan', style: TextStyle(fontSize: 12)),
-            ),
-          ],
+
+              // Top Slider: White handler with tooltip, based on yourRatioValue
+              FlutterSlider(
+                values: [yourRatioValue],
+                max: 7,
+                min: 2,
+                disabled: true,
+                handlerHeight: 32,
+                handlerWidth: 32,
+                handler: FlutterSliderHandler(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                    border: Border.all(color: Colors.black26),
+                  ),
+                  child: const Icon(Icons.circle, color: Colors.white, size: 10),
+                ),
+                tooltip: FlutterSliderTooltip(
+                  alwaysShowTooltip: true,
+                  textStyle: const TextStyle(color: Colors.black),
+                  boxStyle: FlutterSliderTooltipBox(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  custom: (dynamic value) {
+                    final int intValue = int.parse(value.toString().split('.')[0]);
+                    return Text('$intValue Bulan');
+                  },
+                ),
+                trackBar: FlutterSliderTrackBar(
+                  activeTrackBarHeight: 1,
+                  inactiveTrackBarHeight: 1,
+                  activeTrackBar: BoxDecoration(color: Colors.transparent),
+                  inactiveTrackBar: BoxDecoration(color: Colors.transparent),
+                ),
+              ),
+
+
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         const Text(

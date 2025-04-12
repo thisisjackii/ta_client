@@ -7,12 +7,13 @@ class EvaluationDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final evaluationData = <Map<String, String>>[
-      {'id': '0', 'yourRatio': '3 Bulan', 'idealRatio': '3 - 6 Bulan'},
+      {'id': '0', 'yourRatio': '4 Bulan', 'idealRatio': '3 - 6 Bulan'},
       {'id': '1', 'yourRatio': '8%', 'idealRatio': '> 15%'},
       {'id': '2', 'yourRatio': '75%', 'idealRatio': '≤ 50%'},
       {'id': '3', 'yourRatio': '51%', 'idealRatio': '≥ 10%'},
       {'id': '4', 'yourRatio': '92%', 'idealRatio': '> 45%'},
       {'id': '5', 'yourRatio': '36%', 'idealRatio': '≥ 50%'},
+      {'id': '6', 'yourRatio': '36%'},
     ];
 
     return Scaffold(
@@ -96,6 +97,7 @@ class EvaluationDashboard extends StatelessWidget {
                 'Rasio Tabungan',
                 'Rasio kemampuan pelunasan hutang',
                 'Aset investasi terhadap nilai bersih kekayaan',
+                'Rasio Solvabilitas',
               ];
 
               return Column(
@@ -120,7 +122,7 @@ class EvaluationDashboard extends StatelessWidget {
                     child: Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -142,7 +144,7 @@ class EvaluationDashboard extends StatelessWidget {
                                   Text(
                                     data['yourRatio'] ?? '',
                                     style: const TextStyle(
-                                      fontSize: 18,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -150,7 +152,8 @@ class EvaluationDashboard extends StatelessWidget {
                               ),
                             ),
                             // Ideal Ratio
-                            Expanded(
+                            if (data['id'] != '6')
+                              Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -165,7 +168,7 @@ class EvaluationDashboard extends StatelessWidget {
                                   Text(
                                     data['idealRatio'] ?? '',
                                     style: const TextStyle(
-                                      fontSize: 18,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -177,7 +180,7 @@ class EvaluationDashboard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                 ],
               );
             },

@@ -4,6 +4,7 @@ import 'package:ta_client/features/evaluation/view/widgets/custom_slider_single_
 import 'package:ta_client/features/evaluation/view/widgets/slider_limit_type.dart';
 import 'package:ta_client/features/evaluation/view/widgets/evaluation_detail_card.dart';
 import 'package:ta_client/features/evaluation/view/widgets/formula_explanation_dialog.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 class EvaluationDetailPage extends StatefulWidget {
 
@@ -23,7 +24,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
     super.initState();
     // Sample logic based on ID – can be dynamic later
     if (widget.id == '0') {
-      yourRatioValue = 3;
+      yourRatioValue = 4;
     } else if (widget.id == '1') {
       yourRatioValue = 8; // fallback or other values
     } else if (widget.id == '2') {
@@ -33,6 +34,8 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
     } else if (widget.id == '4') {
       yourRatioValue = 92; // fallback or other values
     } else if (widget.id == '5') {
+      yourRatioValue = 36; // fallback or other values
+    }  else if (widget.id == '6') {
       yourRatioValue = 36; // fallback or other values
     }
   }
@@ -46,6 +49,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
       '3': 'Rasio Tabungan',
       '4': 'Rasio kemampuan pelunasan hutang',
       '5': 'Aset investasi terhadap nilai bersih kekayaan',
+      '6': 'Rasio Solvabilitas',
     };
 
     return Scaffold(
@@ -62,7 +66,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
             ),
           ],
         ),
-        actions: [
+        actions: widget.id == '6' ? [] : [
           IconButton(
             icon: const Icon(Icons.info_rounded),
             onPressed: () {
@@ -92,6 +96,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -99,7 +104,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 // Left Text
                 Expanded(
                   child: Text(
-                    detailContent[widget.id] ?? 'No data available',
+                    detailContent[widget.id] ?? '',
                     style: const TextStyle(fontSize: 16),
                   ),
                 ),
@@ -107,7 +112,9 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 const SizedBox(width: 12),
 
                 // Right Hugging Card
-                Container(
+                widget.id == '6'
+                    ? const SizedBox.shrink()
+                    : Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey), // customize color
@@ -313,6 +320,72 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 valuesBelowDivider: [
                   {'label': 'Total', 'value': '-'},
                 ],
+              ),
+            ] else if (widget.id == '6') ...[
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Rasio solvabilitas ini menunjukkan (dalam persentase) seberapa rentan terhadap risiko kebangkrutan.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    Math.tex(
+                      r'\frac{\textit{Total Kekayaan Bersih}}{\textit{Total Aset}} \times 100\%',
+                      textStyle: const TextStyle(fontSize: 18),
+                      mathStyle: MathStyle.display,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              StatExpandableCard(
+                title: 'Total Kekayaan Bersih',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Saham', 'value': '15000'},
+                  {'label': 'Properti investasi', 'value': '5400'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '19400'},
+                ],
+              ),
+              StatExpandableCard(
+                title: 'Total Aset',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Pendapatan bulanan', 'value': '-'},
+                  {'label': 'Gaji', 'value': '-'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '-'},
+                ],
+              ),
+            ]  else ...[
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.do_not_disturb_on_rounded, size: 124, color: Colors.grey),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Oops! Belum ada data keuangan yang bisa dievaluasi.',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Pastikan Anda sudah mencatat transaksi terlebih dahulu',
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ],
           ],
