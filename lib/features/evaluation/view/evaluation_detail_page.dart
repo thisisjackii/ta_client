@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:ta_client/features/evaluation/view/widgets/custom_slider_double_range.dart';
 import 'package:ta_client/features/evaluation/view/widgets/custom_slider_single_range.dart';
 import 'package:ta_client/features/evaluation/view/widgets/slider_limit_type.dart';
+import 'package:ta_client/features/evaluation/view/widgets/evaluation_detail_card.dart';
+import 'package:ta_client/features/evaluation/view/widgets/formula_explanation_dialog.dart';
 
 class EvaluationDetailPage extends StatefulWidget {
 
@@ -22,117 +24,297 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
     // Sample logic based on ID – can be dynamic later
     if (widget.id == '0') {
       yourRatioValue = 3;
-    } else {
-      yourRatioValue = 45; // fallback or other values
+    } else if (widget.id == '1') {
+      yourRatioValue = 8; // fallback or other values
+    } else if (widget.id == '2') {
+      yourRatioValue = 75; // fallback or other values
+    } else if (widget.id == '3') {
+      yourRatioValue = 51; // fallback or other values
+    } else if (widget.id == '4') {
+      yourRatioValue = 92; // fallback or other values
+    } else if (widget.id == '5') {
+      yourRatioValue = 36; // fallback or other values
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final detailContent = {
-      '0': 'Detail for Rasio Keuangan 1',
-      '1': 'Detail for Rasio Keuangan 2',
-      '2': 'Detail for Rasio Keuangan 3',
-      '3': 'Detail for Rasio Keuangan 4',
-      '4': 'Detail for Rasio Keuangan 5',
-      '5': 'Detail for Rasio Keuangan 6',
+      '0': 'Rasio Likuiditas',
+      '1': 'Rasio aset lancar terhadap kekayaan bersih',
+      '2': 'Rasio utang terhadap aset',
+      '3': 'Rasio Tabungan',
+      '4': 'Rasio kemampuan pelunasan hutang',
+      '5': 'Aset investasi terhadap nilai bersih kekayaan',
     };
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Detail Rasio ${int.parse(widget.id) + 1}'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Ringkasan',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_rounded),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    title: const Text('Penjelasan Rasio'),
+                    content: FormulaExplanationDialog(id: widget.id),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Tutup'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+
+          ),
+        ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              detailContent[widget.id] ?? 'No data available',
-              style: const TextStyle(fontSize: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left Text
+                Expanded(
+                  child: Text(
+                    detailContent[widget.id] ?? 'No data available',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Right Hugging Card
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey), // customize color
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'Status',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
             ),
+
             const SizedBox(height: 32),
             if (widget.id == '0') ...[
               CustomSliderDoubleRange(
                 id: widget.id,
                 yourRatioValue: yourRatioValue,
               ),
-            ]
-            else if (widget.id == '1') ...[
+              const SizedBox(height: 32),
+              StatExpandableCard(
+                title: 'Aset Likuid',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Gaji', 'value': '15000'},
+                  {'label': 'Uang di Bank', 'value': '5400'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '19400'},
+                ],
+              ),
+              StatExpandableCard(
+                title: 'Rata-rata pengeluaran bulanan',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Gaji', 'value': '15000'},
+                  {'label': 'Uang di Bank', 'value': '5400'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '19400'},
+                ],
+              ),
+            ] else if (widget.id == '1') ...[
+              CustomSliderSingleRange(
+                yourRatio: yourRatioValue,
+                limit: 15,
+                limitType: SliderLimitType.moreThan,
+              ),
+              const SizedBox(height: 32),
+              StatExpandableCard(
+                title: 'Aset Likuid',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Gaji', 'value': '15000'},
+                  {'label': 'Uang di Bank', 'value': '5400'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '19400'},
+                ],
+              ),
+              StatExpandableCard(
+                title: 'Aset Non-Likuid',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Aset Non-Likuid 1', 'value': '-'},
+                  {'label': 'Aset Non-Likuid 2', 'value': '-'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '-'},
+                ],
+              ),
+              StatExpandableCard(
+                title: 'Kewajiban (Liabilitas)',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Contoh Kewajiban 1', 'value': '-'},
+                  {'label': 'Contoh Kewajiban 2', 'value': '-'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '-'},
+                ],
+              ),
+            ] else if (widget.id == '2') ...[
               CustomSliderSingleRange(
                 yourRatio: yourRatioValue,
                 limit: 50,
                 limitType: SliderLimitType.lessThanEqual,
               ),
-            ],
-
-            const SizedBox(height: 32),
-
-            /// Expandable Card Here
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  setState(() => isExpanded = !isExpanded);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // Header Row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.bar_chart),
-                              SizedBox(width: 8),
-                              Text('Statistik Rasio', style: TextStyle(fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Icon(Icons.info_outline, color: Colors.grey[600]),
-                              const SizedBox(width: 8),
-                              Icon(
-                                isExpanded ? Icons.expand_less : Icons.expand_more,
-                                color: Colors.grey[600],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
-                      // Expanded Content
-                      if (isExpanded) ...[
-                        const SizedBox(height: 16),
-                        const Divider(),
-
-                        const SizedBox(height: 8),
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Jumlah Transaksi', style: TextStyle(fontSize: 14)),
-                            Text('42 transaksi', style: TextStyle(fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Rata-rata Per Bulan', style: TextStyle(fontSize: 14)),
-                            Text('14 transaksi', style: TextStyle(fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+              const SizedBox(height: 32),
+              StatExpandableCard(
+                title: 'Utang',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Utang 1', 'value': '15000'},
+                  {'label': 'Utang 2', 'value': '5400'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '19400'},
+                ],
               ),
-            ),
-
+              StatExpandableCard(
+                title: 'Aset',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Aset 1', 'value': '-'},
+                  {'label': 'Aset 2', 'value': '-'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '-'},
+                ],
+              ),
+            ] else if (widget.id == '3') ...[
+              CustomSliderSingleRange(
+                yourRatio: yourRatioValue,
+                limit: 10,
+                limitType: SliderLimitType.moreThanEqual,
+              ),
+              const SizedBox(height: 32),
+              StatExpandableCard(
+                title: 'Tabungan',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Rekening tabungan', 'value': '15000'},
+                  {'label': 'Deposito', 'value': '5400'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '19400'},
+                ],
+              ),
+              StatExpandableCard(
+                title: 'Penghasilan Kotor',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Gaji', 'value': '-'},
+                  {'label': 'Pendapatan bulanan', 'value': '-'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '-'},
+                ],
+              ),
+            ] else if (widget.id == '4') ...[
+              CustomSliderSingleRange(
+                yourRatio: yourRatioValue,
+                limit: 45,
+                limitType: SliderLimitType.moreThan,
+              ),
+              const SizedBox(height: 32),
+              StatExpandableCard(
+                title: 'Pembayaran Utang',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Rekening tabungan', 'value': '15000'},
+                  {'label': 'Kartu kredit', 'value': '5400'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '19400'},
+                ],
+              ),
+              StatExpandableCard(
+                title: 'Penghasilan Bersih',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Pendapatan bulanan', 'value': '-'},
+                  {'label': 'Gaji', 'value': '-'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '-'},
+                ],
+              ),
+            ] else if (widget.id == '5') ...[
+              CustomSliderSingleRange(
+                yourRatio: yourRatioValue,
+                limit: 50,
+                limitType: SliderLimitType.moreThanEqual,
+              ),
+              const SizedBox(height: 32),
+              StatExpandableCard(
+                title: 'Pembayaran Utang',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Saham', 'value': '15000'},
+                  {'label': 'Properti investasi', 'value': '5400'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '19400'},
+                ],
+              ),
+              StatExpandableCard(
+                title: 'Nilai Bersih Kekayaan',
+                icon: Icons.bar_chart,
+                valuesAboveDivider: [
+                  {'label': 'Pendapatan bulanan', 'value': '-'},
+                  {'label': 'Gaji', 'value': '-'},
+                ],
+                valuesBelowDivider: [
+                  {'label': 'Total', 'value': '-'},
+                ],
+              ),
+            ],
           ],
         ),
       ),

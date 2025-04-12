@@ -32,7 +32,13 @@ class EvaluationHistoryPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat Evaluasi'),
+        title: const Text(
+          'Riwayat Evaluasi',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -60,7 +66,8 @@ class EvaluationHistoryPage extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.date_range, size: 24, color: Colors.blue),
+                          const Icon(Icons.date_range,
+                              size: 24, color: Colors.blue),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(

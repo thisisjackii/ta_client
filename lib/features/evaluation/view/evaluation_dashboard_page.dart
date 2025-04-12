@@ -20,9 +20,12 @@ class EvaluationDashboard extends StatelessWidget {
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Evaluasi',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            const Text(
+              'Evaluasi Keuangan',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -47,16 +50,35 @@ class EvaluationDashboard extends StatelessWidget {
           const SizedBox(height: 8),
 
           // [THE DATE RANGE WITH ICON]
-          const Row(
-            children: [
-              Icon(Icons.date_range, size: 16, color: Colors.grey),
-              SizedBox(width: 4),
-              Text(
-                '{tanggal mulai} - {tanggal akhir}', // Placeholder
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+          Center(
+            child: Card(
+              elevation: 2, // <- subtle shadow
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min, // <- hugs the content width
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.date_range, size: 16, color: Colors.grey),
+                    SizedBox(width: 6),
+                    Text(
+                      '{tanggal mulai} - {tanggal akhir}', // Placeholder
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
+
+
           const SizedBox(height: 16),
 
           // [LOOP OF THE CARDS]

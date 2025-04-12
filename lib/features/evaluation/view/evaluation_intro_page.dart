@@ -57,10 +57,12 @@ class EvaluationIntro extends StatelessWidget {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   const Text(
                     'Ingin tahu ke mana uangmu pergi? Cek kesehatan keuanganmu dengan mencatat transaksi secara rutin. Dijamin gak ribet!',
                     style: TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
                   ),
                   SizedBox(
                     width: double.infinity,
