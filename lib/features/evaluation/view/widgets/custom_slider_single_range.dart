@@ -1,8 +1,11 @@
 import 'package:another_xlider/another_xlider.dart';
 import 'package:another_xlider/models/handler.dart';
+import 'package:another_xlider/models/hatch_mark.dart';
+import 'package:another_xlider/models/hatch_mark_label.dart';
 import 'package:another_xlider/models/tooltip/tooltip.dart';
 import 'package:another_xlider/models/tooltip/tooltip_box.dart';
 import 'package:another_xlider/models/trackbar.dart';
+import 'package:another_xlider/widgets/sized_box.dart';
 import 'package:flutter/material.dart';
 import 'package:ta_client/features/evaluation/view/widgets/slider_limit_type.dart';
 
@@ -13,6 +16,7 @@ class CustomSliderSingleRange extends StatelessWidget {
     required this.limitType,
     super.key,
   });
+
   final double yourRatio;
   final double limit;
   final SliderLimitType limitType;
@@ -21,10 +25,9 @@ class CustomSliderSingleRange extends StatelessWidget {
   Widget build(BuildContext context) {
     // Determine min and max to center the ideal limit
     const double range = 30; // Half the range to extend left and right
-    final min = (limit - range).clamp(0, double.infinity);
-    final max = limit + range;
-
-    final clampedRatio = yourRatio.clamp(min, max);
+    final min = (limit - range).clamp(0, double.infinity).toDouble();
+    final max = (limit + range).toDouble();
+    final clampedRatio = yourRatio.clamp(min, max).toDouble();
 
     // Determine if user's ratio is ideal
     final isIdeal = switch (limitType) {
@@ -43,47 +46,91 @@ class CustomSliderSingleRange extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Slider
-        FlutterSlider(
-          key: ValueKey('single_slider_$yourRatio'),
-          values: [clampedRatio.toDouble()],
-          min: min.toDouble(),
-          max: max,
-          jump: true,
-          disabled: true,
-          handler: FlutterSliderHandler(
-            decoration: const BoxDecoration(),
-            child: Icon(
-              Icons.circle,
-              color: isIdeal ? Colors.green : Colors.red,
-            ),
-          ),
-          trackBar: FlutterSliderTrackBar(
-            inactiveTrackBarHeight: 12,
-            activeTrackBarHeight: 12,
-            inactiveTrackBar: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              color: Colors.grey[300],
-            ),
-            activeTrackBar: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              color: isIdeal ? Colors.green : Colors.redAccent,
-            ),
-          ),
-          tooltip: FlutterSliderTooltip(
-            alwaysShowTooltip: true,
-            format: (_) => '${yourRatio.toStringAsFixed(0)}%',
-            textStyle: const TextStyle(color: Colors.black),
-            boxStyle: FlutterSliderTooltipBox(
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(4),
+        // SLIDER AREA (Stack with dual overlays)
+        Stack(
+          alignment: Alignment.center,
+          children: [
+
+            // Base slider with fixed min-max handlers
+            FlutterSlider(
+              values: [min, max],
+              rangeSlider: true,
+              min: min,
+              max: max,
+              jump: true,
+              disabled: true,
+              handler: FlutterSliderHandler(
+                decoration: const BoxDecoration(),
+                child: const Icon(Icons.circle, color: const Color(0xffB5B5B5)),
+              ),
+              rightHandler: FlutterSliderHandler(
+                decoration: const BoxDecoration(),
+                child: const Icon(Icons.circle, color: const Color(0xffE5E5E5)),
               ),
             ),
-          ),
+
+            // Foreground slider showing user's ratio
+            FlutterSlider(
+              key: ValueKey('single_slider_$yourRatio'),
+              values: [clampedRatio],
+              min: min,
+              max: max,
+              jump: true,
+              disabled: true,
+              handler: FlutterSliderHandler(
+                decoration: const BoxDecoration(),
+                child: Icon(
+                  Icons.circle,
+                  color: isIdeal ? Colors.green : Colors.red,
+                ),
+              ),
+              trackBar: FlutterSliderTrackBar(
+                inactiveTrackBarHeight: 12,
+                activeTrackBarHeight: 12,
+                inactiveTrackBar: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  color: Colors.transparent,
+                ),
+                activeTrackBar: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  color: isIdeal ? Colors.green : Colors.red,
+                ),
+                activeTrackBarDraggable: false,
+              ),
+              tooltip: FlutterSliderTooltip(
+                alwaysShowTooltip: true,
+                format: (_) => '${yourRatio.toStringAsFixed(0)}%',
+                textStyle: const TextStyle(color: Colors.black),
+                boxStyle: FlutterSliderTooltipBox(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              hatchMark: FlutterSliderHatchMark(
+                displayLines: true,
+                density: 0.4, // Adjust based on how many ticks you want
+                smallLine: FlutterSliderSizedBox(
+                  width: 1,
+                  height: 6,
+                  decoration: BoxDecoration(color: Colors.grey),
+                ),
+                bigLine: FlutterSliderSizedBox(
+                  width: 2,
+                  height: 10,
+                  decoration: BoxDecoration(color: Colors.grey),
+                ),
+              ),
+
+            ),
+
+          ],
         ),
 
         const SizedBox(height: 8),
+
+        // Min, ideal, max labels (optional if hatch marks already show them)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -97,8 +144,11 @@ class CustomSliderSingleRange extends StatelessWidget {
         ),
 
         const SizedBox(height: 16),
+
+        // Description
         Text(
-          'Nilai ideal adalah ${_limitTypeLabel(limitType)} $limit%. Rasio kamu saat ini adalah $yourRatio%.',
+          'Nilai ideal adalah ${_limitTypeLabel(limitType)} $limit%. '
+              'Rasio kamu saat ini adalah $yourRatio%.',
           style: const TextStyle(fontSize: 14),
         ),
       ],
@@ -118,3 +168,4 @@ class CustomSliderSingleRange extends StatelessWidget {
     }
   }
 }
+
