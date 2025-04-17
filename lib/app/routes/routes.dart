@@ -14,11 +14,20 @@ class Routes {
   static const viewTransaction = '/view-transaction';
   static const filter = '/filter';
   static const statistik = '/statistik';
+
   static const evaluationIntro = '/evaluation-intro';
   static const evaluationDateSelection = '/evaluation-date-selection';
   static const evaluationDashboard = '/evaluation-dashboard';
   static const evaluationDetail = '/evaluation-detail';
   static const evaluationHistory = '/evaluation-history';
+
+  static const budgetingIntro = '/budgeting-intro';
+  static const budgetingIncome = '/budgeting-income';
+  static const budgetingIncomeDate = '/budgeting-income-date';
+  static const budgetingAllocationDate = '/budgeting-allocation-date';
+  static const budgetingAllocationPage = '/budgeting-allocation-page';
+  static const budgetingAllocationExpense = '/budgeting-allocation-expense';
+  static const budgetingDashboard = '/budgeting-dashboard';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -86,6 +95,41 @@ class Routes {
       case evaluationHistory:
         return MaterialPageRoute(
           builder: (_) => const EvaluationHistoryPage(),
+          settings: settings,
+        );
+      case budgetingIntro:
+        return MaterialPageRoute(
+          builder: (_) => const BudgetingIntro(),
+          settings: settings,
+        );
+      case budgetingIncome:
+        return MaterialPageRoute(
+          builder: (_) => const BudgetingIncome(),
+          settings: settings,
+        );
+      case budgetingIncomeDate:
+        return MaterialPageRoute(
+          builder: (_) => const BudgetingIncomeDate(),
+          settings: settings,
+        );
+      case budgetingAllocationDate:
+        return MaterialPageRoute(
+          builder: (_) => const BudgetingAllocationDate(),
+          settings: settings,
+        );
+      case budgetingAllocationPage:
+        return MaterialPageRoute(
+          builder: (_) => const BudgetingAllocation(),
+          settings: settings,
+        );
+      case budgetingAllocationExpense:
+        return MaterialPageRoute(
+          builder: (_) => const BudgetingAllocationExpense(),
+          settings: settings,
+        );
+      case budgetingDashboard:
+        return MaterialPageRoute(
+          builder: (_) => const BudgetingDashboard(),
           settings: settings,
         );
       // case editTransaction:

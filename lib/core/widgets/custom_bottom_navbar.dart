@@ -39,10 +39,14 @@ class CustomBottomNavbar extends StatelessWidget {
             ]),
             _buildTabItems([
               _TabItem(
-                label: 'Stat',
-                icon: Icons.insert_chart_rounded,
+                label: 'Budgeting',
+                icon: Icons.attach_money_rounded,
                 isSelected: currentTab == 2,
-                onTap: () => onTabSelected(2),
+                onTap: () async {
+                  final result = await Navigator.pushNamed(context, Routes.budgetingIntro);
+                  // Do something with the result if needed
+                  print('Returned from BudgetingIntro: $result');
+                },
               ),
               _TabItem(
                 label: 'Akun',

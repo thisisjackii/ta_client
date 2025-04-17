@@ -1,4 +1,11 @@
 // screens/screens.dart
+export '../../features/budgeting/view/budgeting_intro_page.dart';
+export '../../features/budgeting/view/budgeting_income_page.dart';
+export '../../features/budgeting/view/budgeting_allocation_date.dart';
+export '../../features/budgeting/view/budgeting_income_date.dart';
+export '../../features/budgeting/view/budgeting_allocation_page.dart';
+export '../../features/budgeting/view/budgeting_allocation_expense.dart';
+export '../../features/budgeting/view/budgeting_dashboard.dart';
 export '../../features/evaluation/view/evaluation_dashboard_page.dart';
 export '../../features/evaluation/view/evaluation_date_page.dart';
 export '../../features/evaluation/view/evaluation_detail_page.dart';
@@ -13,3 +20,4 @@ export '../../features/transaction/view/create_transaction_page.dart';
 export '../../features/transaction/view/dashboard_page.dart';
 export '../../features/transaction/view/view_transaction_page.dart';
 export '../../features/welcome/view/welcome_page.dart';
+
