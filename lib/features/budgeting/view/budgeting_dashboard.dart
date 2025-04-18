@@ -23,15 +23,21 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
 
   final Map<String, double> allocationValues = {
     '0': 0.0,
-    '1': 10.0,
-    '2': 35.0,
+    '1': 150000.0,
+    '2': 150000.0,
   };
 
   final Map<String, double> allocationTargets = {
-    '0': 0.0,
-    '1': 35.0,
-    '2': 35.0,
+    '0': 3500000.0,
+    '1': 750000.0,
+    '2': 150000.0,
   };
+
+  final NumberFormat currencyFormatter = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp. ',
+    decimalDigits: 0,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -103,17 +109,22 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
               final data = allocationData[index];
               final id = data['id']!;
               final title = data['Title']!;
-              final value = allocationValues[id] ?? 0.0;
-              final target = 35.0;
-              final percentage = ((value / target) * 100).toDouble();
+
+              final currentValue = allocationValues[id] ?? 0.0;
+              final targetValue = allocationTargets[id] ?? 0.0;
+              final targetMaxPercent = 35.0;
+
+              final valueRatio = (targetValue == 0.0) ? 0.0 : (currentValue / targetValue);
+              final currentPercentage = targetMaxPercent * valueRatio;
+              final targetPercentage = targetMaxPercent;
 
               final subItems = ['Expense 1', 'Expense 2', 'Expense 3', 'Expense 4'];
               final selectedSubItems = selectedSubExpenses[id] ?? <String>{};
               final isExpanded = expandedCardIds.contains(id);
 
               Color getProgressColor(double percent) {
-                if (percent <= 32) return Colors.green;
-                if (percent <= 65) return Colors.orange;
+                if (percent <= targetMaxPercent * 0.32) return Colors.green;
+                if (percent <= targetMaxPercent * 0.65) return Colors.orange;
                 return Colors.red;
               }
 
@@ -121,7 +132,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                 key: Key(id),
                 direction: DismissDirection.horizontal,
                 confirmDismiss: (direction) async {
-                  if (percentage > 0) {
+                  if (valueRatio > 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("Alokasi '$title' tidak bisa dihapus karena masih memiliki persentase.")),
                     );
@@ -187,9 +198,32 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('Rp ${value.toStringAsFixed(0)}'),
-                                  Text('${value.toStringAsFixed(0)}% / ${target.toStringAsFixed(0)}%',
-                                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '${currencyFormatter.format(currentValue)} /',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w300,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        ' ${currencyFormatter.format(targetValue)}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text('(${currentPercentage.toStringAsFixed(1)}% / ${targetPercentage.toStringAsFixed(1)}%)',
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
                                 ],
                               ),
                             ],
@@ -199,20 +233,21 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                             alignment: Alignment.center,
                             children: [
                               LinearProgressIndicator(
-                                value: (percentage / 100),
+                                value: valueRatio.clamp(0.0, 1.0),
                                 minHeight: 18,
                                 borderRadius: BorderRadius.circular(6),
                                 backgroundColor: Colors.grey[300],
-                                valueColor: AlwaysStoppedAnimation(getProgressColor(percentage)),
+                                valueColor: AlwaysStoppedAnimation(getProgressColor(currentPercentage)),
                               ),
                               Text(
-                                '${percentage.toStringAsFixed(0)}%',
+                                '${(valueRatio * 100).toStringAsFixed(1)}%',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
+
                             ],
                           ),
 
@@ -229,7 +264,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                                     dense: true,
                                     controlAffinity: ListTileControlAffinity.leading,
                                     title: Text(item),
-                                    onChanged: (percentage > 0)
+                                    onChanged: (valueRatio > 0)
                                         ? null // disabled
                                         : (val) {
                                       setState(() {
@@ -247,7 +282,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                                 Align(
                                   alignment: Alignment.centerRight,
                                   child: TextButton.icon(
-                                    onPressed: (percentage > 0)
+                                    onPressed: (valueRatio > 0)
                                         ? null // disabled
                                         : () {
                                       debugPrint('Saved selections for $id: ${selectedSubItems.join(', ')}');
@@ -256,7 +291,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                                     label: const Text('Save'),
                                   ),
                                 ),
-                                if (percentage > 0)
+                                if (valueRatio > 0)
                                   Padding(
                                     padding: const EdgeInsets.symmetric(vertical: 8),
                                     child: Text(

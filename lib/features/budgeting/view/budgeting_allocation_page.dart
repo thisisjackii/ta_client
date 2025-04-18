@@ -24,9 +24,10 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
   };
   final Set<String> selectedIds = {};
 
-  double get totalAllocation => allocationValues.entries
-      .where((entry) => selectedIds.contains(entry.key))
-      .fold(0.0, (sum, entry) => sum + entry.value);
+  double get totalAllocation {
+    return selectedIds.fold(0.0, (sum, id) => sum + (allocationValues[id] ?? 0));
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +106,13 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
               final data = allocationData[index];
               final id = data['id']!;
               final isSelected = selectedIds.contains(id);
+              double _getMaxFor(String id) {
+                double othersTotal = selectedIds
+                    .where((otherId) => otherId != id)
+                    .fold(0.0, (sum, otherId) => sum + (allocationValues[otherId] ?? 0.0));
 
+                return (100.0 - othersTotal).clamp(0.0, 100.0);
+              }
               return Card(
                 color: isSelected ? Colors.white : Colors.grey[200],
                 margin: const EdgeInsets.only(bottom: 12),
@@ -153,14 +160,38 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
                       ),
                       FlutterSlider(
                         values: [allocationValues[id]!],
-                        max: 100,
+                        max: 100, // Always 100 visually
                         min: 0,
                         disabled: !isSelected,
                         onDragging: (handlerIndex, lowerValue, upperValue) {
                           setState(() {
-                            allocationValues[id] = (lowerValue as num).toDouble();
+                            final newValue = (lowerValue as num).toDouble();
+
+                            final othersTotal = selectedIds
+                                .where((otherId) => otherId != id)
+                                .fold(0.0, (sum, otherId) => sum + (allocationValues[otherId] ?? 0));
+
+                            final maxAvailableForThis = (100.0 - othersTotal).clamp(0.0, 100.0);
+
+                            if (newValue > maxAvailableForThis) {
+                              // Show snackbar only if exceeding
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text("⚠️ Tidak dapat melebihi total di atas 100%"),
+                                  backgroundColor: Colors.red[400],
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+
+                            // Clamp the value regardless
+                            allocationValues[id] = newValue.clamp(0.0, maxAvailableForThis);
                           });
                         },
+
+
+
                       ),
                     ],
                   ),
