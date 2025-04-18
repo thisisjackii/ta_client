@@ -174,19 +174,6 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
                                   },
                                 );
                               }).toList(),
-
-                              // Save button aligned to the right
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton.icon(
-                                  onPressed: () {
-                                    // Handle save logic if needed
-                                    debugPrint('Saved selections for $id: ${selectedSubItems.join(', ')}');
-                                  },
-                                  icon: const Icon(Icons.save_alt_rounded, size: 18),
-                                  label: const Text('Save'),
-                                ),
-                              ),
                             ],
                           ),
                       ],

@@ -2,6 +2,7 @@ import 'package:another_xlider/another_xlider.dart';
 import 'package:flutter/material.dart';
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:intl/intl.dart';
+import 'package:ta_client/features/budgeting/view/widgets/allocation_card.dart';
 
 class BudgetingDashboard extends StatefulWidget {
   const BudgetingDashboard({super.key});
@@ -21,13 +22,13 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
   ];
 
   final Map<String, double> allocationValues = {
-    '0': 20.0,
+    '0': 0.0,
     '1': 10.0,
     '2': 35.0,
   };
 
   final Map<String, double> allocationTargets = {
-    '0': 35.0,
+    '0': 0.0,
     '1': 35.0,
     '2': 35.0,
   };
@@ -61,31 +62,39 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
         padding: const EdgeInsets.all(16),
         children: [
           // Allocation Funds Card
-          Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Text(
-                    'Allocation Funds',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  const Text('Rp. 0'), // Placeholder value
-                ],
+          ExpandableAllocationCard(),
+          // Title
+          Center(
+            child: Card(
+              elevation: 2, // <- subtle shadow
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min, // <- hugs the content width
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.date_range, size: 16, color: Colors.grey),
+                    SizedBox(width: 6),
+                    Text(
+                      '{tanggal mulai} - {tanggal akhir}', // Placeholder
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
 
-          // Title
-          const Text(
-            'February 2025',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
           const SizedBox(height: 12),
 
-          // Cards from allocationData
+                 // Cards from allocationData
           ListView.builder(
             itemCount: allocationData.length,
             shrinkWrap: true,
@@ -108,105 +117,165 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                 return Colors.red;
               }
 
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    if (isExpanded) {
-                      expandedCardIds.remove(id);
-                    } else {
-                      expandedCardIds.add(id);
-                    }
-                  });
-                },
-                child: Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.category),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text('Rp ${value.toStringAsFixed(0)}'),
-                                Text('${value.toStringAsFixed(0)}% / ${target.toStringAsFixed(0)}%',
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            LinearProgressIndicator(
-                              value: (percentage / 100),
-                              minHeight: 18,
-                              borderRadius: BorderRadius.circular(6),
-                              backgroundColor: Colors.grey[300],
-                              valueColor: AlwaysStoppedAnimation(getProgressColor(percentage)),
-                            ),
-                            Text(
-                              '${percentage.toStringAsFixed(0)}%',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
+              return Dismissible(
+                key: Key(id),
+                direction: DismissDirection.horizontal,
+                confirmDismiss: (direction) async {
+                  if (percentage > 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Alokasi '$title' tidak bisa dihapus karena masih memiliki persentase.")),
+                    );
+                    return false;
+                  }
 
-                        if (isExpanded) ...[
-                          const SizedBox(height: 12),
-                          Column(
+                  return await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Hapus Alokasi?'),
+                      content: Text("Apakah kamu yakin ingin menghapus '$title'?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Batal'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('Hapus'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+
+                onDismissed: (direction) {
+                  setState(() {
+                    allocationData.removeAt(index);
+                    allocationValues.remove(id);
+                    selectedSubExpenses.remove(id);
+                    expandedCardIds.remove(id);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("'$title' telah dihapus")),
+                  );
+                },
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (isExpanded) {
+                        expandedCardIds.remove(id);
+                      } else {
+                        expandedCardIds.add(id);
+                      }
+                    });
+                  },
+
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // --- Your card content remains unchanged ---
+                          Row(
                             children: [
-                              ...subItems.map((item) {
-                                final isSelected = selectedSubItems.contains(item);
-                                return CheckboxListTile(
-                                  value: isSelected,
-                                  contentPadding: EdgeInsets.zero,
-                                  dense: true,
-                                  controlAffinity: ListTileControlAffinity.leading,
-                                  title: Text(item),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      final current = selectedSubExpenses[id] ?? <String>{};
-                                      if (val == true) {
-                                        current.add(item);
-                                      } else {
-                                        current.remove(item);
-                                      }
-                                      selectedSubExpenses[id] = current;
-                                    });
-                                  },
-                                );
-                              }).toList(),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton.icon(
-                                  onPressed: () {
-                                    debugPrint('Saved selections for $id: ${selectedSubItems.join(', ')}');
-                                  },
-                                  icon: const Icon(Icons.save_alt_rounded, size: 18),
-                                  label: const Text('Save'),
+                              const Icon(Icons.category),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text('Rp ${value.toStringAsFixed(0)}'),
+                                  Text('${value.toStringAsFixed(0)}% / ${target.toStringAsFixed(0)}%',
+                                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              LinearProgressIndicator(
+                                value: (percentage / 100),
+                                minHeight: 18,
+                                borderRadius: BorderRadius.circular(6),
+                                backgroundColor: Colors.grey[300],
+                                valueColor: AlwaysStoppedAnimation(getProgressColor(percentage)),
+                              ),
+                              Text(
+                                '${percentage.toStringAsFixed(0)}%',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
                             ],
                           ),
+
+                          // --- Expanded content ---
+                          if (isExpanded) ...[
+                            const SizedBox(height: 12),
+                            Column(
+                              children: [
+                                ...subItems.map((item) {
+                                  final isSelected = selectedSubItems.contains(item);
+                                  return CheckboxListTile(
+                                    value: isSelected,
+                                    contentPadding: EdgeInsets.zero,
+                                    dense: true,
+                                    controlAffinity: ListTileControlAffinity.leading,
+                                    title: Text(item),
+                                    onChanged: (percentage > 0)
+                                        ? null // disabled
+                                        : (val) {
+                                      setState(() {
+                                        final current = selectedSubExpenses[id] ?? <String>{};
+                                        if (val == true) {
+                                          current.add(item);
+                                        } else {
+                                          current.remove(item);
+                                        }
+                                        selectedSubExpenses[id] = current;
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton.icon(
+                                    onPressed: (percentage > 0)
+                                        ? null // disabled
+                                        : () {
+                                      debugPrint('Saved selections for $id: ${selectedSubItems.join(', ')}');
+                                    },
+                                    icon: const Icon(Icons.save_alt_rounded, size: 18),
+                                    label: const Text('Save'),
+                                  ),
+                                ),
+                                if (percentage > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    child: Text(
+                                      'Edit dinonaktifkan karena alokasi belum 0%',
+                                      style: TextStyle(fontSize: 12, color: Colors.red[400]),
+                                    ),
+                                  ),
+
+                              ],
+                            ),
+                          ],
+
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
               );
+
             },
           ),
 

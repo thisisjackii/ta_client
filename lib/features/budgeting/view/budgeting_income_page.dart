@@ -11,9 +11,9 @@ class BudgetingIncome extends StatefulWidget {
 
 class _BudgetingIncomeState extends State<BudgetingIncome> {
   final incomeData = <Map<String, String>>[
-    {'id': '0', 'Title': 'Rumah', 'Value': 'Rp. 1.500.000'},
-    {'id': '1', 'Title': 'Sosial', 'Value': 'Rp. 500.000'},
-    {'id': '2', 'Title': 'Tabungan', 'Value': 'Rp. 700.000'},
+    {'id': '0', 'Title': 'Gaji', 'Value': 'Rp. 1.500.000'},
+    {'id': '1', 'Title': 'Upah', 'Value': 'Rp. 500.000'},
+    {'id': '2', 'Title': 'Bonus', 'Value': 'Rp. 700.000'},
   ];
 
   final Set<String> selectedIds = {};
