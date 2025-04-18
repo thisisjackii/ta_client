@@ -105,7 +105,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         return IconButton(
           icon: const Icon(Icons.camera_alt, color: Colors.black26),
           onPressed: () {
-            print('Camera clicked at this moment');
+            debugPrint('Camera clicked at this moment');
           },
         );
       case SuffixType.none:

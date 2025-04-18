@@ -66,8 +66,11 @@ class EvaluationHistoryPage extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.date_range,
-                              size: 24, color: Colors.blue),
+                          const Icon(
+                            Icons.date_range,
+                            size: 24,
+                            color: Colors.blue,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(

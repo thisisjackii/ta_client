@@ -21,7 +21,7 @@ class EvaluationDashboard extends StatelessWidget {
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Evaluasi Keuangan',
               style: TextStyle(
                 fontSize: 14,
@@ -34,8 +34,9 @@ class EvaluationDashboard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.restart_alt_rounded),
             onPressed: () async {
-              final result = await Navigator.pushNamed(context, Routes.evaluationHistory);
-              print('Returned from EvaluationIntro: $result');
+              final result =
+                  await Navigator.pushNamed(context, Routes.evaluationHistory);
+              debugPrint('Returned from EvaluationIntro: $result');
             },
           ),
         ],
@@ -57,12 +58,11 @@ class EvaluationDashboard extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min, // <- hugs the content width
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.date_range, size: 16, color: Colors.grey),
                     SizedBox(width: 6),
                     Text(
@@ -78,7 +78,6 @@ class EvaluationDashboard extends StatelessWidget {
               ),
             ),
           ),
-
 
           const SizedBox(height: 16),
 
@@ -125,7 +124,10 @@ class EvaluationDashboard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                         child: Row(
                           children: [
                             // Your Ratio
@@ -154,27 +156,27 @@ class EvaluationDashboard extends StatelessWidget {
                             // Ideal Ratio
                             if (data['id'] != '6')
                               Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Ideal Ratio',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Ideal Ratio',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    data['idealRatio'] ?? '',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      data['idealRatio'] ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -187,8 +189,6 @@ class EvaluationDashboard extends StatelessWidget {
           ),
         ],
       ),
-
-
     );
   }
 }

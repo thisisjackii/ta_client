@@ -61,37 +61,40 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
             child: selectedCategory == null
                 ? const Center(child: Text('Select a Category'))
                 : ListView.builder(
-              itemCount: categoryMapping[selectedCategory]!.length,
-              itemBuilder: (context, index) {
-                final subCategory =
-                categoryMapping[selectedCategory]![index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    dense: true,
-                    tileColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    title: Text(
-                      subCategory,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.navigate_next,
-                      size: 16,
-                    ),
-                    onTap: () {
-                      widget.onCategorySelected(selectedCategory!, subCategory);
-                      Navigator.pop(context);
+                    itemCount: categoryMapping[selectedCategory]!.length,
+                    itemBuilder: (context, index) {
+                      final subCategory =
+                          categoryMapping[selectedCategory]![index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          dense: true,
+                          tileColor: Colors.grey.shade300,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          title: Text(
+                            subCategory,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.navigate_next,
+                            size: 16,
+                          ),
+                          onTap: () {
+                            widget.onCategorySelected(
+                              selectedCategory!,
+                              subCategory,
+                            );
+                            Navigator.pop(context);
+                          },
+                        ),
+                      );
                     },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class DropdownItem {
-
   DropdownItem({required this.label, required this.color, this.icon});
   final String label;
   final IconData? icon;
@@ -9,9 +8,12 @@ class DropdownItem {
 }
 
 class CustomDropdownField extends StatefulWidget {
-
   const CustomDropdownField({
-    required this.items, required this.selectedValue, required this.onChanged, this.label, super.key,
+    required this.items,
+    required this.selectedValue,
+    required this.onChanged,
+    this.label,
+    super.key,
   });
   final List<DropdownItem> items;
   final String? selectedValue;
@@ -49,7 +51,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
             ),
           ),
         Container(
-          padding: const EdgeInsets.symmetric(),
+          padding: EdgeInsets.zero,
           decoration: const BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -71,7 +73,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                       setState(() {
                         currentSelected = value;
                         final selectedItem = widget.items.firstWhere(
-                              (item) => item.label == value,
+                          (item) => item.label == value,
                         );
                         widget.onChanged(selectedItem);
                       });

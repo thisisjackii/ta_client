@@ -111,7 +111,7 @@ class _FilterFormPageState extends State<FilterFormPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(),
+                padding: EdgeInsets.zero,
                 decoration: const BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
@@ -129,8 +129,10 @@ class _FilterFormPageState extends State<FilterFormPage> {
                           value: selectedChild,
                           isExpanded: true,
                           items: (filteredChildItems.isNotEmpty
-                              ? filteredChildItems
-                              : childItemsMap.values.expand((e) => e).toList())
+                                  ? filteredChildItems
+                                  : childItemsMap.values
+                                      .expand((e) => e)
+                                      .toList())
                               .map((child) {
                             return DropdownMenuItem<String>(
                               value: child,
@@ -214,7 +216,8 @@ class _FilterFormPageState extends State<FilterFormPage> {
               },
               child: const Text(
                 'Filter',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
           ),

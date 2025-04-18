@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 
 class StatExpandableCard extends StatefulWidget {
-  final String title;
-  final IconData icon;
-  final List<Map<String, String>> valuesAboveDivider;
-  final List<Map<String, String>> valuesBelowDivider;
-
   const StatExpandableCard({
-    super.key,
     required this.title,
     required this.icon,
     required this.valuesAboveDivider,
     required this.valuesBelowDivider,
+    super.key,
   });
+  final String title;
+  final IconData icon;
+  final List<Map<String, String>> valuesAboveDivider;
+  final List<Map<String, String>> valuesBelowDivider;
 
   @override
   State<StatExpandableCard> createState() => _StatExpandableCardState();
@@ -67,29 +66,45 @@ class _StatExpandableCardState extends State<StatExpandableCard> {
               // Expanded Content
               if (isExpanded) ...[
                 const SizedBox(height: 16),
-                ...widget.valuesAboveDivider.map((entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(entry['label']!, style: const TextStyle(fontSize: 14)),
-                      Text(entry['value']!, style: const TextStyle(fontWeight: FontWeight.w500)),
-                    ],
+                ...widget.valuesAboveDivider.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          entry['label']!,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        Text(
+                          entry['value']!,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                   ),
-                )),
+                ),
                 const Divider(),
                 const SizedBox(height: 8),
-                ...widget.valuesBelowDivider.map((entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(entry['label']!, style: const TextStyle(fontSize: 14)),
-                      Text(entry['value']!, style: const TextStyle(fontWeight: FontWeight.w500)),
-                    ],
+                ...widget.valuesBelowDivider.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          entry['label']!,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        Text(
+                          entry['value']!,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                   ),
-                )),
-              ]
+                ),
+              ],
             ],
           ),
         ),

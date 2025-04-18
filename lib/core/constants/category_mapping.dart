@@ -24,7 +24,11 @@ const Map<String, List<String>> categoryMapping = {
   'Perawatan Pribadi & Pakaian': ['Perawatan Pribadi', 'Pakaian'],
   'Hiburan & Rekreasi': ['Hiburan', 'Rekreasi'],
   'Pendidikan & Pembelajaran': ['Pendidikan', 'Pembelajaran'],
-  'Kewajiban Finansial (pinjaman, pajak, asuransi)': ['Bayar pinjaman', 'Bayar pajak', 'Bayar asuransi'],
+  'Kewajiban Finansial (pinjaman, pajak, asuransi)': [
+    'Bayar pinjaman',
+    'Bayar pajak',
+    'Bayar asuransi',
+  ],
   'Perumahan dan Kebutuhan Sehari-hari': ['Perumahan', 'Kebutuhan Sehari-hari'],
   'Ekuitas': ['Ekuitas'],
 };

@@ -11,8 +11,6 @@ import 'package:ta_client/features/transaction/services/transaction_service.dart
 part 'transaction_event.dart';
 part 'transaction_state.dart';
 
-enum TransactionOperation { create, update, delete }
-
 class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   TransactionBloc({
     required this.repository,
@@ -23,10 +21,58 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     on<UpdateTransactionRequested>(_onUpdate);
     on<DeleteTransactionRequested>(_onDelete);
     on<ClassifyTransactionRequested>(_onClassify);
+    on<ToggleBookmarkRequested>(_onToggleBookmark);
   }
   final TransactionRepository repository;
   final ConnectivityService connectivityService;
   final TransactionService transactionService;
+
+  Future<void> _onClassify(
+    ClassifyTransactionRequested event,
+    Emitter<TransactionState> emit,
+  ) async {
+    try {
+      emit(state.copyWith(isLoading: true));
+      final result =
+          await transactionService.classifyTransaction(event.description);
+      if (result.containsKey('message') && result['message'] != null) {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage: result['message'] as String,
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            classifiedCategory: result['category'] as String? ?? '',
+          ),
+        );
+      }
+    } catch (error) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString(),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onToggleBookmark(
+    ToggleBookmarkRequested event,
+    Emitter<TransactionState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true));
+    try {
+      final updated =
+          await transactionService.toggleBookmark(event.transactionId);
+      emit(state.copyWith(isLoading: false, createdTransaction: updated));
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+    }
+  }
 
   Future<void> _onCreate(
     CreateTransactionRequested event,
@@ -52,47 +98,19 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
             t.category == created.category &&
             t.subcategory == created.subcategory &&
             t.amount == created.amount &&
+            t.isBookmarked == created.isBookmarked &&
             t.date.difference(created.date).inSeconds.abs() < 1,
       );
       if (found) {
-        emit(state.copyWith(
-            isLoading: false, isSuccess: true, createdTransaction: created,),);
+        emit(
+          state.copyWith(
+            isLoading: false,
+            isSuccess: true,
+            createdTransaction: created,
+          ),
+        );
       } else {
         throw Exception('New transaction not found in updated dashboard data.');
-      }
-    } catch (e) {
-      emit(
-        state.copyWith(
-          isLoading: false,
-          isSuccess: false,
-          errorMessage: e.toString(),
-        ),
-      );
-    }
-  }
-
-  Future<void> _onUpdate(
-    UpdateTransactionRequested event,
-    Emitter<TransactionState> emit,
-  ) async {
-    emit(
-      state.copyWith(
-        isLoading: true,
-        operation: TransactionOperation.update,
-      ),
-    );
-    try {
-      final online = await connectivityService.isOnline;
-      await repository.updateTransaction(event.transaction, isOnline: online);
-      // Force a reload of transactions
-      final updatedItems = await repository.fetchTransactions(isOnline: online);
-      // For update, we can compare by id since an updated transaction should have a valid id.
-      final updated = event.transaction;
-      final found = updatedItems.any((t) => t.id == updated.id);
-      if (found) {
-        emit(state.copyWith(isLoading: false, isSuccess: true));
-      } else {
-        throw Exception('Updated transaction not found in refreshed data.');
       }
     } catch (e) {
       emit(
@@ -138,27 +156,39 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     }
   }
 
-  Future<void> _onClassify(
-    ClassifyTransactionRequested event,
+  Future<void> _onUpdate(
+    UpdateTransactionRequested event,
     Emitter<TransactionState> emit,
   ) async {
+    emit(
+      state.copyWith(
+        isLoading: true,
+        operation: TransactionOperation.update,
+      ),
+    );
     try {
-      emit(state.copyWith(isLoading: true));
-      final result =
-          await transactionService.classifyTransaction(event.description);
+      final online = await connectivityService.isOnline;
+      await repository.updateTransaction(event.transaction, isOnline: online);
+      // Force a reload of transactions
+      final updatedItems = await repository.fetchTransactions(isOnline: online);
+      // For update, we can compare by id since an updated transaction should have a valid id.
+      final updated = event.transaction;
+      final found = updatedItems.any((t) => t.id == updated.id);
+      if (found) {
+        emit(state.copyWith(isLoading: false, isSuccess: true));
+      } else {
+        throw Exception('Updated transaction not found in refreshed data.');
+      }
+    } catch (e) {
       emit(
         state.copyWith(
           isLoading: false,
-          classifiedCategory: result['category'] as String? ?? '',
-        ),
-      );
-    } catch (error) {
-      emit(
-        state.copyWith(
-          isLoading: false,
-          errorMessage: error.toString(),
+          isSuccess: false,
+          errorMessage: e.toString(),
         ),
       );
     }
   }
 }
+
+enum TransactionOperation { create, update, delete }

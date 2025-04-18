@@ -202,16 +202,14 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
 
       // Apply parent category filter.
       final parentMatch =
-          filterCriteria == null || filterCriteria!['parent'] == null
-              ? true
-              : t.type == filterCriteria!['parent'];
+          (filterCriteria == null || filterCriteria!['parent'] == null) ||
+              t.type == filterCriteria!['parent'];
 
       // Apply child category filter.
       // (Assuming your Transaction model has a property 'category')
       final childMatch =
-          filterCriteria == null || filterCriteria!['child'] == null
-              ? true
-              : t.category == filterCriteria!['child'];
+          (filterCriteria == null || filterCriteria!['child'] == null) ||
+              t.category == filterCriteria!['child'];
 
       // Apply date range filter.
       final startDate = filterCriteria?['startDate'] as DateTime?;
@@ -223,10 +221,9 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
       }
 
       return monthMatch && parentMatch && childMatch && dateMatch;
-    }).toList();
-
-    // Sort descending: newest first.
-    filtered.sort((a, b) => b.date.compareTo(a.date));
+    }).toList()
+      // Sort descending: newest first.
+      ..sort((a, b) => b.date.compareTo(a.date));
     return filtered;
   }
 

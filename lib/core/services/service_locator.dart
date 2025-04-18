@@ -12,7 +12,9 @@ void setupServiceLocator() {
   sl
     ..registerLazySingleton<AuthState>(AuthState.new)
     ..registerLazySingleton<TransactionService>(
-      () => TransactionService(baseUrl: 'https://ta-server-f649ec90e07a.herokuapp.com/api/v1'),
+      () => TransactionService(
+        baseUrl: 'http://localhost:4000/api/v1',
+      ), // https://ta-server-f649ec90e07a.herokuapp.com/api/v1
     )
     ..registerLazySingleton<ConnectivityService>(ConnectivityService.new)
     ..registerLazySingleton<TransactionRepository>(

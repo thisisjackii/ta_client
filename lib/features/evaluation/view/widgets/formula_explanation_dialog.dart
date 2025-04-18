@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
 class FormulaExplanationDialog extends StatelessWidget {
+  const FormulaExplanationDialog({required this.id, super.key});
   final String id;
-
-  const FormulaExplanationDialog({super.key, required this.id});
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +19,10 @@ class FormulaExplanationDialog extends StatelessWidget {
             const SizedBox(height: 16),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-                child: Math.tex(
-                  r'\frac{\textit{Aset Likuid}}{\textit{Pengeluaran bulanan}}',
-                  textStyle: const TextStyle(fontSize: 18),
-                  mathStyle: MathStyle.display,
-                ),
+              child: Math.tex(
+                r'\frac{\textit{Aset Likuid}}{\textit{Pengeluaran bulanan}}',
+                textStyle: const TextStyle(fontSize: 18),
+              ),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -37,7 +35,6 @@ class FormulaExplanationDialog extends StatelessWidget {
               child: Math.tex(
                 r'\frac{\textit{Aset Likuid}}{\textit{Pengeluaran bulanan}}',
                 textStyle: const TextStyle(fontSize: 18),
-                mathStyle: MathStyle.display,
               ),
             ),
             const SizedBox(height: 16),
@@ -60,7 +57,6 @@ class FormulaExplanationDialog extends StatelessWidget {
             Math.tex(
               r'\frac{\textit{Aset Likuid}}{\textit{Total Kekayaan Bersih}} \times 100\%',
               textStyle: const TextStyle(fontSize: 18),
-              mathStyle: MathStyle.display,
             ),
             const SizedBox(height: 16),
             const Text(
@@ -71,7 +67,6 @@ class FormulaExplanationDialog extends StatelessWidget {
             Math.tex(
               r'\frac{\textit{Aset Likuid}}{\textit{Total Kekayaan Bersih}} \times 100\%',
               textStyle: const TextStyle(fontSize: 18),
-              mathStyle: MathStyle.display,
             ),
             const SizedBox(height: 16),
             const Text(
@@ -95,7 +90,6 @@ class FormulaExplanationDialog extends StatelessWidget {
               child: Math.tex(
                 r'\frac{\textit{Total Utang}}{\textit{Total Aset}} \times 100\%',
                 textStyle: const TextStyle(fontSize: 18),
-                mathStyle: MathStyle.display,
               ),
             ),
             const SizedBox(height: 16),
@@ -109,7 +103,6 @@ class FormulaExplanationDialog extends StatelessWidget {
               child: Math.tex(
                 r'\frac{\textit{Total Utang}}{\textit{Total Aset}} \times 100\%',
                 textStyle: const TextStyle(fontSize: 18),
-                mathStyle: MathStyle.display,
               ),
             ),
             const SizedBox(height: 16),
@@ -134,10 +127,8 @@ class FormulaExplanationDialog extends StatelessWidget {
               child: Math.tex(
                 r'\frac{\textit{Total Tabungan}}{\textit{Penghasilan Kotor}} \times 100\%',
                 textStyle: const TextStyle(fontSize: 18),
-                mathStyle: MathStyle.display,
               ),
             ),
-
             const SizedBox(height: 16),
             const Text(
               'Hasil Anda:',
@@ -149,7 +140,6 @@ class FormulaExplanationDialog extends StatelessWidget {
               child: Math.tex(
                 r'\frac{\textit{Total Tabungan}}{\textit{Penghasilan Kotor}} \times 100\%',
                 textStyle: const TextStyle(fontSize: 18),
-                mathStyle: MathStyle.display,
               ),
             ),
             const SizedBox(height: 16),
@@ -174,7 +164,6 @@ class FormulaExplanationDialog extends StatelessWidget {
               child: Math.tex(
                 r'\frac{\textit{Total Pembayaran Utang}}{\textit{Penghasilan Bersih}} \times 100\%',
                 textStyle: const TextStyle(fontSize: 18),
-                mathStyle: MathStyle.display,
               ),
             ),
             const SizedBox(height: 16),
@@ -188,7 +177,6 @@ class FormulaExplanationDialog extends StatelessWidget {
               child: Math.tex(
                 r'\frac{\textit{Total Pembayaran Utang}}{\textit{Penghasilan Bersih}} \times 100\%',
                 textStyle: const TextStyle(fontSize: 18),
-                mathStyle: MathStyle.display,
               ),
             ),
             const SizedBox(height: 16),
@@ -213,10 +201,8 @@ class FormulaExplanationDialog extends StatelessWidget {
               child: Math.tex(
                 r'\frac{\textit{Total Aset Diinvestasikan}}{\textit{Total Kekayaan Bersih}} \times 100\%',
                 textStyle: const TextStyle(fontSize: 18),
-                mathStyle: MathStyle.display,
               ),
             ),
-
             const SizedBox(height: 16),
             const Text(
               'Hasil Anda:',
@@ -228,7 +214,6 @@ class FormulaExplanationDialog extends StatelessWidget {
               child: Math.tex(
                 r'\frac{\textit{Total Aset Diinvestasikan}}{\textit{Total Kekayaan Bersih}} \times 100\%',
                 textStyle: const TextStyle(fontSize: 18),
-                mathStyle: MathStyle.display,
               ),
             ),
             const SizedBox(height: 16),

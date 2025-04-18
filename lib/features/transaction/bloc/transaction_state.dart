@@ -17,6 +17,16 @@ class TransactionState extends Equatable {
   final Transaction? createdTransaction;
   final String? classifiedCategory; // e.g. raw value from API
 
+  @override
+  List<Object?> get props => [
+        isLoading,
+        isSuccess,
+        errorMessage,
+        operation,
+        createdTransaction,
+        classifiedCategory,
+      ];
+
   TransactionState copyWith({
     bool? isLoading,
     bool? isSuccess,
@@ -34,7 +44,4 @@ class TransactionState extends Equatable {
       classifiedCategory: classifiedCategory ?? this.classifiedCategory,
     );
   }
-
-  @override
-  List<Object?> get props => [isLoading, isSuccess, errorMessage, operation, createdTransaction, classifiedCategory];
 }

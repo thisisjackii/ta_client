@@ -7,22 +7,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ta_client/core/services/service_locator.dart';
 import 'package:ta_client/features/transaction/services/transaction_sync_service.dart';
 
-class AppBlocObserver extends BlocObserver {
-  const AppBlocObserver();
-
-  @override
-  void onChange(BlocBase<dynamic> bloc, Change<dynamic> change) {
-    super.onChange(bloc, change);
-    log('onChange(${bloc.runtimeType}, $change)');
-  }
-
-  @override
-  void onError(BlocBase<dynamic> bloc, Object error, StackTrace stackTrace) {
-    log('onError(${bloc.runtimeType}, $error, $stackTrace)');
-    super.onError(bloc, error, stackTrace);
-  }
-}
-
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   FlutterError.onError = (details) {
     log(details.exceptionAsString(), stackTrace: details.stack);
@@ -39,4 +23,20 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   sl<TransactionSyncService>().startListening();
 
   runApp(await builder());
+}
+
+class AppBlocObserver extends BlocObserver {
+  const AppBlocObserver();
+
+  @override
+  void onChange(BlocBase<dynamic> bloc, Change<dynamic> change) {
+    super.onChange(bloc, change);
+    log('onChange(${bloc.runtimeType}, $change)');
+  }
+
+  @override
+  void onError(BlocBase<dynamic> bloc, Object error, StackTrace stackTrace) {
+    log('onError(${bloc.runtimeType}, $error, $stackTrace)');
+    super.onError(bloc, error, stackTrace);
+  }
 }

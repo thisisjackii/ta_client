@@ -1,7 +1,6 @@
 import 'package:another_xlider/another_xlider.dart';
 import 'package:another_xlider/models/handler.dart';
 import 'package:another_xlider/models/hatch_mark.dart';
-import 'package:another_xlider/models/hatch_mark_label.dart';
 import 'package:another_xlider/models/tooltip/tooltip.dart';
 import 'package:another_xlider/models/tooltip/tooltip_box.dart';
 import 'package:another_xlider/models/trackbar.dart';
@@ -26,8 +25,8 @@ class CustomSliderSingleRange extends StatelessWidget {
     // Determine min and max to center the ideal limit
     const double range = 30; // Half the range to extend left and right
     final min = (limit - range).clamp(0, double.infinity).toDouble();
-    final max = (limit + range).toDouble();
-    final clampedRatio = yourRatio.clamp(min, max).toDouble();
+    final max = limit + range;
+    final clampedRatio = yourRatio.clamp(min, max);
 
     // Determine if user's ratio is ideal
     final isIdeal = switch (limitType) {
@@ -50,7 +49,6 @@ class CustomSliderSingleRange extends StatelessWidget {
         Stack(
           alignment: Alignment.center,
           children: [
-
             // Base slider with fixed min-max handlers
             FlutterSlider(
               values: [min, max],
@@ -61,11 +59,11 @@ class CustomSliderSingleRange extends StatelessWidget {
               disabled: true,
               handler: FlutterSliderHandler(
                 decoration: const BoxDecoration(),
-                child: const Icon(Icons.circle, color: const Color(0xffB5B5B5)),
+                child: const Icon(Icons.circle, color: Color(0xffB5B5B5)),
               ),
               rightHandler: FlutterSliderHandler(
                 decoration: const BoxDecoration(),
-                child: const Icon(Icons.circle, color: const Color(0xffE5E5E5)),
+                child: const Icon(Icons.circle, color: Color(0xffE5E5E5)),
               ),
             ),
 
@@ -111,20 +109,18 @@ class CustomSliderSingleRange extends StatelessWidget {
               hatchMark: FlutterSliderHatchMark(
                 displayLines: true,
                 density: 0.4, // Adjust based on how many ticks you want
-                smallLine: FlutterSliderSizedBox(
+                smallLine: const FlutterSliderSizedBox(
                   width: 1,
                   height: 6,
                   decoration: BoxDecoration(color: Colors.grey),
                 ),
-                bigLine: FlutterSliderSizedBox(
+                bigLine: const FlutterSliderSizedBox(
                   width: 2,
                   height: 10,
                   decoration: BoxDecoration(color: Colors.grey),
                 ),
               ),
-
             ),
-
           ],
         ),
 
@@ -148,7 +144,7 @@ class CustomSliderSingleRange extends StatelessWidget {
         // Description
         Text(
           'Nilai ideal adalah ${_limitTypeLabel(limitType)} $limit%. '
-              'Rasio kamu saat ini adalah $yourRatio%.',
+          'Rasio kamu saat ini adalah $yourRatio%.',
           style: const TextStyle(fontSize: 14),
         ),
       ],
@@ -168,4 +164,3 @@ class CustomSliderSingleRange extends StatelessWidget {
     }
   }
 }
-

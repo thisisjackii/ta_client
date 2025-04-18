@@ -17,39 +17,13 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final ValueChanged<Map<String, dynamic>?> onFilterChanged;
 
   @override
-  _CustomAppBarState createState() => _CustomAppBarState();
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  _CustomAppBarState createState() => _CustomAppBarState();
 }
 
 class _CustomAppBarState extends State<CustomAppBar> {
-  // Helper to safely add or subtract months.
-  DateTime _changeMonth(DateTime date, int change) {
-    var newYear = date.year;
-    var newMonth = date.month + change;
-    if (newMonth > 12) {
-      newYear += (newMonth - 1) ~/ 12;
-      newMonth = ((newMonth - 1) % 12) + 1;
-    } else if (newMonth < 1) {
-      newYear -= ((1 - newMonth) ~/ 12) + 1;
-      newMonth = 12 - ((1 - newMonth) % 12);
-    }
-    return DateTime(newYear, newMonth);
-  }
-
-  Future<void> _pickMonth(BuildContext context) async {
-    final selected = await showMonthPicker(
-      context: context,
-      initialDate: widget.selectedMonth,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (selected != null) {
-      widget.onMonthChanged(DateTime(selected.year, selected.month));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final monthYearText = DateFormat('MMM yyyy').format(widget.selectedMonth);
@@ -113,7 +87,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
               IconButton(
                 icon: const Icon(Icons.filter_alt_rounded),
                 onPressed: () async {
-                  final result = await Navigator.pushNamed(context, Routes.filter);
+                  final result =
+                      await Navigator.pushNamed(context, Routes.filter);
                   if (result != null && result is Map<String, dynamic>) {
                     // Propagate filter criteria upward.
                     widget.onFilterChanged(result);
@@ -126,7 +101,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                   if (value == 'statistic') {
                     Navigator.pushNamed(context, Routes.statistik);
                   } else if (value == 'download_pdf') {
-                    // Handle Download PDF action (if implemented).
+                    // Navigator.pushNamed(context, Routes.showDoubleEntryRecap);
                   }
                 },
                 itemBuilder: (BuildContext context) => [
@@ -144,5 +119,31 @@ class _CustomAppBarState extends State<CustomAppBar> {
           ),
       ],
     );
+  }
+
+  // Helper to safely add or subtract months.
+  DateTime _changeMonth(DateTime date, int change) {
+    var newYear = date.year;
+    var newMonth = date.month + change;
+    if (newMonth > 12) {
+      newYear += (newMonth - 1) ~/ 12;
+      newMonth = ((newMonth - 1) % 12) + 1;
+    } else if (newMonth < 1) {
+      newYear -= ((1 - newMonth) ~/ 12) + 1;
+      newMonth = 12 - ((1 - newMonth) % 12);
+    }
+    return DateTime(newYear, newMonth);
+  }
+
+  Future<void> _pickMonth(BuildContext context) async {
+    final selected = await showMonthPicker(
+      context: context,
+      initialDate: widget.selectedMonth,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (selected != null) {
+      widget.onMonthChanged(DateTime(selected.year, selected.month));
+    }
   }
 }

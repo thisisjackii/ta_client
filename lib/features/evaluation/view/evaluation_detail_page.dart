@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:ta_client/features/evaluation/view/widgets/custom_slider_double_range.dart';
 import 'package:ta_client/features/evaluation/view/widgets/custom_slider_single_range.dart';
-import 'package:ta_client/features/evaluation/view/widgets/slider_limit_type.dart';
 import 'package:ta_client/features/evaluation/view/widgets/evaluation_detail_card.dart';
 import 'package:ta_client/features/evaluation/view/widgets/formula_explanation_dialog.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:ta_client/features/evaluation/view/widgets/slider_limit_type.dart';
 
 class EvaluationDetailPage extends StatefulWidget {
-
   const EvaluationDetailPage({required this.id, super.key});
   final String id;
 
@@ -35,7 +34,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
       yourRatioValue = 92; // fallback or other values
     } else if (widget.id == '5') {
       yourRatioValue = 36; // fallback or other values
-    }  else if (widget.id == '6') {
+    } else if (widget.id == '6') {
       yourRatioValue = 36; // fallback or other values
     }
   }
@@ -54,10 +53,10 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Ringkasan',
               style: TextStyle(
                 fontSize: 14,
@@ -66,40 +65,41 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
             ),
           ],
         ),
-        actions: widget.id == '6' ? [] : [
-          IconButton(
-            icon: const Icon(Icons.info_rounded),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    title: const Text('Penjelasan Rasio'),
-                    content: FormulaExplanationDialog(id: widget.id),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Tutup'),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-
-          ),
-        ],
+        actions: widget.id == '6'
+            ? []
+            : [
+                IconButton(
+                  icon: const Icon(Icons.info_rounded),
+                  onPressed: () {
+                    showDialog<void>(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          title: const Text('Penjelasan Rasio'),
+                          content: FormulaExplanationDialog(id: widget.id),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Tutup'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Left Text
                 Expanded(
@@ -112,30 +112,31 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 const SizedBox(width: 12),
 
                 // Right Hugging Card
-                widget.id == '6'
-                    ? const SizedBox.shrink()
-                    : Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey), // customize color
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                if (widget.id == '6')
+                  const SizedBox.shrink()
+                else
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey), // customize color
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withAlpha(50),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'Status',
+                      style: TextStyle(fontSize: 14),
+                    ),
                   ),
-                  child: const Text(
-                    'Status',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
               ],
             ),
-
             const SizedBox(height: 32),
             if (widget.id == '0') ...[
               CustomSliderDoubleRange(
@@ -143,7 +144,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 yourRatioValue: yourRatioValue,
               ),
               const SizedBox(height: 32),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Aset Likuid',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -154,7 +155,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                   {'label': 'Total', 'value': '19400'},
                 ],
               ),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Rata-rata pengeluaran bulanan',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -172,7 +173,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 limitType: SliderLimitType.moreThan,
               ),
               const SizedBox(height: 32),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Aset Likuid',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -183,7 +184,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                   {'label': 'Total', 'value': '19400'},
                 ],
               ),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Aset Non-Likuid',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -194,7 +195,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                   {'label': 'Total', 'value': '-'},
                 ],
               ),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Kewajiban (Liabilitas)',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -212,7 +213,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 limitType: SliderLimitType.lessThanEqual,
               ),
               const SizedBox(height: 32),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Utang',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -223,7 +224,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                   {'label': 'Total', 'value': '19400'},
                 ],
               ),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Aset',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -241,7 +242,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 limitType: SliderLimitType.moreThanEqual,
               ),
               const SizedBox(height: 32),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Tabungan',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -252,7 +253,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                   {'label': 'Total', 'value': '19400'},
                 ],
               ),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Penghasilan Kotor',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -270,7 +271,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 limitType: SliderLimitType.moreThan,
               ),
               const SizedBox(height: 32),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Pembayaran Utang',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -281,7 +282,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                   {'label': 'Total', 'value': '19400'},
                 ],
               ),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Penghasilan Bersih',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -299,7 +300,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                 limitType: SliderLimitType.moreThanEqual,
               ),
               const SizedBox(height: 32),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Pembayaran Utang',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -310,7 +311,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                   {'label': 'Total', 'value': '19400'},
                 ],
               ),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Nilai Bersih Kekayaan',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -325,7 +326,6 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
@@ -336,13 +336,12 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                     Math.tex(
                       r'\frac{\textit{Total Kekayaan Bersih}}{\textit{Total Aset}} \times 100\%',
                       textStyle: const TextStyle(fontSize: 18),
-                      mathStyle: MathStyle.display,
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Total Kekayaan Bersih',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -353,7 +352,7 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                   {'label': 'Total', 'value': '19400'},
                 ],
               ),
-              StatExpandableCard(
+              const StatExpandableCard(
                 title: 'Total Aset',
                 icon: Icons.bar_chart,
                 valuesAboveDivider: [
@@ -364,22 +363,26 @@ class _EvaluationDetailPageState extends State<EvaluationDetailPage> {
                   {'label': 'Total', 'value': '-'},
                 ],
               ),
-            ]  else ...[
-              Center(
+            ] else ...[
+              const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.do_not_disturb_on_rounded, size: 124, color: Colors.grey),
-                    const SizedBox(height: 24),
-                    const Text(
+                    Icon(
+                      Icons.do_not_disturb_on_rounded,
+                      size: 124,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 24),
+                    Text(
                       'Oops! Belum ada data keuangan yang bisa dievaluasi.',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
+                    SizedBox(height: 12),
+                    Text(
                       'Pastikan Anda sudah mencatat transaksi terlebih dahulu',
                       style: TextStyle(fontSize: 14, color: Colors.black54),
                       textAlign: TextAlign.center,

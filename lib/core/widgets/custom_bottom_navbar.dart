@@ -3,7 +3,9 @@ import 'package:ta_client/app/routes/routes.dart';
 
 class CustomBottomNavbar extends StatelessWidget {
   const CustomBottomNavbar({
-    required this.currentTab, required this.onTabSelected, super.key,
+    required this.currentTab,
+    required this.onTabSelected,
+    super.key,
   });
   final int currentTab;
   final void Function(int) onTabSelected;
@@ -31,9 +33,12 @@ class CustomBottomNavbar extends StatelessWidget {
                 icon: Icons.saved_search_rounded,
                 isSelected: currentTab == 1,
                 onTap: () async {
-                  final result = await Navigator.pushNamed(context, Routes.evaluationIntro);
+                  final result = await Navigator.pushNamed(
+                    context,
+                    Routes.evaluationIntro,
+                  );
                   // Do something with the result if needed
-                  print('Returned from EvaluationIntro: $result');
+                  debugPrint('Returned from EvaluationIntro: $result');
                 },
               ),
             ]),
@@ -43,9 +48,10 @@ class CustomBottomNavbar extends StatelessWidget {
                 icon: Icons.attach_money_rounded,
                 isSelected: currentTab == 2,
                 onTap: () async {
-                  final result = await Navigator.pushNamed(context, Routes.budgetingIntro);
+                  final result =
+                      await Navigator.pushNamed(context, Routes.budgetingIntro);
                   // Do something with the result if needed
-                  print('Returned from BudgetingIntro: $result');
+                  debugPrint('Returned from BudgetingIntro: $result');
                 },
               ),
               _TabItem(

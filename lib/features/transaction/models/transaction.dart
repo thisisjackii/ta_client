@@ -7,6 +7,7 @@ class Transaction {
     required this.category,
     required this.subcategory,
     required this.amount,
+    required this.isBookmarked,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
@@ -19,6 +20,7 @@ class Transaction {
         category: json['category'] as String? ?? '',
         subcategory: json['subcategory'] as String? ?? '',
         amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+        isBookmarked: json['isBookmarked'] as bool? ?? false,
       );
     } on FormatException catch (e) {
       throw ArgumentError('Invalid date format: ${e.message}');
@@ -33,6 +35,7 @@ class Transaction {
   final String category;
   final String subcategory;
   final double amount;
+  final bool isBookmarked;
 
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{
@@ -42,6 +45,7 @@ class Transaction {
       'category': category,
       'subcategory': subcategory,
       'amount': amount,
+      'isBookmarked': isBookmarked,
     };
     if (id.isNotEmpty) {
       data['id'] = id;

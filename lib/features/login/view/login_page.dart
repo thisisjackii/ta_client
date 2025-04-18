@@ -157,7 +157,7 @@ class _LoginPageState extends State<LoginPage> {
                           BorderRadius.circular(64), // Match decoration corners
                       onTap: () {
                         // Your onPressed logic here
-                        print('Button clicked!');
+                        debugPrint('Button clicked!');
                       },
                       onHover: (hovering) {
                         // Debug hover effect if needed
@@ -169,9 +169,11 @@ class _LoginPageState extends State<LoginPage> {
                       splashColor: Colors.grey[400], // Splash effect
                       child: AnimatedContainer(
                         duration: const Duration(
-                            milliseconds: 200,), // Smooth transition
+                          milliseconds: 200,
+                        ), // Smooth transition
                         padding: const EdgeInsets.all(
-                            16,), // Adjust padding as needed
+                          16,
+                        ), // Adjust padding as needed
                         decoration: BoxDecoration(
                           color: _isHovered
                               ? Colors.grey[300]

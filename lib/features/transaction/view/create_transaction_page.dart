@@ -21,7 +21,9 @@ class CreateTransactionPage extends StatelessWidget {
           );
           // Simply pop; DashboardPage's RouteAware (didPopNext) will trigger a reload.
           Future.delayed(const Duration(seconds: 1), () {
-            Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+            if (context.mounted) {
+              Navigator.of(context).pushReplacementNamed(Routes.dashboard);
+            }
           });
         } else if (state.errorMessage != null) {
           QuickAlert.show(

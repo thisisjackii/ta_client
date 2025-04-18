@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 void main() async {
@@ -6,7 +7,7 @@ void main() async {
   const testDescription = 'Order makanan via Gofood';
 
   final url = Uri.parse('$baseUrl/transactions/classify');
-  print('Testing classification for: "$testDescription"');
+  debugPrint('Testing classification for: "$testDescription"');
 
   final response = await http.post(
     url,
@@ -16,10 +17,10 @@ void main() async {
 
   if (response.statusCode == 200) {
     final data = json.decode(response.body) as Map<String, dynamic>;
-    print(
+    debugPrint(
       'Predicted Category: ${data['category']} (Confidence: ${data['confidence']})',
     );
   } else {
-    print('Error: ${response.statusCode} - ${response.body}');
+    debugPrint('Error: ${response.statusCode} - ${response.body}');
   }
 }

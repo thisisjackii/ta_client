@@ -1,8 +1,5 @@
 import 'package:another_xlider/another_xlider.dart';
 import 'package:another_xlider/models/handler.dart';
-import 'package:another_xlider/models/handler_animation.dart';
-import 'package:another_xlider/models/hatch_mark.dart';
-import 'package:another_xlider/models/hatch_mark_label.dart';
 import 'package:another_xlider/models/tooltip/tooltip.dart';
 import 'package:another_xlider/models/tooltip/tooltip_box.dart';
 import 'package:another_xlider/models/trackbar.dart';
@@ -35,7 +32,7 @@ class CustomSliderDoubleRange extends StatelessWidget {
             children: [
               // Bottom Slider: Visual Range
               FlutterSlider(
-                values: [3, 6],
+                values: const [3, 6],
                 rangeSlider: true,
                 max: 7,
                 min: 2,
@@ -73,7 +70,7 @@ class CustomSliderDoubleRange extends StatelessWidget {
                     ),
                   ),
                   custom: (dynamic value) {
-                    final int intValue = int.parse(value.toString().split('.')[0]);
+                    final intValue = int.parse(value.toString().split('.')[0]);
                     return Text('$intValue Bulan');
                   },
                 ),
@@ -93,7 +90,8 @@ class CustomSliderDoubleRange extends StatelessWidget {
                     color: Colors.white,
                     border: Border.all(color: Colors.black26),
                   ),
-                  child: const Icon(Icons.circle, color: Colors.white, size: 10),
+                  child:
+                      const Icon(Icons.circle, color: Colors.white, size: 10),
                 ),
                 tooltip: FlutterSliderTooltip(
                   alwaysShowTooltip: true,
@@ -105,26 +103,24 @@ class CustomSliderDoubleRange extends StatelessWidget {
                     ),
                   ),
                   custom: (dynamic value) {
-                    final int intValue = int.parse(value.toString().split('.')[0]);
+                    final intValue = int.parse(value.toString().split('.')[0]);
                     return Text('$intValue Bulan');
                   },
                 ),
-                trackBar: FlutterSliderTrackBar(
+                trackBar: const FlutterSliderTrackBar(
                   activeTrackBarHeight: 1,
                   inactiveTrackBarHeight: 1,
                   activeTrackBar: BoxDecoration(color: Colors.transparent),
                   inactiveTrackBar: BoxDecoration(color: Colors.transparent),
                 ),
               ),
-
-
             ],
           ),
         ),
         const SizedBox(height: 16),
         const Text(
           'Nilai ideal berada antara 3 sampai 6 bulan. '
-              'Rasio kamu berada di posisi saat ini berdasarkan perhitungan.',
+          'Rasio kamu berada di posisi saat ini berdasarkan perhitungan.',
           style: TextStyle(fontSize: 14),
         ),
       ],

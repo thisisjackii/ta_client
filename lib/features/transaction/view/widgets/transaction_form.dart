@@ -89,83 +89,42 @@ class _TransactionFormState extends State<TransactionForm> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    mode = widget.mode;
-    if (widget.transaction != null) {
-      transactionType = widget.transaction!.type;
-      selectedValue = widget.transaction!.type;
-      descriptionController.text = widget.transaction!.description;
-      amountController.text =
-          _rupiahFormatter.format(widget.transaction!.amount.toInt());
-      rawPredictedCategory = widget.transaction!.category;
-      subcategory = widget.transaction!.subcategory;
-      selectedDate = widget.transaction!.date;
-      selectedTime = TimeOfDay.fromDateTime(widget.transaction!.date);
-    } else {
-      transactionType = dropdownItems.first.label;
-      selectedValue = dropdownItems.first.label;
-    }
-    descriptionController.addListener(_onDescriptionChanged);
-  }
-
-  void _onDescriptionChanged() {
-    final text = descriptionController.text;
-    if (text.trim().isNotEmpty && widget.onDescriptionChanged != null) {
-      widget.onDescriptionChanged!(text);
-    }
-  }
-
-  @override
-  void dispose() {
-    descriptionController
-      ..removeListener(_onDescriptionChanged)
-      ..dispose();
-    amountController.dispose();
-    super.dispose();
-  }
-
-  // Switch to edit mode when a read-only field is tapped.
-  void _switchToEdit() {
-    if (mode == TransactionFormMode.view) {
-      setState(() {
-        mode = TransactionFormMode.edit;
-      });
-    }
-  }
-
-  /// Helper function: Given a subcategory string, return its parent category
-  /// by scanning through the categoryMapping.
-  String findParentCategory(String sub) {
-    final normalizedSub = sub.trim().toLowerCase();
-    for (final entry in categoryMapping.entries) {
-      for (final cat in entry.value) {
-        if (cat.trim().toLowerCase() == normalizedSub) {
-          return entry.key;
-        }
-      }
-    }
-    debugPrint('No parent found for subcategory: "$sub"');
-    return '';
-  }
-
-  @override
   Widget build(BuildContext context) {
     final isReadOnly = mode == TransactionFormMode.view;
     return BlocListener<TransactionBloc, TransactionState>(
-        listener: (context, state) {
-          if (state.classifiedCategory != null &&
-              state.classifiedCategory!.isNotEmpty) {
-            final predictedSub = state.classifiedCategory!;
-            debugPrint('Raw classification result: "$predictedSub"');
-            final predictedParent = findParentCategory(predictedSub);
-            debugPrint('Found parent category: "$predictedParent" for "$predictedSub"');
-            setState(() {
-              rawPredictedCategory = predictedParent;
-              subcategory = '$predictedSub ✨';
-            });
-          }
-        },
+      listener: (context, state) {
+        if (state.classifiedCategory != null &&
+            state.classifiedCategory!.isNotEmpty) {
+          final predictedSub = state.classifiedCategory!;
+          debugPrint('Raw classification result: "$predictedSub"');
+          final predictedParent = findParentCategory(predictedSub);
+          debugPrint(
+            'Found parent category: "$predictedParent" for "$predictedSub"',
+          );
+          setState(() {
+            rawPredictedCategory = predictedParent;
+            subcategory = '$predictedSub ✨';
+          });
+        } else {
+          // Else branch when classification was not confident enough.
+          debugPrint(
+            'Classification not confident enough. No valid category returned.',
+          );
+          setState(() {
+            rawPredictedCategory = '';
+            subcategory =
+                ''; // Or set a default message like 'Please choose manually'
+          });
+          // Optionally, inform the user via a visual snackBar or alert.
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'The system is not confident with the auto-classification. Please select a category manually.',
+              ),
+            ),
+          );
+        }
+      },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -259,12 +218,12 @@ class _TransactionFormState extends State<TransactionForm> {
                       onCategorySelected: isReadOnly
                           ? (cat, subCat) {}
                           : (cat, subCat) {
-                        // When manually selected, update without appending sparkle.
-                        setState(() {
-                          rawPredictedCategory = cat;
-                          subcategory = subCat;
-                        });
-                      },
+                              // When manually selected, update without appending sparkle.
+                              setState(() {
+                                rawPredictedCategory = cat;
+                                subcategory = subCat;
+                              });
+                            },
                     ),
                   ),
                 ],
@@ -297,10 +256,10 @@ class _TransactionFormState extends State<TransactionForm> {
                       onDateChanged: isReadOnly
                           ? null
                           : (date) {
-                        setState(() {
-                          selectedDate = date;
-                        });
-                      },
+                              setState(() {
+                                selectedDate = date;
+                              });
+                            },
                     ),
                   ),
                   Expanded(
@@ -311,10 +270,10 @@ class _TransactionFormState extends State<TransactionForm> {
                       onTimeChanged: isReadOnly
                           ? null
                           : (time) {
-                        setState(() {
-                          selectedTime = time;
-                        });
-                      },
+                              setState(() {
+                                selectedTime = time;
+                              });
+                            },
                     ),
                   ),
                 ],
@@ -359,12 +318,10 @@ class _TransactionFormState extends State<TransactionForm> {
 
                       final rawAmount = amountController.text
                           .replaceAll(RegExp('[^0-9]'), '');
-                      final parsedAmount =
-                          double.tryParse(rawAmount) ?? 0.0;
+                      final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
 
                       // Remove sparkle before sending the transaction.
-                      final cleanSubcategory =
-                      subcategory.replaceAll(' ✨', '');
+                      final cleanSubcategory = subcategory.replaceAll(' ✨', '');
 
                       final transaction = Transaction(
                         id: widget.transaction?.id ?? '',
@@ -374,6 +331,7 @@ class _TransactionFormState extends State<TransactionForm> {
                         category: rawPredictedCategory,
                         subcategory: cleanSubcategory,
                         amount: parsedAmount,
+                        isBookmarked: widget.transaction?.isBookmarked ?? false,
                       );
 
                       widget.onSubmit(transaction);
@@ -400,5 +358,66 @@ class _TransactionFormState extends State<TransactionForm> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    descriptionController
+      ..removeListener(_onDescriptionChanged)
+      ..dispose();
+    amountController.dispose();
+    super.dispose();
+  }
+
+  /// Helper function: Given a subcategory string, return its parent category
+  /// by scanning through the categoryMapping.
+  String findParentCategory(String sub) {
+    final normalizedSub = sub.trim().toLowerCase();
+    for (final entry in categoryMapping.entries) {
+      for (final cat in entry.value) {
+        if (cat.trim().toLowerCase() == normalizedSub) {
+          return entry.key;
+        }
+      }
+    }
+    debugPrint('No parent found for subcategory: "$sub"');
+    return '';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    mode = widget.mode;
+    if (widget.transaction != null) {
+      transactionType = widget.transaction!.type;
+      selectedValue = widget.transaction!.type;
+      descriptionController.text = widget.transaction!.description;
+      amountController.text =
+          _rupiahFormatter.format(widget.transaction!.amount.toInt());
+      rawPredictedCategory = widget.transaction!.category;
+      subcategory = widget.transaction!.subcategory;
+      selectedDate = widget.transaction!.date;
+      selectedTime = TimeOfDay.fromDateTime(widget.transaction!.date);
+    } else {
+      transactionType = dropdownItems.first.label;
+      selectedValue = dropdownItems.first.label;
+    }
+    descriptionController.addListener(_onDescriptionChanged);
+  }
+
+  void _onDescriptionChanged() {
+    final text = descriptionController.text;
+    if (text.trim().isNotEmpty && widget.onDescriptionChanged != null) {
+      widget.onDescriptionChanged!(text);
+    }
+  }
+
+  // Switch to edit mode when a read-only field is tapped.
+  void _switchToEdit() {
+    if (mode == TransactionFormMode.view) {
+      setState(() {
+        mode = TransactionFormMode.edit;
+      });
+    }
   }
 }

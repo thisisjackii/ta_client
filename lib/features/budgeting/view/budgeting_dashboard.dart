@@ -1,6 +1,4 @@
-import 'package:another_xlider/another_xlider.dart';
 import 'package:flutter/material.dart';
-import 'package:ta_client/app/routes/routes.dart';
 import 'package:intl/intl.dart';
 import 'package:ta_client/features/budgeting/view/widgets/allocation_card.dart';
 
@@ -46,7 +44,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Alokasi Keuanganmu',
               style: TextStyle(
                 fontSize: 14,
@@ -58,9 +56,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
         actions: [
           IconButton(
             icon: const Icon(Icons.info_rounded),
-            onPressed: () async {
-
-            },
+            onPressed: () async {},
           ),
         ],
       ),
@@ -68,7 +64,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
         padding: const EdgeInsets.all(16),
         children: [
           // Allocation Funds Card
-          ExpandableAllocationCard(),
+          const ExpandableAllocationCard(),
           // Title
           Center(
             child: Card(
@@ -76,12 +72,11 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min, // <- hugs the content width
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.date_range, size: 16, color: Colors.grey),
                     SizedBox(width: 6),
                     Text(
@@ -100,7 +95,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
 
           const SizedBox(height: 12),
 
-                 // Cards from allocationData
+          // Cards from allocationData
           ListView.builder(
             itemCount: allocationData.length,
             shrinkWrap: true,
@@ -112,13 +107,19 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
 
               final currentValue = allocationValues[id] ?? 0.0;
               final targetValue = allocationTargets[id] ?? 0.0;
-              final targetMaxPercent = 35.0;
+              const targetMaxPercent = 35.0;
 
-              final valueRatio = (targetValue == 0.0) ? 0.0 : (currentValue / targetValue);
+              final valueRatio =
+                  (targetValue == 0.0) ? 0.0 : (currentValue / targetValue);
               final currentPercentage = targetMaxPercent * valueRatio;
-              final targetPercentage = targetMaxPercent;
+              const targetPercentage = targetMaxPercent;
 
-              final subItems = ['Expense 1', 'Expense 2', 'Expense 3', 'Expense 4'];
+              final subItems = [
+                'Expense 1',
+                'Expense 2',
+                'Expense 3',
+                'Expense 4',
+              ];
               final selectedSubItems = selectedSubExpenses[id] ?? <String>{};
               final isExpanded = expandedCardIds.contains(id);
 
@@ -130,20 +131,24 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
 
               return Dismissible(
                 key: Key(id),
-                direction: DismissDirection.horizontal,
                 confirmDismiss: (direction) async {
                   if (valueRatio > 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Alokasi '$title' tidak bisa dihapus karena masih memiliki persentase.")),
+                      SnackBar(
+                        content: Text(
+                          "Alokasi '$title' tidak bisa dihapus karena masih memiliki persentase.",
+                        ),
+                      ),
                     );
                     return false;
                   }
 
-                  return await showDialog<bool>(
+                  return showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Hapus Alokasi?'),
-                      content: Text("Apakah kamu yakin ingin menghapus '$title'?"),
+                      content:
+                          Text("Apakah kamu yakin ingin menghapus '$title'?"),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(false),
@@ -157,7 +162,6 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                     ),
                   );
                 },
-
                 onDismissed: (direction) {
                   setState(() {
                     allocationData.removeAt(index);
@@ -179,7 +183,6 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                       }
                     });
                   },
-
                   child: Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: Padding(
@@ -193,7 +196,13 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                               const Icon(Icons.category),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                child: Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -204,7 +213,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                                     children: [
                                       Text(
                                         '${currencyFormatter.format(currentValue)} /',
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w300,
                                           color: Colors.black,
@@ -221,8 +230,12 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                                       ),
                                     ],
                                   ),
-                                  Text('(${currentPercentage.toStringAsFixed(1)}% / ${targetPercentage.toStringAsFixed(1)}%)',
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  Text(
+                                    '(${currentPercentage.toStringAsFixed(1)}% / ${targetPercentage.toStringAsFixed(1)}%)',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -237,7 +250,9 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                                 minHeight: 18,
                                 borderRadius: BorderRadius.circular(6),
                                 backgroundColor: Colors.grey[300],
-                                valueColor: AlwaysStoppedAnimation(getProgressColor(currentPercentage)),
+                                valueColor: AlwaysStoppedAnimation(
+                                  getProgressColor(currentPercentage),
+                                ),
                               ),
                               Text(
                                 '${(valueRatio * 100).toStringAsFixed(1)}%',
@@ -247,7 +262,6 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                                   color: Colors.white,
                                 ),
                               ),
-
                             ],
                           ),
 
@@ -257,63 +271,72 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                             Column(
                               children: [
                                 ...subItems.map((item) {
-                                  final isSelected = selectedSubItems.contains(item);
+                                  final isSelected =
+                                      selectedSubItems.contains(item);
                                   return CheckboxListTile(
                                     value: isSelected,
                                     contentPadding: EdgeInsets.zero,
                                     dense: true,
-                                    controlAffinity: ListTileControlAffinity.leading,
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
                                     title: Text(item),
                                     onChanged: (valueRatio > 0)
                                         ? null // disabled
                                         : (val) {
-                                      setState(() {
-                                        final current = selectedSubExpenses[id] ?? <String>{};
-                                        if (val == true) {
-                                          current.add(item);
-                                        } else {
-                                          current.remove(item);
-                                        }
-                                        selectedSubExpenses[id] = current;
-                                      });
-                                    },
+                                            setState(() {
+                                              final current =
+                                                  selectedSubExpenses[id] ??
+                                                      <String>{};
+                                              if (val!) {
+                                                current.add(item);
+                                              } else {
+                                                current.remove(item);
+                                              }
+                                              selectedSubExpenses[id] = current;
+                                            });
+                                          },
                                   );
-                                }).toList(),
+                                }),
                                 Align(
                                   alignment: Alignment.centerRight,
                                   child: TextButton.icon(
                                     onPressed: (valueRatio > 0)
                                         ? null // disabled
                                         : () {
-                                      debugPrint('Saved selections for $id: ${selectedSubItems.join(', ')}');
-                                    },
-                                    icon: const Icon(Icons.save_alt_rounded, size: 18),
+                                            debugPrint(
+                                              'Saved selections for $id: ${selectedSubItems.join(', ')}',
+                                            );
+                                          },
+                                    icon: const Icon(
+                                      Icons.save_alt_rounded,
+                                      size: 18,
+                                    ),
                                     label: const Text('Save'),
                                   ),
                                 ),
                                 if (valueRatio > 0)
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
                                     child: Text(
                                       'Edit dinonaktifkan karena alokasi belum 0%',
-                                      style: TextStyle(fontSize: 12, color: Colors.red[400]),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.red[400],
+                                      ),
                                     ),
                                   ),
-
                               ],
                             ),
                           ],
-
                         ],
                       ),
                     ),
                   ),
                 ),
               );
-
             },
           ),
-
         ],
       ),
     );

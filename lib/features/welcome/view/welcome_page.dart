@@ -1,16 +1,17 @@
 // welcome_page.dart
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
 
+  @override
+  State<WelcomePage> createState() => _WelcomePageState();
+
   static Widget create() {
     return const WelcomePage();
   }
-
-  @override
-  State<WelcomePage> createState() => _WelcomePageState();
 }
 
 class _WelcomePageState extends State<WelcomePage>
@@ -20,59 +21,6 @@ class _WelcomePageState extends State<WelcomePage>
   late Animation<Color?> _color2Animation;
 
   final Random _random = Random();
-
-  // Function to generate a random color
-  Color _randomColor() {
-    return Color.fromRGBO(
-      _random.nextInt(256),
-      _random.nextInt(256),
-      _random.nextInt(256),
-      1,
-    );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Initialize AnimationController
-    _controller = AnimationController(
-      duration: const Duration(seconds: 5),
-      vsync: this,
-    );
-
-    _setNewGradientAnimation();
-
-    // Loop the animation forward and backward
-    _controller.repeat(reverse: true);
-  }
-
-  // Function to set a new gradient animation
-  void _setNewGradientAnimation() {
-    _color1Animation = ColorTween(
-      begin: _randomColor(),
-      end: _randomColor(),
-    ).animate(_controller);
-
-    _color2Animation = ColorTween(
-      begin: _randomColor(),
-      end: _randomColor(),
-    ).animate(_controller);
-
-    // Update animation on every tick
-    _controller.addListener(() {
-      if (_controller.status == AnimationStatus.completed ||
-          _controller.status == AnimationStatus.dismissed) {
-        setState(_setNewGradientAnimation);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +107,9 @@ class _WelcomePageState extends State<WelcomePage>
                           ),
                         ),
                         onPressed: () => Navigator.pushNamed(
-                            context, '/login',), // Example route
+                          context,
+                          '/login',
+                        ), // Example route
                         child: const Text(
                           'Login',
                           style: TextStyle(fontSize: 16),
@@ -184,7 +134,9 @@ class _WelcomePageState extends State<WelcomePage>
                           ),
                         ),
                         onPressed: () => Navigator.pushNamed(
-                            context, '/register',), // Example route
+                          context,
+                          '/register',
+                        ), // Example route
                         child: const Text(
                           'Register',
                           style: TextStyle(fontSize: 16),
@@ -199,5 +151,58 @@ class _WelcomePageState extends State<WelcomePage>
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize AnimationController
+    _controller = AnimationController(
+      duration: const Duration(seconds: 5),
+      vsync: this,
+    );
+
+    _setNewGradientAnimation();
+
+    // Loop the animation forward and backward
+    _controller.repeat(reverse: true);
+  }
+
+  // Function to generate a random color
+  Color _randomColor() {
+    return Color.fromRGBO(
+      _random.nextInt(256),
+      _random.nextInt(256),
+      _random.nextInt(256),
+      1,
+    );
+  }
+
+  // Function to set a new gradient animation
+  void _setNewGradientAnimation() {
+    _color1Animation = ColorTween(
+      begin: _randomColor(),
+      end: _randomColor(),
+    ).animate(_controller);
+
+    _color2Animation = ColorTween(
+      begin: _randomColor(),
+      end: _randomColor(),
+    ).animate(_controller);
+
+    // Update animation on every tick
+    _controller.addListener(() {
+      if (_controller.status == AnimationStatus.completed ||
+          _controller.status == AnimationStatus.dismissed) {
+        setState(_setNewGradientAnimation);
+      }
+    });
   }
 }

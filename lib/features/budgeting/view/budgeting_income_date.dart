@@ -21,12 +21,13 @@ class _BudgetingIncomeDateState extends State<BudgetingIncomeDate> {
   }
 
   void _showDatePickerModal() {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false, // Optional: block outside tap to dismiss
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -54,7 +55,6 @@ class _BudgetingIncomeDateState extends State<BudgetingIncomeDate> {
                     child: CustomDatePicker(
                       label: 'Start Date',
                       isDatePicker: true,
-                      isEnabled: true, // or false to disable
                       selectedDate: startDate,
                       onDateChanged: (date) => setState(() => startDate = date),
                     ),

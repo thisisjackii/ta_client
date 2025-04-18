@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:ta_client/app/routes/routes.dart';
 
 class ExpandableAllocationCard extends StatefulWidget {
   const ExpandableAllocationCard({super.key});
 
   @override
-  State<ExpandableAllocationCard> createState() => _ExpandableAllocationCardState();
+  State<ExpandableAllocationCard> createState() =>
+      _ExpandableAllocationCardState();
 }
 
 class _ExpandableAllocationCardState extends State<ExpandableAllocationCard> {
@@ -39,17 +39,16 @@ class _ExpandableAllocationCardState extends State<ExpandableAllocationCard> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Row(
+              const Row(
                 children: [
-                  const Text(
+                  Text(
                     'Alokasi Pemasukan',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const Spacer(),
-                  const Text('Rp. 0'), // Placeholder value
+                  Spacer(),
+                  Text('Rp. 0'), // Placeholder value
                 ],
               ),
-
               if (isExpanded) ...[
                 const SizedBox(height: 12),
                 Column(
@@ -64,8 +63,9 @@ class _ExpandableAllocationCardState extends State<ExpandableAllocationCard> {
                         title: Text(item),
                         onChanged: (val) {
                           setState(() {
-                            final current = selectedSubExpenses[id] ?? <String>{};
-                            if (val == true) {
+                            final current =
+                                selectedSubExpenses[id] ?? <String>{};
+                            if (val!) {
                               current.add(item);
                             } else {
                               current.remove(item);
@@ -77,12 +77,14 @@ class _ExpandableAllocationCardState extends State<ExpandableAllocationCard> {
                           });
                         },
                       );
-                    }).toList(),
+                    }),
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton.icon(
                         onPressed: () {
-                          debugPrint('Saved selections for $id: ${selectedSubItems.join(', ')}');
+                          debugPrint(
+                            'Saved selections for $id: ${selectedSubItems.join(', ')}',
+                          );
                         },
                         icon: const Icon(Icons.save_alt_rounded, size: 18),
                         label: const Text('Save'),

@@ -8,7 +8,8 @@ class EvaluationDateSelection extends StatefulWidget {
   const EvaluationDateSelection({super.key});
 
   @override
-  State<EvaluationDateSelection> createState() => _EvaluationDateSelectionState();
+  State<EvaluationDateSelection> createState() =>
+      _EvaluationDateSelectionState();
 }
 
 class _EvaluationDateSelectionState extends State<EvaluationDateSelection> {
@@ -22,12 +23,13 @@ class _EvaluationDateSelectionState extends State<EvaluationDateSelection> {
   }
 
   void _showDatePickerModal() {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false, // Optional: block outside tap to dismiss
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -95,7 +97,10 @@ class _EvaluationDateSelectionState extends State<EvaluationDateSelection> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context); // Close dialog
-                        Navigator.pushNamed(context, Routes.evaluationDashboard);
+                        Navigator.pushNamed(
+                          context,
+                          Routes.evaluationDashboard,
+                        );
                       },
                       child: const Text('OK'),
                     ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ta_client/app/routes/routes.dart';
 import 'package:intl/intl.dart';
+import 'package:ta_client/app/routes/routes.dart';
 
 class BudgetingIncome extends StatefulWidget {
   const BudgetingIncome({super.key});
@@ -19,12 +19,16 @@ class _BudgetingIncomeState extends State<BudgetingIncome> {
   final Set<String> selectedIds = {};
 
   int _parseRupiah(String value) {
-    final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+    final digitsOnly = value.replaceAll(RegExp('[^0-9]'), '');
     return int.tryParse(digitsOnly) ?? 0;
   }
 
   String _formatToRupiah(int value) {
-    final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp. ', decimalDigits: 0);
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp. ',
+      decimalDigits: 0,
+    );
     return formatter.format(value);
   }
 
@@ -40,7 +44,7 @@ class _BudgetingIncomeState extends State<BudgetingIncome> {
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Budgeting',
               style: TextStyle(
                 fontSize: 14,
@@ -55,7 +59,7 @@ class _BudgetingIncomeState extends State<BudgetingIncome> {
             onPressed: () async {
               final result =
                   await Navigator.pushNamed(context, Routes.evaluationHistory);
-              print('Returned from EvaluationIntro: $result');
+              debugPrint('Returned from EvaluationIntro: $result');
             },
           ),
         ],
@@ -89,7 +93,10 @@ class _BudgetingIncomeState extends State<BudgetingIncome> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       child: Row(
                         children: [
                           // Left column (icon + title, then value)
@@ -99,18 +106,29 @@ class _BudgetingIncomeState extends State<BudgetingIncome> {
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.attach_money, size: 14, color: Colors.green),
+                                    const Icon(
+                                      Icons.attach_money,
+                                      size: 14,
+                                      color: Colors.green,
+                                    ),
                                     const SizedBox(width: 8),
                                     Text(
                                       data['Title'] ?? '',
-                                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.black87,
+                                      ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   data['Value'] ?? '',
-                                  style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
@@ -121,7 +139,7 @@ class _BudgetingIncomeState extends State<BudgetingIncome> {
                             shape: const CircleBorder(),
                             onChanged: (value) {
                               setState(() {
-                                if (value == true) {
+                                if (value!) {
                                   selectedIds.add(data['id']!);
                                 } else {
                                   selectedIds.remove(data['id']);
@@ -144,15 +162,21 @@ class _BudgetingIncomeState extends State<BudgetingIncome> {
             Card(
               color: Colors.blue.shade50,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
                   children: [
                     const Expanded(
                       child: Text(
                         'Total',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     Text(
@@ -180,12 +204,17 @@ class _BudgetingIncomeState extends State<BudgetingIncome> {
                 backgroundColor: submitButtonColor,
               ),
               onPressed: () async {
-                await Navigator.pushNamed(context, Routes.budgetingAllocationDate);
+                await Navigator.pushNamed(
+                  context,
+                  Routes.budgetingAllocationDate,
+                );
               },
               child: const Text(
                 'Mulai',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.white,),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

@@ -1,16 +1,16 @@
-import 'package:another_xlider/another_xlider.dart';
 import 'package:flutter/material.dart';
 import 'package:ta_client/app/routes/routes.dart';
-import 'package:intl/intl.dart';
 
 class BudgetingAllocationExpense extends StatefulWidget {
   const BudgetingAllocationExpense({super.key});
 
   @override
-  State<BudgetingAllocationExpense> createState() => _BudgetingAllocationExpenseState();
+  State<BudgetingAllocationExpense> createState() =>
+      _BudgetingAllocationExpenseState();
 }
 
-class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense> {
+class _BudgetingAllocationExpenseState
+    extends State<BudgetingAllocationExpense> {
   final Set<String> expandedIds = {};
   final Map<String, Set<String>> selectedSubExpenses = {};
   final allocationData = [
@@ -28,7 +28,7 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
 
   double get totalAllocation => allocationValues.entries
       .where((entry) => selectedIds.contains(entry.key))
-      .fold(0.0, (sum, entry) => sum + entry.value);
+      .fold(0, (sum, entry) => sum + entry.value);
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +38,7 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Budgeting',
               style: TextStyle(
                 fontSize: 14,
@@ -50,9 +50,7 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
         actions: [
           IconButton(
             icon: const Icon(Icons.info_rounded),
-            onPressed: () async {
-
-            },
+            onPressed: () async {},
           ),
         ],
       ),
@@ -69,19 +67,17 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
             style: TextStyle(fontSize: 12),
           ),
           const SizedBox(height: 8),
-
           Center(
             child: Card(
               elevation: 2, // <- subtle shadow
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min, // <- hugs the content width
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.date_range, size: 16, color: Colors.grey),
                     SizedBox(width: 6),
                     Text(
@@ -97,7 +93,6 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
               ),
             ),
           ),
-
           const SizedBox(height: 8),
           ListView.builder(
             itemCount: allocationData.length,
@@ -107,7 +102,8 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
               final data = allocationData[index];
               final id = data['id']!;
               final isExpanded = expandedIds.contains(id); // Set<String>
-              final selectedSubItems = selectedSubExpenses[id] ?? <String>{}; // Map<String, Set<String>>
+              final selectedSubItems = selectedSubExpenses[id] ??
+                  <String>{}; // Map<String, Set<String>>
 
               final subItems = List.generate(4, (i) => 'Expense ${i + 1}');
 
@@ -121,7 +117,10 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
                   color: Colors.white,
                   margin: const EdgeInsets.only(bottom: 12),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -136,7 +135,7 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
                               ),
                             ),
                             Text(
-                              "${allocationValues[id]!.toStringAsFixed(0)}%",
+                              '${allocationValues[id]!.toStringAsFixed(0)}%',
                               style: const TextStyle(fontSize: 14),
                             ),
                             Icon(
@@ -154,17 +153,20 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
                           Column(
                             children: [
                               ...subItems.map((item) {
-                                final isSelected = selectedSubItems.contains(item);
+                                final isSelected =
+                                    selectedSubItems.contains(item);
                                 return CheckboxListTile(
                                   value: isSelected,
                                   contentPadding: EdgeInsets.zero,
                                   dense: true,
-                                  controlAffinity: ListTileControlAffinity.leading,
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
                                   title: Text(item),
                                   onChanged: (val) {
                                     setState(() {
-                                      final current = selectedSubExpenses[id] ?? <String>{};
-                                      if (val == true) {
+                                      final current =
+                                          selectedSubExpenses[id] ?? <String>{};
+                                      if (val!) {
                                         current.add(item);
                                       } else {
                                         current.remove(item);
@@ -173,7 +175,7 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
                                     });
                                   },
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
                       ],
@@ -183,7 +185,6 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
               );
             },
           ),
-
           const SizedBox(height: 6),
           SizedBox(
             width: double.infinity,
@@ -197,7 +198,9 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
               child: const Text(
                 'Simpan',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.white,),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

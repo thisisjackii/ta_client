@@ -1,7 +1,6 @@
 import 'package:another_xlider/another_xlider.dart';
 import 'package:flutter/material.dart';
 import 'package:ta_client/app/routes/routes.dart';
-import 'package:intl/intl.dart';
 
 class BudgetingAllocation extends StatefulWidget {
   const BudgetingAllocation({super.key});
@@ -25,9 +24,8 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
   final Set<String> selectedIds = {};
 
   double get totalAllocation {
-    return selectedIds.fold(0.0, (sum, id) => sum + (allocationValues[id] ?? 0));
+    return selectedIds.fold(0, (sum, id) => sum + (allocationValues[id] ?? 0));
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +35,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Budgeting',
               style: TextStyle(
                 fontSize: 14,
@@ -49,9 +47,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
         actions: [
           IconButton(
             icon: const Icon(Icons.info_rounded),
-            onPressed: () async {
-
-            },
+            onPressed: () async {},
           ),
         ],
       ),
@@ -68,19 +64,17 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
             style: TextStyle(fontSize: 12),
           ),
           const SizedBox(height: 8),
-
           Center(
             child: Card(
               elevation: 2, // <- subtle shadow
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min, // <- hugs the content width
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.date_range, size: 16, color: Colors.grey),
                     SizedBox(width: 6),
                     Text(
@@ -96,7 +90,6 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
               ),
             ),
           ),
-
           const SizedBox(height: 8),
           ListView.builder(
             itemCount: allocationData.length,
@@ -106,18 +99,23 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
               final data = allocationData[index];
               final id = data['id']!;
               final isSelected = selectedIds.contains(id);
-              double _getMaxFor(String id) {
-                double othersTotal = selectedIds
-                    .where((otherId) => otherId != id)
-                    .fold(0.0, (sum, otherId) => sum + (allocationValues[otherId] ?? 0.0));
+              double getMaxFor(String id) {
+                final othersTotal =
+                    selectedIds.where((otherId) => otherId != id).fold(
+                          0,
+                          (sum, otherId) =>
+                              sum + (allocationValues[otherId] ?? 0).toInt(),
+                        );
 
                 return (100.0 - othersTotal).clamp(0.0, 100.0);
               }
+
               return Card(
                 color: isSelected ? Colors.white : Colors.grey[200],
                 margin: const EdgeInsets.only(bottom: 12),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   child: Column(
                     children: [
                       Row(
@@ -126,7 +124,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
                             value: isSelected,
                             onChanged: (value) {
                               setState(() {
-                                if (value == true) {
+                                if (value!) {
                                   selectedIds.add(id);
                                 } else {
                                   selectedIds.remove(id);
@@ -152,7 +150,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
                           Opacity(
                             opacity: isSelected ? 1.0 : 0.5,
                             child: Text(
-                              "${allocationValues[id]!.toStringAsFixed(0)}%",
+                              '${allocationValues[id]!.toStringAsFixed(0)}%',
                               style: const TextStyle(fontSize: 14),
                             ),
                           ),
@@ -169,16 +167,24 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
 
                             final othersTotal = selectedIds
                                 .where((otherId) => otherId != id)
-                                .fold(0.0, (sum, otherId) => sum + (allocationValues[otherId] ?? 0));
+                                .fold<num>(
+                                  0,
+                                  (sum, otherId) =>
+                                      sum + (allocationValues[otherId] ?? 0),
+                                );
 
-                            final maxAvailableForThis = (100.0 - othersTotal).clamp(0.0, 100.0);
+                            final maxAvailableForThis =
+                                (100.0 - othersTotal).clamp(0.0, 100.0);
 
                             if (newValue > maxAvailableForThis) {
                               // Show snackbar only if exceeding
-                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context)
+                                  .hideCurrentSnackBar();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: const Text("⚠️ Tidak dapat melebihi total di atas 100%"),
+                                  content: const Text(
+                                    '⚠️ Tidak dapat melebihi total di atas 100%',
+                                  ),
                                   backgroundColor: Colors.red[400],
                                   duration: const Duration(seconds: 2),
                                 ),
@@ -186,12 +192,10 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
                             }
 
                             // Clamp the value regardless
-                            allocationValues[id] = newValue.clamp(0.0, maxAvailableForThis);
+                            allocationValues[id] =
+                                newValue.clamp(0.0, maxAvailableForThis);
                           });
                         },
-
-
-
                       ),
                     ],
                   ),
@@ -199,26 +203,29 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
               );
             },
           ),
-
           Card(
             color: Colors.blue.shade50,
             elevation: 0,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total Alokasi',
-                      style:
-                      TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  Text("${totalAllocation.toStringAsFixed(0)}%",
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Total Alokasi',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '${totalAllocation.toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-
           const Text(
             'Perhitungan anggaran dalam penelitian ini merujuk pada standar yang ditetapkan oleh Kapoor et al. (2015), yang didasarkan pada data dari lembaga statistik Amerika.',
             style: TextStyle(fontSize: 8, color: Colors.grey),
@@ -231,12 +238,17 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
                 backgroundColor: submitButtonColor,
               ),
               onPressed: () async {
-                Navigator.pushNamed(context, Routes.budgetingAllocationExpense);
+                await Navigator.pushNamed(
+                  context,
+                  Routes.budgetingAllocationExpense,
+                );
               },
               child: const Text(
                 'Simpan',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.white,),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

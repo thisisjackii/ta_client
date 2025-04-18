@@ -64,7 +64,8 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     if (widget.isDatePicker) {
       final pickedDate = await showDatePicker(
         context: context,
-        initialDate: widget.selectedDate ?? widget.initialDate ?? DateTime.now(),
+        initialDate:
+            widget.selectedDate ?? widget.initialDate ?? DateTime.now(),
         firstDate: DateTime(2000),
         lastDate: DateTime(2100),
       );
@@ -77,7 +78,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         context: context,
         initialTime: widget.initialTime ?? TimeOfDay.now(),
       );
-      if (pickedTime != null) {
+      if (pickedTime != null && mounted) {
         _controller.text = pickedTime.format(context);
         widget.onTimeChanged?.call(pickedTime);
       }
@@ -93,7 +94,6 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
           onTap: _handleTap,
           behavior: HitTestBehavior.opaque,
           child: IgnorePointer(
-            ignoring: true, // Let GestureDetector handle taps
             child: CustomTextField(
               controller: _controller,
               label: widget.label,

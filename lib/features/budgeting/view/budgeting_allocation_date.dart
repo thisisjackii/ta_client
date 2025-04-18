@@ -7,7 +7,8 @@ class BudgetingAllocationDate extends StatefulWidget {
   const BudgetingAllocationDate({super.key});
 
   @override
-  State<BudgetingAllocationDate> createState() => _BudgetingAllocationDateState();
+  State<BudgetingAllocationDate> createState() =>
+      _BudgetingAllocationDateState();
 }
 
 class _BudgetingAllocationDateState extends State<BudgetingAllocationDate> {
@@ -21,12 +22,13 @@ class _BudgetingAllocationDateState extends State<BudgetingAllocationDate> {
   }
 
   void _showDatePickerModal() {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false, // Optional: block outside tap to dismiss
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -64,7 +66,6 @@ class _BudgetingAllocationDateState extends State<BudgetingAllocationDate> {
                     child: CustomDatePicker(
                       label: 'End Date',
                       isDatePicker: true,
-                      isEnabled: true,
                       onDateChanged: (date) {
                         setState(() {
                           endDate = date;
@@ -93,7 +94,10 @@ class _BudgetingAllocationDateState extends State<BudgetingAllocationDate> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context); // Close dialog
-                        Navigator.pushNamed(context, Routes.budgetingAllocationPage);
+                        Navigator.pushNamed(
+                          context,
+                          Routes.budgetingAllocationPage,
+                        );
                       },
                       child: const Text('OK'),
                     ),
