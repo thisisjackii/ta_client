@@ -1,21 +1,37 @@
 // lib/features/budgeting/view/budgeting_allocation_page.dart
 
 import 'package:another_xlider/another_xlider.dart';
-import 'package:another_xlider/models/handler.dart';
-import 'package:another_xlider/models/trackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
-import 'package:ta_client/core/constants/app_colors.dart';
+import 'package:ta_client/core/constants/category_mapping.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
-import 'package:ta_client/core/constants/category_mapping.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
 
-class BudgetingAllocation extends StatelessWidget {
+class BudgetingAllocation extends StatefulWidget {
   const BudgetingAllocation({super.key});
+
+  @override
+  _BudgetingAllocationState createState() => _BudgetingAllocationState();
+}
+
+class _BudgetingAllocationState extends State<BudgetingAllocation> {
+  // local copy of slider positions to force UI bounce-back
+  final Map<String, double> _localValues = {};
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // initialize local values from bloc state once
+    if (_localValues.isEmpty) {
+      final blocState = context.read<BudgetingBloc>().state;
+      _localValues.addAll(blocState.allocationValues);
+    }
+  }
 
   static bool _isExpenseCategory(String key) {
     const expenseKeys = {
@@ -37,19 +53,19 @@ class BudgetingAllocation extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<BudgetingBloc, BudgetingState>(
       builder: (context, state) {
-        final expenseEntries = categoryMapping.entries
+        final allocationData = categoryMapping.entries
             .where((e) => _isExpenseCategory(e.key))
             .toList();
-
-        final values = state.allocationValues;
         final selectedSubs = state.selectedSubExpenses;
-        final selectedCats = state.selectedCategories;
+        final selectedCategories = state.selectedCategories;
 
         ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
-            snackBarController;
+            _snackBarController;
 
-        // total % used so far
-        final totalUsed = values.values.fold<double>(0, (sum, v) => sum + v);
+        final totalAllocation = state.allocationValues.values.fold(
+          0.0,
+          (sum, v) => sum + v,
+        );
 
         return Scaffold(
           appBar: AppBar(
@@ -70,19 +86,26 @@ class BudgetingAllocation extends StatelessWidget {
               ),
               const SizedBox(height: AppDimensions.smallPadding),
 
-              // For each expense category:
-              ...expenseEntries.map((entry) {
+              // One card per expense category
+              ...allocationData.map((entry) {
                 final category = entry.key;
                 final subItems = entry.value;
-                final curr = values[category] ?? 0.0;
-                final isSelected = selectedCats.contains(category);
 
-                // sum of others
-                final usedByOthers = values.entries
+                // use local value if present, else fallback to bloc state
+                final currentValue = _localValues[category] ??
+                    state.allocationValues[category] ??
+                    0.0;
+
+                final isSelected = selectedCategories.contains(category);
+                final hasSubChecked =
+                    (selectedSubs[category]?.isNotEmpty ?? false);
+                final sliderEnabled = isSelected && hasSubChecked;
+
+                // compute max so total ≤ 100%
+                final othersSum = state.allocationValues.entries
                     .where((e) => e.key != category)
-                    .fold<double>(0, (s, e) => s + e.value);
-                // how much this one can still take
-                final remain = (100.0 - usedByOthers).clamp(0.0, 100.0);
+                    .fold(0, (sum, e) => sum + e.value.toInt());
+                final maxForCat = (100 - othersSum).clamp(0.0, 100.0);
 
                 return Card(
                   margin:
@@ -92,7 +115,7 @@ class BudgetingAllocation extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // header row
+                        // Header row
                         Row(
                           children: [
                             Checkbox(
@@ -101,7 +124,7 @@ class BudgetingAllocation extends StatelessWidget {
                                 context.read<BudgetingBloc>().add(
                                       ToggleAllocationCategory(
                                         category: category,
-                                        isSelected: val ?? false,
+                                        isSelected: val!,
                                       ),
                                     );
                               },
@@ -118,7 +141,7 @@ class BudgetingAllocation extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${curr.toStringAsFixed(0)}%',
+                              '${currentValue.toStringAsFixed(0)}%',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isSelected ? Colors.black : Colors.grey,
@@ -127,108 +150,60 @@ class BudgetingAllocation extends StatelessWidget {
                           ],
                         ),
 
-                        const SizedBox(height: AppDimensions.smallPadding),
+                        // Slider with clamp + bounce-back
+                        FlutterSlider(
+                          values: [currentValue],
+                          max: 100,
+                          min: 0,
+                          disabled: !sliderEnabled,
+                          onDragging: (handlerIndex, lowerValue, upperValue) {
+                            final attempt = (lowerValue as num).toDouble();
+                            final clamped = attempt.clamp(0.0, maxForCat);
 
-                        // stacked slider for fill + remaining overlay + thumb
-                        SizedBox(
-                          height: 40,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // full grey track
-                              FlutterSlider(
-                                values: [0],
-                                min: 0,
-                                max: 100,
-                                disabled: true,
-                                handler: FlutterSliderHandler(
-                                    decoration: const BoxDecoration()),
-                                trackBar: FlutterSliderTrackBar(
-                                  activeTrackBar:
-                                      BoxDecoration(color: Colors.grey[300]),
-                                  inactiveTrackBar:
-                                      BoxDecoration(color: Colors.grey[300]),
-                                ),
-                              ),
-
-                              // filled portion
-                              FlutterSlider(
-                                values: [curr],
-                                min: 0,
-                                max: 100,
-                                disabled: true,
-                                handler: FlutterSliderHandler(
-                                    decoration: const BoxDecoration()),
-                                trackBar: const FlutterSliderTrackBar(
-                                  activeTrackBar:
-                                      BoxDecoration(color: AppColors.primary),
-                                  inactiveTrackBar:
-                                      BoxDecoration(color: Colors.transparent),
-                                ),
-                              ),
-
-                              // remaining overlay from right
-                              if (remain < 100)
-                                Positioned.fill(
-                                  child: FractionallySizedBox(
-                                    alignment: Alignment.centerRight,
-                                    widthFactor: (100 - remain) / 100,
-                                    child: Container(
-                                        color: Colors.black.withOpacity(0.1)),
+                            if (attempt > maxForCat &&
+                                _snackBarController == null) {
+                              _snackBarController =
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    '⚠️ Total alokasi tidak boleh melebihi 100%',
                                   ),
+                                  backgroundColor: Colors.redAccent,
+                                  duration: Duration(seconds: 2),
                                 ),
+                              );
+                              _snackBarController!.closed
+                                  .then((_) => _snackBarController = null);
+                            }
 
-                              // interactive thumb
-                              FlutterSlider(
-                                values: [curr],
-                                min: 0,
-                                max: 100,
-                                disabled: !isSelected,
-                                handler: FlutterSliderHandler(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.black26),
-                                    color: Colors.white,
+                            // update local for immediate UI bounce-back
+                            setState(() {
+                              _localValues[category] = clamped.toDouble();
+                            });
+
+                            // dispatch to bloc
+                            context.read<BudgetingBloc>().add(
+                                  UpdateAllocationValue(
+                                    id: category,
+                                    value: clamped.toDouble(),
                                   ),
-                                ),
-                                trackBar: const FlutterSliderTrackBar(
-                                  activeTrackBar:
-                                      BoxDecoration(color: Colors.transparent),
-                                  inactiveTrackBar:
-                                      BoxDecoration(color: Colors.transparent),
-                                ),
-                                onDragging: (handlerIndex, lower, upper) {
-                                  final raw = (lower as num).toDouble();
-                                  final newVal = raw.clamp(0.0, remain);
-
-                                  // show warning if they try to exceed remainder
-                                  if (raw > remain &&
-                                      snackBarController == null) {
-                                    snackBarController =
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            '⚠️ Total alokasi tidak boleh melebihi 100%'),
-                                        backgroundColor: Colors.redAccent,
-                                        duration: Duration(seconds: 2),
-                                      ),
+                                );
+                          },
+                          onDragCompleted:
+                              (handlerIndex, lowerValue, upperValue) {
+                            final finalVal =
+                                (lowerValue as num).toDouble().clamp(
+                                      0.0,
+                                      maxForCat,
                                     );
-                                    snackBarController!.closed
-                                        .then((_) => snackBarController = null);
-                                  }
-
-                                  context.read<BudgetingBloc>().add(
-                                        UpdateAllocationValue(
-                                            id: category, value: newVal),
-                                      );
-                                },
-                              ),
-                            ],
-                          ),
+                            // ensure local also respects clamp
+                            setState(() {
+                              _localValues[category] = finalVal.toDouble();
+                            });
+                          },
                         ),
 
-                        // sub-items: only if category is selected
+                        // Sub-items
                         if (isSelected) ...[
                           const SizedBox(height: AppDimensions.smallPadding),
                           ...subItems.map((sub) {
@@ -243,7 +218,7 @@ class BudgetingAllocation extends StatelessWidget {
                                       ToggleExpenseSubItem(
                                         allocationId: category,
                                         subItem: sub,
-                                        isSelected: val ?? false,
+                                        isSelected: val!,
                                       ),
                                     );
                               },
@@ -256,7 +231,7 @@ class BudgetingAllocation extends StatelessWidget {
                 );
               }).toList(),
 
-              // total card
+              // Total allocation summary
               Card(
                 color: AppColors.greyBackground,
                 elevation: 0,
@@ -270,7 +245,11 @@ class BudgetingAllocation extends StatelessWidget {
                         style: TextStyle(
                             fontSize: 14, fontWeight: FontWeight.bold),
                       ),
-                      Text('${totalUsed.toStringAsFixed(0)}%'),
+                      Text(
+                        '${totalAllocation.toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                 ),
@@ -288,9 +267,16 @@ class BudgetingAllocation extends StatelessWidget {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary),
-                  onPressed: () => Navigator.pushNamed(
-                      context, Routes.budgetingAllocationExpense),
-                  child: const Text(AppStrings.save),
+                  onPressed: () async {
+                    await Navigator.pushNamed(
+                      context,
+                      Routes.budgetingAllocationExpense,
+                    );
+                  },
+                  child: const Text(
+                    AppStrings.save,
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],
