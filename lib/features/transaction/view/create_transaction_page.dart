@@ -20,7 +20,7 @@ class CreateTransactionPage extends StatelessWidget {
             text: 'Transaction Completed Successfully!',
           );
           // Simply pop; DashboardPage's RouteAware (didPopNext) will trigger a reload.
-          Future.delayed(const Duration(seconds: 1), () {
+          Future<void>.delayed(const Duration(seconds: 1), () {
             if (context.mounted) {
               Navigator.of(context).pushReplacementNamed(Routes.dashboard);
             }

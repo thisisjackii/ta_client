@@ -1,132 +1,116 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
+import 'package:ta_client/core/constants/app_dimensions.dart';
+import 'package:ta_client/core/constants/app_strings.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
 
 class EvaluationHistoryPage extends StatelessWidget {
   const EvaluationHistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Sample dummy history list
-    final historyList = [
-      {
-        'startDate': '01 Jan 2024',
-        'endDate': '31 Mar 2024',
-        'ideal': 3,
-        'notIdeal': 2,
-        'incomplete': 1,
-      },
-      {
-        'startDate': '01 Apr 2024',
-        'endDate': '30 Jun 2024',
-        'ideal': 5,
-        'notIdeal': 0,
-        'incomplete': 1,
-      },
-      {
-        'startDate': '01 Jul 2024',
-        'endDate': '30 Sep 2024',
-        'ideal': 2,
-        'notIdeal': 4,
-        'incomplete': 0,
-      },
-    ];
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Riwayat Evaluasi',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Riwayat Evaluasi Keuangan',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: historyList.length,
-                itemBuilder: (context, index) {
-                  final item = historyList[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.date_range,
-                            size: 24,
-                            color: Colors.blue,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${item['startDate']} - ${item['endDate']}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Wrap(
-                                  spacing: 12,
-                                  runSpacing: 4,
+    return BlocBuilder<EvaluationBloc, EvaluationState>(
+      builder: (context, state) {
+        if (state.loading) {
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),);
+        }
+        return Scaffold(
+          appBar: AppBar(title: const Text(AppStrings.evaluationHistoryTitle)),
+          body: Padding(
+            padding: const EdgeInsets.all(AppDimensions.padding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  AppStrings.evaluationHistoryTitle,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: AppDimensions.smallPadding),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: state.history.length,
+                    itemBuilder: (context, index) {
+                      final h = state.history[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.cardRadius),
+                        ),
+                        elevation: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppDimensions.padding),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.date_range,
+                                size: 24,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '${item['ideal']} Ideal',
+                                      '${h.start.day}/${h.start.month}/${h.start.year}'
+                                      ' - '
+                                      '${h.end.day}/${h.end.month}/${h.end.year}',
                                       style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF2A8C8B),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    Text(
-                                      '${item['notIdeal']} Tidak Ideal',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFFEF233C),
-                                      ),
-                                    ),
-                                    Text(
-                                      '${item['incomplete']} Tidak Lengkap',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.grey[700],
-                                      ),
+                                    const SizedBox(height: 6),
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 4,
+                                      children: [
+                                        Text(
+                                          '${h.ideal} Ideal',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.ideal,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${h.notIdeal} Tidak Ideal',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.notIdeal,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${h.incomplete} Tidak Lengkap',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.incomplete,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

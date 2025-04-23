@@ -1,40 +1,26 @@
+// lib/features/budgeting/view/budgeting_intro_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
+import 'package:ta_client/core/constants/app_dimensions.dart';
+import 'package:ta_client/core/constants/app_strings.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 
 class BudgetingIntro extends StatelessWidget {
   const BudgetingIntro({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const submitButtonColor = Color(0xff237BF5);
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xff81B7F3),
+        backgroundColor: AppColors.primary,
         automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                const Text(
-                  'Budgeting',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+        title: const Text(AppStrings.budgetingTitle),
       ),
       body: Column(
         children: [
-          // Top Half: Full-width image (no padding)
           Expanded(
             child: Image.asset(
               'assets/img/budgeting_background.png',
@@ -42,21 +28,17 @@ class BudgetingIntro extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
-
-          // Bottom Half: Centered texts & button, spaced around
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: AppDimensions.padding),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
                     'Raih Tujuan Keuanganmu dengan Budgeting yang Tepat!',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const Text(
@@ -64,20 +46,17 @@ class BudgetingIntro extends StatelessWidget {
                     style: TextStyle(fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: submitButtonColor,
-                      ),
-                      onPressed: () async {
-                        await Navigator.pushNamed(context, Routes.budgetingIncomeDate);
-                      },
-                      child: const Text(
-                        'Mulai',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.white,),
-                      ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                    ),
+                    onPressed: () {
+                      context.read<BudgetingBloc>().add(LoadBudgetingData());
+                      Navigator.pushNamed(context, Routes.budgetingIncomeDate);
+                    },
+                    child: const Text(
+                      AppStrings.start,
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ],

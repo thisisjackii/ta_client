@@ -7,6 +7,10 @@ import 'package:ta_client/core/services/connectivity_service.dart';
 import 'package:ta_client/core/services/service_locator.dart';
 import 'package:ta_client/core/state/auth_state.dart';
 import 'package:ta_client/core/widgets/custom_route_observer.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
+import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
+import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
@@ -31,6 +35,15 @@ class App extends StatelessWidget {
             repository: sl<TransactionRepository>(),
             connectivityService: sl<ConnectivityService>(),
             transactionService: sl<TransactionService>(),
+          ),
+        ),
+        BlocProvider<BudgetingBloc>(
+          create: (context) =>
+              BudgetingBloc(repository: sl<BudgetingRepository>()),
+        ),
+        BlocProvider<EvaluationBloc>(
+          create: (context) => EvaluationBloc(
+            sl<EvaluationRepository>(),
           ),
         ),
       ],

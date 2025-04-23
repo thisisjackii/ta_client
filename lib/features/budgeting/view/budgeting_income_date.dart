@@ -1,7 +1,12 @@
+// lib/features/budgeting/view/budgeting_income_date.dart
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:ta_client/app/routes/routes.dart';
-import 'package:ta_client/core/widgets/custom_date_picker.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
+import 'package:ta_client/core/constants/app_dimensions.dart';
+import 'package:ta_client/core/constants/app_strings.dart';
+import 'package:ta_client/features/budgeting/view/widgets/budgeting_date_selection.dart';
 
 class BudgetingIncomeDate extends StatefulWidget {
   const BudgetingIncomeDate({super.key});
@@ -11,97 +16,37 @@ class BudgetingIncomeDate extends StatefulWidget {
 }
 
 class _BudgetingIncomeDateState extends State<BudgetingIncomeDate> {
-  DateTime? startDate;
-  DateTime? endDate;
-
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 500), _showDatePickerModal);
+    Timer(const Duration(milliseconds: 300), _showDatePickerModal);
   }
 
   void _showDatePickerModal() {
     showDialog<void>(
       context: context,
-      barrierDismissible: false, // Optional: block outside tap to dismiss
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),),
           contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Title
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Pilih Tanggal Pemasukan',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Date pickers
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomDatePicker(
-                      label: 'Start Date',
-                      isDatePicker: true,
-                      selectedDate: startDate,
-                      onDateChanged: (date) => setState(() => startDate = date),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomDatePicker(
-                      label: 'End Date',
-                      isDatePicker: true,
-                      isEnabled: false,
-                      onDateChanged: (date) {
-                        setState(() {
-                          endDate = date;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Close dialog
-                      },
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Close dialog
-                        Navigator.pushNamed(context, Routes.budgetingIncome);
-                      },
-                      child: const Text('OK'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          content: const BudgetingDateSelection(),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(AppStrings.cancel),
+            ),
+            ElevatedButton(
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, Routes.budgetingIncome);
+              },
+              child: const Text(AppStrings.ok),
+            ),
+          ],
         );
       },
     );
@@ -109,8 +54,6 @@ class _BudgetingIncomeDateState extends State<BudgetingIncomeDate> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('')),
-    );
+    return const Scaffold();
   }
 }

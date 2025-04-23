@@ -1,91 +1,75 @@
+// lib/features/evaluation/view/evaluation_intro_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
+import 'package:ta_client/core/constants/app_dimensions.dart';
+import 'package:ta_client/core/constants/app_strings.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_event.dart';
 
-class EvaluationIntro extends StatelessWidget {
-  const EvaluationIntro({super.key});
-
+class EvaluationIntroPage extends StatelessWidget {
+  const EvaluationIntroPage({super.key});
   @override
-  Widget build(BuildContext context) {
-    const submitButtonColor = Color(0xff237BF5);
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xffA7D1FF),
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          backgroundColor: AppColors.info,
+          automaticallyImplyLeading: false,
+          title: const Text(AppStrings.evaluationIntroTitle),
+        ),
+        body: Column(
           children: [
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.of(context).pop(),
+            Expanded(
+              child: Image.asset(
+                'assets/img/10078322.png',
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.padding,
                 ),
-                const Text(
-                  'Evaluasi Keuangan',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    const Text(
+                      'Bagaimana Kondisi Keuanganmu? Cek Kesehatan Keuanganmu Yuk!',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const Text(
+                      AppStrings.evaluationIntroSubtitle,
+                      style: TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                      ),
+                      onPressed: () {
+                        context.read<EvaluationBloc>()
+                          ..add(SelectDateRange(DateTime.now(), DateTime.now()))
+                          ..add(LoadDashboard());
+                        Navigator.pushNamed(
+                          context,
+                          Routes.evaluationDateSelection,
+                        );
+                      },
+                      child: const Text(
+                        AppStrings.start,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
-      ),
-      body: Column(
-        children: [
-          // Top Half: Full-width image (no padding)
-          Expanded(
-            child: Image.asset(
-              'assets/img/10078322.png',
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          // Bottom Half: Centered texts & button, spaced around
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Bagaimana Kondisi Keuanganmu? Cek Kesehatan Keuanganmu Yuk!',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const Text(
-                    'Ingin tahu ke mana uangmu pergi? Cek kesehatan keuanganmu dengan mencatat transaksi secara rutin. Dijamin gak ribet!',
-                    style: TextStyle(fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: submitButtonColor,
-                      ),
-                      onPressed: () async {
-                        await Navigator.pushNamed(context, Routes.evaluationDateSelection);
-                      },
-                      child: const Text(
-                        'Mulai',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.white,),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+      );
 }

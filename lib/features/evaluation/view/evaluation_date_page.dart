@@ -1,123 +1,76 @@
+// lib/features/evaluation/view/evaluation_date_page.dart
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_dimensions.dart';
+import 'package:ta_client/core/constants/app_strings.dart';
 import 'package:ta_client/core/widgets/custom_date_picker.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_event.dart';
 
-class EvaluationDateSelection extends StatefulWidget {
-  const EvaluationDateSelection({super.key});
-
+class EvaluationDatePage extends StatefulWidget {
+  const EvaluationDatePage({super.key});
   @override
-  State<EvaluationDateSelection> createState() =>
-      _EvaluationDateSelectionState();
+  _EvaluationDatePageState createState() => _EvaluationDatePageState();
 }
 
-class _EvaluationDateSelectionState extends State<EvaluationDateSelection> {
-  DateTime? startDate;
-  DateTime? endDate;
+class _EvaluationDatePageState extends State<EvaluationDatePage> {
+  DateTime? _start;
+  DateTime? _end;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 500), _showDatePickerModal);
+    Timer(const Duration(milliseconds: 300), _openDateDialog);
   }
 
-  void _showDatePickerModal() {
+  void _openDateDialog() {
     showDialog<void>(
       context: context,
-      barrierDismissible: false, // Optional: block outside tap to dismiss
-      builder: (context) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Title
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Pilih Rentang Tanggal',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Date pickers
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomDatePicker(
-                      label: 'Start Date',
-                      isDatePicker: true,
-                      onDateChanged: (date) {
-                        setState(() {
-                          startDate = date;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomDatePicker(
-                      label: 'End Date',
-                      isDatePicker: true,
-                      onDateChanged: (date) {
-                        setState(() {
-                          endDate = date;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Close dialog
-                      },
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Close dialog
-                        Navigator.pushNamed(
-                          context,
-                          Routes.evaluationDashboard,
-                        );
-                      },
-                      child: const Text('OK'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text(AppStrings.dateRangePrompt),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomDatePicker(
+              label: 'Start',
+              isDatePicker: true,
+              selectedDate: _start,
+              onDateChanged: (d) => setState(() => _start = d),
+            ),
+            const SizedBox(height: AppDimensions.smallPadding),
+            CustomDatePicker(
+              label: 'End',
+              isDatePicker: true,
+              selectedDate: _end,
+              onDateChanged: (d) => setState(() => _end = d),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(AppStrings.cancel),
           ),
-        );
-      },
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (_start != null && _end != null) {
+                context
+                    .read<EvaluationBloc>()
+                    .add(SelectDateRange(_start!, _end!));
+              }
+              Navigator.pushNamed(context, Routes.evaluationDashboard);
+            },
+            child: const Text(AppStrings.ok),
+          ),
+        ],
+      ),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('')),
-    );
-  }
+  Widget build(BuildContext context) => const Scaffold();
 }

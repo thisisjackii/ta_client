@@ -1,46 +1,66 @@
+// lib/features/budgeting/view/widgets/budgeting_date_selection.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ta_client/core/constants/app_dimensions.dart';
+import 'package:ta_client/core/constants/app_strings.dart';
+import 'package:ta_client/core/widgets/custom_date_picker.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
 
-class CustomDateRangeSelector extends StatelessWidget {
-  const CustomDateRangeSelector({
-    required this.title,
-    required this.isIncome,
-    required this.startDate,
-    required this.endDate,
-    required this.onStartDateChanged,
-    required this.onEndDateChanged,
-    super.key,
-  });
-  final String title;
-  final bool isIncome;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final ValueChanged<DateTime?> onStartDateChanged;
-  final ValueChanged<DateTime?> onEndDateChanged;
+class BudgetingDateSelection extends StatelessWidget {
+  const BudgetingDateSelection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Title
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+    return BlocBuilder<BudgetingBloc, BudgetingState>(
+      builder: (context, state) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding:
+                    const EdgeInsets.only(bottom: AppDimensions.smallPadding),
+                child: Text(
+                  context.read<BudgetingBloc>().state.startDate == null
+                      ? AppStrings.selectDateIncome
+                      : AppStrings.selectDateAllocation,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-
-        // Date pickers
-        const Row(),
-      ],
+            Row(
+              children: [
+                Expanded(
+                  child: CustomDatePicker(
+                    label: 'Start Date',
+                    isDatePicker: true,
+                    selectedDate: state.startDate,
+                    onDateChanged: (d) =>
+                        context.read<BudgetingBloc>().add(StartDateChanged(d)),
+                  ),
+                ),
+                const SizedBox(width: AppDimensions.padding),
+                Expanded(
+                  child: CustomDatePicker(
+                    label: 'End Date',
+                    isDatePicker: true,
+                    selectedDate: state.endDate,
+                    onDateChanged: (d) =>
+                        context.read<BudgetingBloc>().add(EndDateChanged(d)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

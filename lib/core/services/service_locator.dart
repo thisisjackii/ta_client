@@ -2,6 +2,10 @@
 import 'package:get_it/get_it.dart';
 import 'package:ta_client/core/services/connectivity_service.dart';
 import 'package:ta_client/core/state/auth_state.dart';
+import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
+import 'package:ta_client/features/budgeting/services/budgeting_service.dart';
+import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
+import 'package:ta_client/features/evaluation/services/evaluation_service.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart';
 import 'package:ta_client/features/transaction/services/transaction_sync_service.dart';
@@ -22,5 +26,19 @@ void setupServiceLocator() {
     )
     ..registerLazySingleton<TransactionSyncService>(
       () => TransactionSyncService(repository: sl<TransactionRepository>()),
+    )
+    ..registerLazySingleton<BudgetingService>(
+      () => BudgetingService(
+        baseUrl: 'http://localhost:4000/api/v1',
+      ),
+    )
+    ..registerLazySingleton<BudgetingRepository>(
+      () => BudgetingRepository(sl<BudgetingService>()),
+    )
+    ..registerLazySingleton<EvaluationService>(
+      EvaluationService.new,
+    )
+    ..registerLazySingleton<EvaluationRepository>(
+      () => EvaluationRepository(sl<EvaluationService>()),
     );
 }

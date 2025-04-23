@@ -2,40 +2,26 @@ import 'package:another_xlider/another_xlider.dart';
 import 'package:another_xlider/models/handler.dart';
 import 'package:another_xlider/models/hatch_mark.dart';
 import 'package:another_xlider/models/tooltip/tooltip.dart';
-import 'package:another_xlider/models/tooltip/tooltip_box.dart';
 import 'package:another_xlider/models/trackbar.dart';
-import 'package:another_xlider/widgets/sized_box.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
+import 'package:ta_client/core/constants/app_dimensions.dart';
+import 'package:ta_client/core/utils/calculations.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
 import 'package:ta_client/features/evaluation/view/widgets/slider_limit_type.dart';
 
 class CustomSliderSingleRange extends StatelessWidget {
   const CustomSliderSingleRange({
-    required this.yourRatio,
     required this.limit,
     required this.limitType,
     super.key,
   });
-
-  final double yourRatio;
   final double limit;
   final SliderLimitType limitType;
-
   @override
   Widget build(BuildContext context) {
-    // Determine min and max to center the ideal limit
-    const double range = 30; // Half the range to extend left and right
-    final min = (limit - range).clamp(0, double.infinity).toDouble();
-    final max = limit + range;
-    final clampedRatio = yourRatio.clamp(min, max);
-
-    // Determine if user's ratio is ideal
-    final isIdeal = switch (limitType) {
-      SliderLimitType.lessThan => yourRatio < limit,
-      SliderLimitType.lessThanEqual => yourRatio <= limit,
-      SliderLimitType.moreThan => yourRatio > limit,
-      SliderLimitType.moreThanEqual => yourRatio >= limit,
-    };
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -43,116 +29,94 @@ class CustomSliderSingleRange extends StatelessWidget {
           'Evaluasi Rasio',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 16),
-
-        // SLIDER AREA (Stack with dual overlays)
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            // Base slider with fixed min-max handlers
-            FlutterSlider(
-              values: [min, max],
-              rangeSlider: true,
-              min: min,
-              max: max,
-              jump: true,
-              disabled: true,
-              handler: FlutterSliderHandler(
-                decoration: const BoxDecoration(),
-                child: const Icon(Icons.circle, color: Color(0xffB5B5B5)),
-              ),
-              rightHandler: FlutterSliderHandler(
-                decoration: const BoxDecoration(),
-                child: const Icon(Icons.circle, color: Color(0xffE5E5E5)),
-              ),
-            ),
-
-            // Foreground slider showing user's ratio
-            FlutterSlider(
-              key: ValueKey('single_slider_$yourRatio'),
-              values: [clampedRatio],
-              min: min,
-              max: max,
-              jump: true,
-              disabled: true,
-              handler: FlutterSliderHandler(
-                decoration: const BoxDecoration(),
-                child: Icon(
-                  Icons.circle,
-                  color: isIdeal ? Colors.green : Colors.red,
+        const SizedBox(height: AppDimensions.padding),
+        BlocBuilder<EvaluationBloc, EvaluationState>(
+          builder: (c, s) {
+            final v = s.detailItem?.yourValue ?? 0;
+            final min = (limit - 30).clamp(0, double.infinity);
+            final max = limit + 30;
+            final clamped = v.clamp(min, max);
+            final isIdeal = switch (limitType) {
+              SliderLimitType.lessThan => v < limit,
+              SliderLimitType.lessThanEqual => v <= limit,
+              SliderLimitType.moreThan => v > limit,
+              SliderLimitType.moreThanEqual => v >= limit,
+            };
+            return Column(
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    FlutterSlider(
+                      values: [min.toDouble(), max],
+                      rangeSlider: true,
+                      min: min.toDouble(),
+                      max: max,
+                      disabled: true,
+                      handler: FlutterSliderHandler(
+                        decoration: const BoxDecoration(),
+                        child: const Icon(Icons.circle, color: Colors.grey),
+                      ),
+                      rightHandler: FlutterSliderHandler(
+                        decoration: const BoxDecoration(),
+                        child: Icon(Icons.circle, color: Colors.grey[400]),
+                      ),
+                    ),
+                    FlutterSlider(
+                      values: [clamped.toDouble()],
+                      min: min.toDouble(),
+                      max: max,
+                      disabled: true,
+                      handler: FlutterSliderHandler(
+                        decoration: const BoxDecoration(),
+                        child: Icon(
+                          Icons.circle,
+                          color: isIdeal ? AppColors.ideal : AppColors.notIdeal,
+                        ),
+                      ),
+                      trackBar: FlutterSliderTrackBar(
+                        activeTrackBar: BoxDecoration(
+                          color: isIdeal ? AppColors.ideal : AppColors.notIdeal,
+                        ),
+                        inactiveTrackBar:
+                            const BoxDecoration(color: Colors.transparent),
+                      ),
+                      tooltip: FlutterSliderTooltip(
+                        alwaysShowTooltip: true,
+                        format: (x) => formatPercent(v),
+                      ),
+                      hatchMark: FlutterSliderHatchMark(
+                          displayLines: true, density: 0.4,),
+                    ),
+                  ],
                 ),
-              ),
-              trackBar: FlutterSliderTrackBar(
-                inactiveTrackBarHeight: 12,
-                activeTrackBarHeight: 12,
-                inactiveTrackBar: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  color: Colors.transparent,
+                const SizedBox(height: AppDimensions.smallPadding),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('${min.toInt()}%'),
+                    Text(
+                      '${limit.toInt()}%',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text('${max.toInt()}%'),
+                  ],
                 ),
-                activeTrackBar: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  color: isIdeal ? Colors.green : Colors.red,
+                const SizedBox(height: AppDimensions.padding),
+                Text(
+                  'Nilai ideal adalah ${_label(limitType)} $limit%. Rasio kamu saat ini adalah $v%.',
+                  style: const TextStyle(fontSize: 14),
                 ),
-                activeTrackBarDraggable: false,
-              ),
-              tooltip: FlutterSliderTooltip(
-                alwaysShowTooltip: true,
-                format: (_) => '${yourRatio.toStringAsFixed(0)}%',
-                textStyle: const TextStyle(color: Colors.black),
-                boxStyle: FlutterSliderTooltipBox(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              hatchMark: FlutterSliderHatchMark(
-                displayLines: true,
-                density: 0.4, // Adjust based on how many ticks you want
-                smallLine: const FlutterSliderSizedBox(
-                  width: 1,
-                  height: 6,
-                  decoration: BoxDecoration(color: Colors.grey),
-                ),
-                bigLine: const FlutterSliderSizedBox(
-                  width: 2,
-                  height: 10,
-                  decoration: BoxDecoration(color: Colors.grey),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 8),
-
-        // Min, ideal, max labels (optional if hatch marks already show them)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('${min.toInt()}%', style: const TextStyle(fontSize: 12)),
-            Text(
-              '${limit.toInt()}%',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            Text('${max.toInt()}%', style: const TextStyle(fontSize: 12)),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Description
-        Text(
-          'Nilai ideal adalah ${_limitTypeLabel(limitType)} $limit%. '
-          'Rasio kamu saat ini adalah $yourRatio%.',
-          style: const TextStyle(fontSize: 14),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 
-  String _limitTypeLabel(SliderLimitType type) {
-    switch (type) {
+  String _label(SliderLimitType t) {
+    switch (t) {
       case SliderLimitType.lessThan:
         return 'kurang dari';
       case SliderLimitType.lessThanEqual:

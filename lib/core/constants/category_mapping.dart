@@ -8,9 +8,9 @@ const Map<String, List<String>> categoryMapping = {
   'Surat Berharga': ['Saham', 'Obligasi', 'Reksadana'],
   'Investasi Alternatif': ['Kripto'],
   'Aset Pribadi': ['Koleksi', 'Perhiasan'],
-  'Hutang': ['Saldo Kartu Kredit', 'Tagihan', 'Cicilan', 'Pajak'],
-  'Hutang Perjanjian Tertulis': ['Pinjaman'],
-  'Pinjaman Jangka Panjang': ['Pinjaman Properti'],
+  'Utang': ['Saldo Kartu Kredit', 'Tagihan', 'Cicilan', 'Pajak'],
+  'Utang Wesel': ['Pinjaman'],
+  'Utang Hipotek': ['Pinjaman Properti'],
   'Pendapatan dari Pekerjaan': ['Gaji', 'Upah', 'Bonus', 'Commission'],
   'Pendapatan dari Investasi': ['Dividen'],
   'Pendapatan Bunga': ['Bunga'],
@@ -24,7 +24,7 @@ const Map<String, List<String>> categoryMapping = {
   'Perawatan Pribadi & Pakaian': ['Perawatan Pribadi', 'Pakaian'],
   'Hiburan & Rekreasi': ['Hiburan', 'Rekreasi'],
   'Pendidikan & Pembelajaran': ['Pendidikan', 'Pembelajaran'],
-  'Kewajiban Finansial (pinjaman, pajak, asuransi)': [
+  'Kewajiban Finansial': [
     'Bayar pinjaman',
     'Bayar pajak',
     'Bayar asuransi',

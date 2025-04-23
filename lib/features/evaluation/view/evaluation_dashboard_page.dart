@@ -1,142 +1,131 @@
+// lib/features/evaluation/view/evaluation_dashboard_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
+import 'package:ta_client/core/constants/app_dimensions.dart';
+import 'package:ta_client/core/constants/app_strings.dart';
+import 'package:ta_client/core/utils/calculations.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_event.dart';
+import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
 
-class EvaluationDashboard extends StatelessWidget {
-  const EvaluationDashboard({super.key});
-
+class EvaluationDashboardPage extends StatelessWidget {
+  const EvaluationDashboardPage({super.key});
   @override
   Widget build(BuildContext context) {
-    final evaluationData = <Map<String, String>>[
-      {'id': '0', 'yourRatio': '4 Bulan', 'idealRatio': '3 - 6 Bulan'},
-      {'id': '1', 'yourRatio': '8%', 'idealRatio': '> 15%'},
-      {'id': '2', 'yourRatio': '75%', 'idealRatio': '≤ 50%'},
-      {'id': '3', 'yourRatio': '51%', 'idealRatio': '≥ 10%'},
-      {'id': '4', 'yourRatio': '92%', 'idealRatio': '> 45%'},
-      {'id': '5', 'yourRatio': '36%', 'idealRatio': '≥ 50%'},
-      {'id': '6', 'yourRatio': '36%'},
-    ];
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Evaluasi Keuangan',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+    return BlocBuilder<EvaluationBloc, EvaluationState>(
+      builder: (c, s) {
+        if (s.loading) {
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),);
+        }
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(AppStrings.evaluationDashboardTitle),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.restart_alt_rounded),
+                onPressed: () {
+                  context.read<EvaluationBloc>().add(LoadHistory());
+                  Navigator.pushNamed(context, Routes.evaluationHistory);
+                },
               ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.restart_alt_rounded),
-            onPressed: () async {
-              final result =
-                  await Navigator.pushNamed(context, Routes.evaluationHistory);
-              debugPrint('Returned from EvaluationIntro: $result');
-            },
+            ],
           ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // [ADDITIONAL TEXT]
-          const Text(
-            'Berdasarkan data yang telah dimasukkan, kamu dapat melihat kemampuan dan keadaan keuanganmu secara menyeluruh.',
-            style: TextStyle(fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-
-          // [THE DATE RANGE WITH ICON]
-          Center(
-            child: Card(
-              elevation: 2, // <- subtle shadow
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          body: ListView(
+            padding: const EdgeInsets.all(AppDimensions.padding),
+            children: [
+              const Text(
+                AppStrings.evaluationDashboardSubtitle,
+                style: TextStyle(fontSize: 14),
               ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min, // <- hugs the content width
-                  children: [
-                    Icon(Icons.date_range, size: 16, color: Colors.grey),
-                    SizedBox(width: 6),
-                    Text(
-                      '{tanggal mulai} - {tanggal akhir}', // Placeholder
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
+              const SizedBox(height: AppDimensions.smallPadding),
+              Card(
+                color: AppColors.dateCardBackground,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppDimensions.smallPadding),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.date_range,
+                        size: AppDimensions.iconSize,
+                        color: Colors.grey,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: AppDimensions.smallPadding),
+                      Text(
+                        '${s.start != null ? '${s.start!.day}/${s.start!.month}/${s.start!.year}' : '--'} - ${s.end != null ? '${s.end!.day}/${s.end!.month}/${s.end!.year}' : '--'}',
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // [LOOP OF THE CARDS]
-          ListView.builder(
-            itemCount: evaluationData.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) {
-              final data = evaluationData[index];
-
-              final ratioLabels = <String>[
-                'Rasio Likuiditas',
-                'Rasio aset lancar terhadap kekayaan bersih',
-                'Rasio utang terhadap aset',
-                'Rasio Tabungan',
-                'Rasio kemampuan pelunasan hutang',
-                'Aset investasi terhadap nilai bersih kekayaan',
-                'Rasio Solvabilitas',
-              ];
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ratioLabels[index],
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        Routes.evaluationDetail,
-                        arguments: data['id'],
-                      );
-                    },
-                    child: Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
+              const SizedBox(height: AppDimensions.padding),
+              ...s.dashboardItems.map((item) {
+                return GestureDetector(
+                  onTap: () {
+                    context.read<EvaluationBloc>().add(LoadDetail(item.id));
+                    Navigator.pushNamed(
+                      context,
+                      Routes.evaluationDetail,
+                      arguments: item.id,
+                    );
+                  },
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.smallPadding,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                        child: Row(
-                          children: [
-                            // Your Ratio
+                    ),
+                    elevation: 2,
+                    margin: const EdgeInsets.only(
+                      bottom: AppDimensions.smallPadding,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppDimensions.padding),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.title,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  AppStrings.yourRatioLabel,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  formatPercent(item.yourValue),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (item.idealText != null)
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    'Your Ratio',
+                                    AppStrings.idealRatioLabel,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey,
@@ -144,7 +133,7 @@ class EvaluationDashboard extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    data['yourRatio'] ?? '',
+                                    item.idealText!,
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -153,42 +142,16 @@ class EvaluationDashboard extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            // Ideal Ratio
-                            if (data['id'] != '6')
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Ideal Ratio',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      data['idealRatio'] ?? '',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                ],
-              );
-            },
+                );
+              }),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

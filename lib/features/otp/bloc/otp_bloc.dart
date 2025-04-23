@@ -14,7 +14,7 @@ class OtpBloc extends Bloc<OtpEvent, OtpState> {
     emit(OtpLoading());
     try {
       // Simulate OTP verification logic
-      await Future.delayed(const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(seconds: 2));
       emit(OtpSuccess());
     } catch (e) {
       emit(OtpFailure(e.toString()));

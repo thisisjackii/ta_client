@@ -25,8 +25,8 @@ class Routes {
   static const budgetingIncome = '/budgeting-income';
   static const budgetingIncomeDate = '/budgeting-income-date';
   static const budgetingAllocationDate = '/budgeting-allocation-date';
-  static const budgetingAllocationPage = '/budgeting-allocation-page';
   static const budgetingAllocationExpense = '/budgeting-allocation-expense';
+  static const budgetingAllocationPage = '/budgeting-allocation-page';
   static const budgetingDashboard = '/budgeting-dashboard';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -73,17 +73,17 @@ class Routes {
         );
       case evaluationIntro:
         return MaterialPageRoute(
-          builder: (_) => const EvaluationIntro(),
+          builder: (_) => const EvaluationIntroPage(),
           settings: settings,
         );
       case evaluationDateSelection:
         return MaterialPageRoute(
-          builder: (_) => const EvaluationDateSelection(),
+          builder: (_) => const EvaluationDatePage(),
           settings: settings,
         );
       case evaluationDashboard:
         return MaterialPageRoute(
-          builder: (_) => const EvaluationDashboard(),
+          builder: (_) => const EvaluationDashboardPage(),
           settings: settings,
         );
       case evaluationDetail:
