@@ -1,9 +1,10 @@
 // lib/features/transaction/view/widgets/transaction_form.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
-import 'package:ta_client/core/constants/category_mapping.dart'; // New mapping file
+import 'package:ta_client/core/constants/category_mapping.dart';
+import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/core/widgets/custom_category_picker.dart';
 import 'package:ta_client/core/widgets/custom_date_picker.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
@@ -33,9 +34,15 @@ class TransactionForm extends StatefulWidget {
   _TransactionFormState createState() => _TransactionFormState();
 }
 
-class _TransactionFormState extends State<TransactionForm> {
+class _TransactionFormState extends State<TransactionForm> with RouteAware {
   Color submitButtonColor = const Color(0xff2A8C8B);
+
   final List<DropdownItem> dropdownItems = [
+    DropdownItem(
+      label: 'Pilih Tipe Akun', // Placeholder text
+      icon: Icons.help_outline,
+      color: Colors.grey,
+    ),
     DropdownItem(
       label: 'Aset',
       icon: Icons.account_balance_wallet,
@@ -57,65 +64,81 @@ class _TransactionFormState extends State<TransactionForm> {
       color: const Color(0xffD623AE),
     ),
   ];
-  String transactionType = '';
-  String? selectedValue;
+
+  late String transactionType;
+  late String selectedValue;
   final _formKey = GlobalKey<FormState>();
-  late TransactionFormMode mode;
+
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
-  // Parent category field
+
   String rawPredictedCategory = '';
-  // Subcategory field
   String subcategory = '';
+
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
+
   final int maxDescriptionLength = 100;
 
-  final NumberFormat _rupiahFormatter = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp. ',
-    decimalDigits: 0,
-  );
+  @override
+  void initState() {
+    super.initState();
 
-  // This getter builds the display label based on the parent and subcategory.
-  String get displayCategory {
-    if (rawPredictedCategory.isNotEmpty) {
-      if (subcategory.isNotEmpty) {
-        return '$rawPredictedCategory / $subcategory';
-      }
-      return rawPredictedCategory;
+    // Initialize mode & fields
+    mode = widget.mode;
+
+    // Build the list of allowed dropdown labels
+    final allowedLabels = dropdownItems.map((d) => d.label).toList();
+
+    if (widget.transaction != null) {
+      // Only accept accountType if it's one of our labels
+      final acct = widget.transaction!.accountType;
+      selectedValue = allowedLabels.contains(acct) ? acct : allowedLabels.first;
+      transactionType = selectedValue;
+
+      // Pre-fill all other controllers
+      descriptionController.text = widget.transaction!.description;
+      amountController.text = formatToRupiah(widget.transaction!.amount);
+      rawPredictedCategory = widget.transaction!.categoryName;
+      subcategory = widget.transaction!.subcategoryName;
+      selectedDate = widget.transaction!.date;
+      selectedTime = TimeOfDay.fromDateTime(widget.transaction!.date);
+    } else {
+      selectedValue = 'Pilih Tipe Akun';
+      transactionType = selectedValue;
     }
-    return 'Pilih Kategori';
+
+    descriptionController.addListener(_onDescriptionChanged);
   }
+
+  void _onDescriptionChanged() {
+    final text = descriptionController.text;
+    if (text.trim().isNotEmpty && widget.onDescriptionChanged != null) {
+      widget.onDescriptionChanged!(text);
+    }
+  }
+
+  late TransactionFormMode mode;
 
   @override
   Widget build(BuildContext context) {
     final isReadOnly = mode == TransactionFormMode.view;
+
     return BlocListener<TransactionBloc, TransactionState>(
       listener: (context, state) {
         if (state.classifiedCategory != null &&
             state.classifiedCategory!.isNotEmpty) {
           final predictedSub = state.classifiedCategory!;
-          debugPrint('Raw classification result: "$predictedSub"');
           final predictedParent = findParentCategory(predictedSub);
-          debugPrint(
-            'Found parent category: "$predictedParent" for "$predictedSub"',
-          );
           setState(() {
             rawPredictedCategory = predictedParent;
             subcategory = '$predictedSub ✨';
           });
         } else {
-          // Else branch when classification was not confident enough.
-          debugPrint(
-            'Classification not confident enough. No valid category returned.',
-          );
           setState(() {
             rawPredictedCategory = '';
-            subcategory =
-                ''; // Or set a default message like 'Please choose manually'
+            subcategory = '';
           });
-          // Optionally, inform the user via a visual snackBar or alert.
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
@@ -131,30 +154,27 @@ class _TransactionFormState extends State<TransactionForm> {
           key: _formKey,
           child: Column(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomTextField(
-                    label: 'Deskripsi',
-                    controller: descriptionController,
-                    readOnly: isReadOnly,
-                    onTap: isReadOnly ? _switchToEdit : null,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field cannot be empty';
-                      }
-                      return null;
-                    },
-                    maxLength: maxDescriptionLength,
-                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                  ),
-                  const SizedBox(height: 4),
-                ],
+              // Description
+              CustomTextField(
+                label: 'Deskripsi',
+                controller: descriptionController,
+                isEnabled: !isReadOnly,
+                onTap: isReadOnly ? _switchToEdit : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Field cannot be empty';
+                  }
+                  return null;
+                },
+                maxLength: maxDescriptionLength,
+                maxLengthEnforcement: MaxLengthEnforcement.enforced,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 16),
+
+              // Dropdown: Account Type
               CustomDropdownField(
                 items: dropdownItems,
-                selectedValue: transactionType,
+                selectedValue: selectedValue,
                 onChanged: (item) {
                   setState(() {
                     selectedValue = item.label;
@@ -163,30 +183,24 @@ class _TransactionFormState extends State<TransactionForm> {
                   });
                 },
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 16),
+
+              // Amount
               Row(
                 children: [
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Total',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontVariations: [FontVariation('wght', 600)],
-                      ),
-                    ),
+                  const Text(
+                    'Total',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(width: 24),
                   Expanded(
                     child: CustomTextField(
                       label: 'Enter Total',
                       controller: amountController,
-                      readOnly: isReadOnly,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        RupiahInputFormatter(),
-                      ],
+                      isEnabled: !isReadOnly,
                       onTap: isReadOnly ? _switchToEdit : null,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [RupiahInputFormatter()],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Field cannot be empty';
@@ -197,62 +211,32 @@ class _TransactionFormState extends State<TransactionForm> {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Kategori',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontVariations: [FontVariation('wght', 600)],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: CustomCategoryPicker(
-                      selectedCategory: rawPredictedCategory,
-                      selectedSubCategory: subcategory,
-                      onCategorySelected: isReadOnly
-                          ? (cat, subCat) {}
-                          : (cat, subCat) {
-                              // When manually selected, update without appending sparkle.
-                              setState(() {
-                                rawPredictedCategory = cat;
-                                subcategory = subCat;
-                              });
-                            },
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 16),
+
+              // Category / Subcategory picker
+              CustomCategoryPicker(
+                categories: categoryMapping,
+                selectedCategory: rawPredictedCategory,
+                selectedSubCategory: subcategory,
+                onCategorySelected: isReadOnly
+                    ? (a, b) {}
+                    : (cat, subCat) {
+                        setState(() {
+                          rawPredictedCategory = cat;
+                          subcategory = subCat;
+                        });
+                      },
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 16),
+
+              // Date & Time
               Row(
                 children: [
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Tanggal',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontVariations: [FontVariation('wght', 600)],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 22),
                   Expanded(
                     child: CustomDatePicker(
                       label: 'Tanggal',
                       isDatePicker: true,
-                      initialDate: selectedDate,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Field cannot be empty';
-                        }
-                        return null;
-                      },
+                      selectedDate: selectedDate,
                       onDateChanged: isReadOnly
                           ? null
                           : (date) {
@@ -260,8 +244,11 @@ class _TransactionFormState extends State<TransactionForm> {
                                 selectedDate = date;
                               });
                             },
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                   ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: CustomDatePicker(
                       label: 'Waktu',
@@ -279,15 +266,12 @@ class _TransactionFormState extends State<TransactionForm> {
                 ],
               ),
               const SizedBox(height: 24),
+
+              // Delete or Submit
               if (isReadOnly)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: widget.onDelete,
-                      child: const Text('Delete'),
-                    ),
-                  ],
+                ElevatedButton(
+                  onPressed: widget.onDelete,
+                  child: const Text('Delete'),
                 )
               else
                 SizedBox(
@@ -296,60 +280,12 @@ class _TransactionFormState extends State<TransactionForm> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: submitButtonColor,
                     ),
-                    onPressed: () {
-                      if (!_formKey.currentState!.validate()) {
-                        return;
-                      }
-
-                      if (selectedDate == null) return;
-
-                      DateTime combinedDate;
-                      if (selectedTime != null) {
-                        combinedDate = DateTime(
-                          selectedDate!.year,
-                          selectedDate!.month,
-                          selectedDate!.day,
-                          selectedTime!.hour,
-                          selectedTime!.minute,
-                        );
-                      } else {
-                        combinedDate = selectedDate!;
-                      }
-
-                      final rawAmount = amountController.text
-                          .replaceAll(RegExp('[^0-9]'), '');
-                      final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
-
-                      // Remove sparkle before sending the transaction.
-                      final cleanSubcategory = subcategory.replaceAll(' ✨', '');
-
-                      final transaction = Transaction(
-                        id: widget.transaction?.id ?? '',
-                        type: transactionType,
-                        description: descriptionController.text,
-                        date: combinedDate,
-                        category: rawPredictedCategory,
-                        subcategory: cleanSubcategory,
-                        amount: parsedAmount,
-                        isBookmarked: widget.transaction?.isBookmarked ?? false,
-                      );
-
-                      widget.onSubmit(transaction);
-
-                      if (mode == TransactionFormMode.edit) {
-                        setState(() {
-                          mode = TransactionFormMode.view;
-                        });
-                      }
-                    },
+                    onPressed: _onSubmit,
                     child: Text(
                       mode == TransactionFormMode.edit
                           ? 'Confirm Edit'
                           : 'Submit',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
@@ -360,6 +296,63 @@ class _TransactionFormState extends State<TransactionForm> {
     );
   }
 
+  void _onSubmit() {
+    if (!_formKey.currentState!.validate() || selectedDate == null) return;
+    if (transactionType == '' || transactionType == 'Pilih Tipe Akun') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a valid account type.')),
+      );
+      return;
+    }
+    final rawAmount = amountController.text.replaceAll(RegExp('[^0-9]'), '');
+    final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
+    final cleanSub = subcategory.replaceAll(' ✨', '');
+
+    final combinedDate = selectedTime == null
+        ? selectedDate!
+        : DateTime(
+            selectedDate!.year,
+            selectedDate!.month,
+            selectedDate!.day,
+            selectedTime!.hour,
+            selectedTime!.minute,
+          );
+
+    final tx = Transaction(
+      id: widget.transaction?.id ?? '',
+      categoryId:
+          '', // <-- you’ll populate this from your picker’s internal lookup
+      accountType: transactionType,
+      description: descriptionController.text,
+      date: combinedDate,
+      categoryName: rawPredictedCategory,
+      subcategoryName: cleanSub,
+      amount: parsedAmount,
+      isBookmarked: widget.transaction?.isBookmarked ?? false,
+    );
+
+    widget.onSubmit(tx);
+
+    if (mode == TransactionFormMode.edit) {
+      setState(() => mode = TransactionFormMode.view);
+    }
+  }
+
+  String findParentCategory(String sub) {
+    for (final entry in categoryMapping.entries) {
+      if (entry.value.map((s) => s.toLowerCase()).contains(sub.toLowerCase())) {
+        return entry.key;
+      }
+    }
+    return '';
+  }
+
+  void _switchToEdit() {
+    if (mode == TransactionFormMode.view) {
+      setState(() => mode = TransactionFormMode.edit);
+    }
+  }
+
   @override
   void dispose() {
     descriptionController
@@ -367,57 +360,5 @@ class _TransactionFormState extends State<TransactionForm> {
       ..dispose();
     amountController.dispose();
     super.dispose();
-  }
-
-  /// Helper function: Given a subcategory string, return its parent category
-  /// by scanning through the categoryMapping.
-  String findParentCategory(String sub) {
-    final normalizedSub = sub.trim().toLowerCase();
-    for (final entry in categoryMapping.entries) {
-      for (final cat in entry.value) {
-        if (cat.trim().toLowerCase() == normalizedSub) {
-          return entry.key;
-        }
-      }
-    }
-    debugPrint('No parent found for subcategory: "$sub"');
-    return '';
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    mode = widget.mode;
-    if (widget.transaction != null) {
-      transactionType = widget.transaction!.type;
-      selectedValue = widget.transaction!.type;
-      descriptionController.text = widget.transaction!.description;
-      amountController.text =
-          _rupiahFormatter.format(widget.transaction!.amount.toInt());
-      rawPredictedCategory = widget.transaction!.category;
-      subcategory = widget.transaction!.subcategory;
-      selectedDate = widget.transaction!.date;
-      selectedTime = TimeOfDay.fromDateTime(widget.transaction!.date);
-    } else {
-      transactionType = dropdownItems.first.label;
-      selectedValue = dropdownItems.first.label;
-    }
-    descriptionController.addListener(_onDescriptionChanged);
-  }
-
-  void _onDescriptionChanged() {
-    final text = descriptionController.text;
-    if (text.trim().isNotEmpty && widget.onDescriptionChanged != null) {
-      widget.onDescriptionChanged!(text);
-    }
-  }
-
-  // Switch to edit mode when a read-only field is tapped.
-  void _switchToEdit() {
-    if (mode == TransactionFormMode.view) {
-      setState(() {
-        mode = TransactionFormMode.edit;
-      });
-    }
   }
 }
