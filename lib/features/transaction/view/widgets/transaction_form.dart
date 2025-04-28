@@ -172,16 +172,27 @@ class _TransactionFormState extends State<TransactionForm> with RouteAware {
               const SizedBox(height: 16),
 
               // Dropdown: Account Type
-              CustomDropdownField(
-                items: dropdownItems,
-                selectedValue: selectedValue,
-                onChanged: (item) {
-                  setState(() {
-                    selectedValue = item.label;
-                    transactionType = item.label;
-                    submitButtonColor = item.color;
-                  });
-                },
+              Row(
+                children: [
+                  const Text(
+                    'Tipe Akun',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: CustomDropdownField(
+                      items: dropdownItems,
+                      selectedValue: selectedValue,
+                      onChanged: (item) {
+                        setState(() {
+                          selectedValue = item.label;
+                          transactionType = item.label;
+                          submitButtonColor = item.color;
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
 
@@ -214,24 +225,40 @@ class _TransactionFormState extends State<TransactionForm> with RouteAware {
               const SizedBox(height: 16),
 
               // Category / Subcategory picker
-              CustomCategoryPicker(
-                categories: categoryMapping,
-                selectedCategory: rawPredictedCategory,
-                selectedSubCategory: subcategory,
-                onCategorySelected: isReadOnly
-                    ? (a, b) {}
-                    : (cat, subCat) {
-                        setState(() {
-                          rawPredictedCategory = cat;
-                          subcategory = subCat;
-                        });
-                      },
+              Row(
+                children: [
+                  const Text(
+                    'Kategori',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: CustomCategoryPicker(
+                      categories: categoryMapping,
+                      selectedCategory: rawPredictedCategory,
+                      selectedSubCategory: subcategory,
+                      onCategorySelected: isReadOnly
+                          ? (a, b) {}
+                          : (cat, subCat) {
+                              setState(() {
+                                rawPredictedCategory = cat;
+                                subcategory = subCat;
+                              });
+                            },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
 
               // Date & Time
               Row(
                 children: [
+                  const Text(
+                    'Waktu',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(width: 24),
                   Expanded(
                     child: CustomDatePicker(
                       label: 'Tanggal',
