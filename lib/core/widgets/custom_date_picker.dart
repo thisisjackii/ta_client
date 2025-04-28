@@ -13,7 +13,7 @@ class CustomDatePicker extends StatefulWidget {
     this.initialTime,
     this.validator,
     this.selectedDate,
-    this.isEnabled = true,
+    this.isEnabled = true, // this toggles enable/disable
   });
 
   final String label;
@@ -41,16 +41,15 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
   }
 
   @override
-  void didUpdateWidget(covariant CustomDatePicker oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _setInitialText(); // Sync text with updated selectedDate
+  void didUpdateWidget(covariant CustomDatePicker old) {
+    super.didUpdateWidget(old);
+    _setInitialText();
   }
 
   void _setInitialText() {
-    final effectiveDate = widget.selectedDate ?? widget.initialDate;
-
-    if (widget.isDatePicker && effectiveDate != null) {
-      _controller.text = DateFormat('dd/MM/yyyy').format(effectiveDate);
+    final dt = widget.selectedDate ?? widget.initialDate;
+    if (widget.isDatePicker && dt != null) {
+      _controller.text = DateFormat('dd/MM/yyyy').format(dt);
     } else if (!widget.isDatePicker && widget.initialTime != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _controller.text = widget.initialTime!.format(context);
@@ -62,25 +61,25 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     if (!widget.isEnabled) return;
 
     if (widget.isDatePicker) {
-      final pickedDate = await showDatePicker(
+      final picked = await showDatePicker(
         context: context,
         initialDate:
             widget.selectedDate ?? widget.initialDate ?? DateTime.now(),
         firstDate: DateTime(2000),
         lastDate: DateTime(2100),
       );
-      if (pickedDate != null) {
-        _controller.text = DateFormat('dd/MM/yyyy').format(pickedDate);
-        widget.onDateChanged?.call(pickedDate);
+      if (picked != null) {
+        _controller.text = DateFormat('dd/MM/yyyy').format(picked);
+        widget.onDateChanged?.call(picked);
       }
     } else {
-      final pickedTime = await showTimePicker(
+      final t = await showTimePicker(
         context: context,
         initialTime: widget.initialTime ?? TimeOfDay.now(),
       );
-      if (pickedTime != null && mounted) {
-        _controller.text = pickedTime.format(context);
-        widget.onTimeChanged?.call(pickedTime);
+      if (t != null && mounted) {
+        _controller.text = t.format(context);
+        widget.onTimeChanged?.call(t);
       }
     }
   }
@@ -89,7 +88,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
   Widget build(BuildContext context) {
     return FormField<String>(
       validator: widget.validator,
-      builder: (FormFieldState<String> field) {
+      builder: (field) {
         return GestureDetector(
           onTap: _handleTap,
           behavior: HitTestBehavior.opaque,

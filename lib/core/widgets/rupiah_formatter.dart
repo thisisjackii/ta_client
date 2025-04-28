@@ -1,15 +1,10 @@
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
+import 'package:ta_client/core/utils/calculations.dart';
 
 class RupiahInputFormatter extends TextInputFormatter {
-  final NumberFormat _formatter = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp. ',
-    decimalDigits: 0,
-  );
-
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue,) {
     // Remove non-digits
     final digitsOnly = newValue.text.replaceAll(RegExp('[^0-9]'), '');
 
@@ -18,7 +13,7 @@ class RupiahInputFormatter extends TextInputFormatter {
 
     // Parse digits safely
     final number = int.parse(digitsOnly);
-    final formatted = _formatter.format(number);
+    final formatted = formatToRupiah(number.toDouble());
 
     return TextEditingValue(
       text: formatted,
