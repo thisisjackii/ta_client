@@ -33,4 +33,6 @@ class AppStrings {
   static const allocationSubtitle =
       'Pilih kategori pengeluaran sesuai dengan alokasi dana yang telah ditetapkan sebelumnya.';
   static const totalAllocation = 'Total Alokasi';
+
+  static const String expendableAllocationCardTitle = 'Alokasi Dana Pemasukan';
 }

@@ -1,12 +1,9 @@
 // lib/features/evaluation/view/evaluation_intro_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
-import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
-import 'package:ta_client/features/evaluation/bloc/evaluation_event.dart';
 
 class EvaluationIntroPage extends StatelessWidget {
   const EvaluationIntroPage({super.key});
@@ -52,9 +49,6 @@ class EvaluationIntroPage extends StatelessWidget {
                         backgroundColor: AppColors.primary,
                       ),
                       onPressed: () {
-                        context.read<EvaluationBloc>()
-                          ..add(SelectDateRange(DateTime.now(), DateTime.now()))
-                          ..add(LoadDashboard());
                         Navigator.pushNamed(
                           context,
                           Routes.evaluationDateSelection,

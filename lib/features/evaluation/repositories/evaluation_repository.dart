@@ -7,7 +7,9 @@ class EvaluationRepository {
   EvaluationRepository(this._service);
   final EvaluationService _service;
   Future<List<Evaluation>> getDashboardItems(DateTime start, DateTime end) =>
-      _service.fetchDashboards(start, end);
-  Future<Evaluation> getDetailItem(String id) => _service.fetchDetail(id);
+      _service.fetchDashboard(start, end);
+  Future<Evaluation> getDetail(DateTime s, DateTime e, String id) =>
+      _service.fetchDetail(s, e, id);
+
   Future<List<History>> getHistory() => _service.fetchHistory();
 }

@@ -6,13 +6,13 @@ import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/features/login/bloc/login_bloc.dart';
 import 'package:ta_client/features/login/bloc/login_event.dart';
 import 'package:ta_client/features/login/bloc/login_state.dart';
+import 'package:ta_client/features/login/services/login_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
   static Widget create() {
     return BlocProvider(
-      create: (context) => LoginBloc(),
+      create: (context) => LoginBloc(loginService: LoginService()),
       child: const LoginPage(),
     );
   }
@@ -21,7 +21,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with RouteAware {
   bool _obscureText = true; // Initial state of password visibility
   bool _isHovered = false;
 
@@ -53,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
             Navigator.pushReplacementNamed(context, Routes.dashboard);
           } else if (state is LoginFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage)),
+              SnackBar(content: Text(state.error)),
             );
           }
         },

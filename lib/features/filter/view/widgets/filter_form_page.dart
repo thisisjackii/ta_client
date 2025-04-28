@@ -9,7 +9,7 @@ class FilterFormPage extends StatefulWidget {
   State<FilterFormPage> createState() => _FilterFormPageState();
 }
 
-class _FilterFormPageState extends State<FilterFormPage> {
+class _FilterFormPageState extends State<FilterFormPage> with RouteAware {
   Color submitButtonColor = const Color(0xff2A8C8B);
   final List<DropdownItem> dropdownItems = [
     DropdownItem(

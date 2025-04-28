@@ -1,4 +1,5 @@
 // lib/features/budgeting/view/budgeting_allocation_expense.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
@@ -17,7 +18,13 @@ class BudgetingAllocationExpense extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<BudgetingBloc, BudgetingState>(
       builder: (context, state) {
-        final allocations = state.allocations;
+        // Filter to only allocations whose category title was selected
+        final selectedAllocations = state.allocations
+            .where(
+              (alloc) => state.selectedCategories.contains(alloc.title),
+            )
+            .toList();
+
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.budgetingTitle),
@@ -36,39 +43,57 @@ class BudgetingAllocationExpense extends StatelessWidget {
                 style: TextStyle(fontSize: 12),
               ),
               const SizedBox(height: AppDimensions.smallPadding),
-              ...allocations.map((alloc) {
+
+              // Only show ExpansionTiles for the categories the user selected
+              ...selectedAllocations.map((alloc) {
                 final title = alloc.title;
                 final subItems = categoryMapping[title] ?? <String>[];
                 return ExpansionTile(
+                  key: PageStorageKey<String>(
+                    title,
+                  ), // preserves expansion state across scroll
+                  maintainState:
+                      true, // retains child widget state when collapsed
                   title: Text(title),
                   children: subItems.map((sub) {
-                    // you can wire onChanged to bloc if needed
+                    final isChecked =
+                        state.selectedSubExpenses[title]?.contains(sub) ??
+                            false;
                     return CheckboxListTile(
-                      value:
-                          state.selectedSubExpenses[alloc.id]?.contains(sub) ??
-                              false,
+                      key:
+                          ValueKey('${title}_$sub}'), // unique key per checkbox
+                      controlAffinity: ListTileControlAffinity
+                          .leading, // checkbox on the left
+                      contentPadding: EdgeInsets.zero, // consistent tap area
+                      value: isChecked,
                       title: Text(sub),
                       onChanged: (val) {
                         context.read<BudgetingBloc>().add(
                               ToggleExpenseSubItem(
-                                  allocationId: alloc.id,
-                                  subItem: sub,
-                                  isSelected: val ?? false,),
+                                allocationId: alloc.id,
+                                subItem: sub,
+                                isSelected: val ?? false,
+                              ),
                             );
                       },
                     );
                   }).toList(),
                 );
               }),
+
               const SizedBox(height: AppDimensions.padding),
-              ElevatedButton(
-                onPressed: () =>
-                    Navigator.pushNamed(context, Routes.budgetingDashboard),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,),
-                child: const Text(
-                  AppStrings.save,
-                  style: TextStyle(color: Colors.white),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, Routes.budgetingDashboard),
+                  child: const Text(
+                    AppStrings.save,
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],

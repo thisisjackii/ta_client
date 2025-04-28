@@ -1,8 +1,10 @@
+// lib/features/evaluation/view/evaluation_detail_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
+import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
 import 'package:ta_client/features/evaluation/view/widgets/custom_slider_double_range.dart';
@@ -25,6 +27,18 @@ class EvaluationDetailPage extends StatelessWidget {
           );
         }
         final item = state.detailItem!;
+
+        // helper to pull breakdown entries by key
+        List<Map<String, String>> entries(String key) {
+          return item.breakdown?.entries
+                  .where((e) => e.key == key)
+                  .map(
+                    (e) => {'label': e.key, 'value': formatToRupiah(e.value)},
+                  )
+                  .toList() ??
+              [];
+        }
+
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.ratioSummaryTitle),
@@ -61,6 +75,7 @@ class EvaluationDetailPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title + Status
                 Row(
                   children: [
                     Expanded(
@@ -78,8 +93,9 @@ class EvaluationDetailPage extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           border: Border.all(color: Colors.grey),
-                          borderRadius:
-                              BorderRadius.circular(AppDimensions.cardRadius),
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.cardRadius,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.grey.withAlpha(50),
@@ -96,38 +112,38 @@ class EvaluationDetailPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 32),
+
+                // ID == 0: double‐range slider
                 if (item.id == '0') ...[
                   const CustomSliderDoubleRange(),
                   const SizedBox(height: 32),
-                  const StatExpandableCard(
+
+                  // Aset Likuid vs Pengeluaran Bulanan
+                  StatExpandableCard(
                     title: 'Aset Likuid',
                     icon: Icons.bar_chart,
-                    valuesAboveDivider: [
-                      {'label': 'Gaji', 'value': '15000'},
-                      {'label': 'Uang di Bank', 'value': '5400'},
-                    ],
-                    valuesBelowDivider: [
-                      {'label': 'Total', 'value': '19400'},
-                    ],
+                    valuesAboveDivider: entries('Aset Likuid'),
+                    valuesBelowDivider: entries('Pengeluaran Bulanan'),
                   ),
-                  const StatExpandableCard(
-                    title: 'Rata-rata pengeluaran bulanan',
-                    icon: Icons.bar_chart,
-                    valuesAboveDivider: [
-                      {'label': 'Gaji', 'value': '15000'},
-                      {'label': 'Uang di Bank', 'value': '5400'},
-                    ],
-                    valuesBelowDivider: [
-                      {'label': 'Total', 'value': '19400'},
-                    ],
-                  ),
+
+                  // other IDs (1–5): single‐range slider + breakdown
                 ] else if (item.id != '6') ...[
                   CustomSliderSingleRange(
                     limit: _getLimit(item.id),
                     limitType: _getLimitType(item.id),
                   ),
                   const SizedBox(height: 32),
-                  // Additional StatExpandableCard widgets per ratio...
+
+                  // for each ratio we show its two inputs + total/net
+                  // e.g. for id '1': Aset Likuid / Net Worth
+                  StatExpandableCard(
+                    title: _ratioTitles[item.id]!,
+                    icon: Icons.bar_chart,
+                    valuesAboveDivider: entries(_ratioInputs[item.id]![0]),
+                    valuesBelowDivider: entries(_ratioInputs[item.id]![1]),
+                  ),
+
+                  // ID == 6: solvency ratio
                 ] else ...[
                   const Center(
                     child: Column(
@@ -138,35 +154,15 @@ class EvaluationDetailPage extends StatelessWidget {
                           style: TextStyle(fontSize: 14),
                         ),
                         SizedBox(height: 16),
-                        // Math.tex(
-                        //   r'\frac{Total Kekayaan Bersih}{Total Aset} \times 100\%',
-                        //   textStyle: const TextStyle(fontSize: 18),
-                        // ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 32),
-                  const StatExpandableCard(
+                  StatExpandableCard(
                     title: 'Total Kekayaan Bersih',
                     icon: Icons.bar_chart,
-                    valuesAboveDivider: [
-                      {'label': 'Saham', 'value': '15000'},
-                      {'label': 'Properti investasi', 'value': '5400'},
-                    ],
-                    valuesBelowDivider: [
-                      {'label': 'Total', 'value': '19400'},
-                    ],
-                  ),
-                  const StatExpandableCard(
-                    title: 'Total Aset',
-                    icon: Icons.bar_chart,
-                    valuesAboveDivider: [
-                      {'label': 'Pendapatan bulanan', 'value': '-'},
-                      {'label': 'Gaji', 'value': '-'},
-                    ],
-                    valuesBelowDivider: [
-                      {'label': 'Total', 'value': '-'},
-                    ],
+                    valuesAboveDivider: entries('Total Kekayaan Bersih'),
+                    valuesBelowDivider: entries('Total Aset'),
                   ),
                 ],
               ],
@@ -177,22 +173,32 @@ class EvaluationDetailPage extends StatelessWidget {
     );
   }
 
+  static const Map<String, String> _ratioTitles = {
+    '1': 'Aset Lancar vs Kekayaan Bersih',
+    '2': 'Utang vs Aset',
+    '3': 'Total Tabungan vs Penghasilan Kotor',
+    '4': 'Pembayaran Utang vs Penghasilan Bersih',
+    '5': 'Investasi vs Kekayaan Bersih',
+  };
+
+  static const Map<String, List<String>> _ratioInputs = {
+    '1': ['Aset Likuid', 'Total Kekayaan Bersih'],
+    '2': ['Total Utang', 'Total Aset'],
+    '3': ['Total Tabungan', 'Penghasilan Kotor'],
+    '4': ['Total Pembayaran Utang', 'Penghasilan Bersih'],
+    '5': ['Total Aset Diinvestasikan', 'Total Kekayaan Bersih'],
+  };
+
   double _getLimit(String id) {
-    return <String, double>{
-      '1': 15,
-      '2': 50,
-      '3': 10,
-      '4': 45,
-      '5': 50,
-    }[id]!;
+    return <String, double>{'1': 15, '2': 50, '3': 10, '4': 45, '5': 50}[id]!;
   }
 
   SliderLimitType _getLimitType(String id) {
     return <String, SliderLimitType>{
-      '1': SliderLimitType.moreThan,
+      '1': SliderLimitType.moreThanEqual,
       '2': SliderLimitType.lessThanEqual,
       '3': SliderLimitType.moreThanEqual,
-      '4': SliderLimitType.moreThan,
+      '4': SliderLimitType.lessThan,
       '5': SliderLimitType.moreThanEqual,
     }[id]!;
   }

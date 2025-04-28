@@ -1,8 +1,8 @@
 // lib/features/transaction/view/widgets/transaction_form.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ta_client/core/constants/account_type_mapping.dart';
 import 'package:ta_client/core/constants/category_mapping.dart';
 import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/core/widgets/custom_category_picker.dart';
@@ -103,6 +103,7 @@ class _TransactionFormState extends State<TransactionForm> with RouteAware {
       subcategory = widget.transaction!.subcategoryName;
       selectedDate = widget.transaction!.date;
       selectedTime = TimeOfDay.fromDateTime(widget.transaction!.date);
+      _syncAccountTypeWithCategory(rawPredictedCategory);
     } else {
       selectedValue = 'Pilih Tipe Akun';
       transactionType = selectedValue;
@@ -134,6 +135,7 @@ class _TransactionFormState extends State<TransactionForm> with RouteAware {
             rawPredictedCategory = predictedParent;
             subcategory = '$predictedSub ✨';
           });
+          _syncAccountTypeWithCategory(predictedParent);
         } else {
           setState(() {
             rawPredictedCategory = '';
@@ -244,6 +246,7 @@ class _TransactionFormState extends State<TransactionForm> with RouteAware {
                                 rawPredictedCategory = cat;
                                 subcategory = subCat;
                               });
+                              _syncAccountTypeWithCategory(cat);
                             },
                     ),
                   ),
@@ -377,6 +380,23 @@ class _TransactionFormState extends State<TransactionForm> with RouteAware {
   void _switchToEdit() {
     if (mode == TransactionFormMode.view) {
       setState(() => mode = TransactionFormMode.edit);
+    }
+  }
+
+  void _syncAccountTypeWithCategory(String categoryKey) {
+    final acct = categoryToAccountType[categoryKey];
+    if (acct != null) {
+      // find the matching DropdownItem so we can grab its color
+      final item = dropdownItems.firstWhere(
+        (d) => d.label == acct,
+        orElse: () => dropdownItems[0], // fallback
+      );
+
+      setState(() {
+        selectedValue = item.label;
+        transactionType = item.label;
+        submitButtonColor = item.color;
+      });
     }
   }
 

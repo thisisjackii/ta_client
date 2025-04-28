@@ -104,7 +104,7 @@ class Routes {
         );
       case budgetingIncome:
         return MaterialPageRoute(
-          builder: (_) => const BudgetingIncome(),
+          builder: (_) => const BudgetingIncomePage(),
           settings: settings,
         );
       case budgetingIncomeDate:
@@ -144,9 +144,8 @@ class Routes {
       default:
         debugPrint('Unknown route: ${settings.name}');
         return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(child: Text('Page not found')),
-          ),
+          builder: (_) =>
+              const Scaffold(body: Center(child: Text('Page not found'))),
         );
     }
   }

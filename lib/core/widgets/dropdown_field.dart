@@ -15,6 +15,7 @@ class CustomDropdownField extends StatefulWidget {
     this.label,
     super.key,
   });
+
   final List<DropdownItem> items;
   final String? selectedValue;
   final void Function(DropdownItem) onChanged;
@@ -30,7 +31,17 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
   @override
   void initState() {
     super.initState();
+    // Initialize the internal state from the incoming prop
     currentSelected = widget.selectedValue;
+  }
+
+  @override
+  void didUpdateWidget(covariant CustomDropdownField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // **Sync** internal state whenever the parent’s selectedValue changes :contentReference[oaicite:0]{index=0}
+    if (oldWidget.selectedValue != widget.selectedValue) {
+      currentSelected = widget.selectedValue;
+    }
   }
 
   @override
@@ -53,49 +64,39 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
         Container(
           padding: EdgeInsets.zero,
           decoration: const BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.grey,
-                width: 1.5,
-              ),
-            ),
+            border: Border(bottom: BorderSide(color: Colors.grey, width: 1.5)),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    hint: const Text('-- Pilih Jenis Akun --'),
-                    value: currentSelected,
-                    icon: const Icon(Icons.arrow_drop_down),
-                    onChanged: (value) {
-                      setState(() {
-                        currentSelected = value;
-                        final selectedItem = widget.items.firstWhere(
-                          (item) => item.label == value,
-                        );
-                        widget.onChanged(selectedItem);
-                      });
-                    },
-                    items: widget.items.map((item) {
-                      return DropdownMenuItem<String>(
-                        value: item.label,
-                        child: Row(
-                          children: [
-                            if (item.icon != null) ...[
-                              Icon(item.icon, color: item.color, size: 20),
-                              const SizedBox(width: 8),
-                            ],
-                            Text(item.label),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              hint: const Text('-- Pilih Jenis Akun --'),
+              value: currentSelected,
+              icon: const Icon(Icons.arrow_drop_down),
+              onChanged: (value) {
+                setState(() {
+                  currentSelected = value;
+                  // Notify parent of the new selection
+                  final selectedItem = widget.items.firstWhere(
+                    (item) => item.label == value,
+                  );
+                  widget.onChanged(selectedItem);
+                });
+              },
+              items: widget.items.map((item) {
+                return DropdownMenuItem<String>(
+                  value: item.label,
+                  child: Row(
+                    children: [
+                      if (item.icon != null) ...[
+                        Icon(item.icon, color: item.color, size: 20),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(item.label),
+                    ],
                   ),
-                ),
-              ),
-            ],
+                );
+              }).toList(),
+            ),
           ),
         ),
       ],

@@ -10,16 +10,46 @@ import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_event.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
 
-class EvaluationDashboardPage extends StatelessWidget {
+class EvaluationDashboardPage extends StatefulWidget {
   const EvaluationDashboardPage({super.key});
+
+  @override
+  State<EvaluationDashboardPage> createState() =>
+      _EvaluationDashboardPageState();
+}
+
+class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
+    with RouteAware {
+  @override
+  void initState() {
+    super.initState();
+    // if we already have dates, automatically load
+    final bloc = context.read<EvaluationBloc>();
+    if (bloc.state.start != null && bloc.state.end != null) {
+      debugPrint('▶️ initState: dispatching LoadDashboard');
+      bloc.add(LoadDashboard());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<EvaluationBloc, EvaluationState>(
       builder: (c, s) {
         if (s.loading) {
           return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),);
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
+
+        // Log the full list once when it arrives
+        debugPrint('📊 Dashboard items (${s.dashboardItems.length}):');
+        for (final item in s.dashboardItems) {
+          debugPrint(
+            '  • [${item.id}] ${item.title}: value=${item.yourValue} '
+            '${item.idealText != null ? "(ideal ${item.idealText})" : ""}',
+          );
+        }
+
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.evaluationDashboardTitle),
@@ -27,6 +57,7 @@ class EvaluationDashboardPage extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.restart_alt_rounded),
                 onPressed: () {
+                  debugPrint('🔄 tapping history button, dispatch LoadHistory');
                   context.read<EvaluationBloc>().add(LoadHistory());
                   Navigator.pushNamed(context, Routes.evaluationHistory);
                 },
@@ -58,7 +89,8 @@ class EvaluationDashboardPage extends StatelessWidget {
                       ),
                       const SizedBox(width: AppDimensions.smallPadding),
                       Text(
-                        '${s.start != null ? '${s.start!.day}/${s.start!.month}/${s.start!.year}' : '--'} - ${s.end != null ? '${s.end!.day}/${s.end!.month}/${s.end!.year}' : '--'}',
+                        '${s.start != null ? '${s.start!.day}/${s.start!.month}/${s.start!.year}' : '--'} - '
+                        '${s.end != null ? '${s.end!.day}/${s.end!.month}/${s.end!.year}' : '--'}',
                       ),
                     ],
                   ),
@@ -66,8 +98,14 @@ class EvaluationDashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: AppDimensions.padding),
               ...s.dashboardItems.map((item) {
+                // Log each tile as it's built
+                debugPrint('🔹 rendering tile for [${item.id}] ${item.title}');
                 return GestureDetector(
                   onTap: () {
+                    debugPrint(
+                      '➡️ tapped item [${item.id}] ${item.title}, '
+                      'dispatching LoadDetail',
+                    );
                     context.read<EvaluationBloc>().add(LoadDetail(item.id));
                     Navigator.pushNamed(
                       context,
@@ -110,7 +148,9 @@ class EvaluationDashboardPage extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  formatPercent(item.yourValue),
+                                  item.id == '0'
+                                      ? formatMonths(item.yourValue)
+                                      : formatPercent(item.yourValue),
                                   style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,

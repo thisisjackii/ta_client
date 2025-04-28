@@ -5,15 +5,18 @@ import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
 
 class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
-  BudgetingBloc({required this.repository}) : super(BudgetingState.initial()) {
+  BudgetingBloc({required this.repository}) : super(const BudgetingState()) {
     on<LoadBudgetingData>(_onLoad);
+    on<ConfirmDateRange>(_onConfirmDateRange);
     on<SelectIncomeCategory>(_onSelectIncome);
-    on<UpdateAllocationValue>(_onUpdateAlloc);
     on<StartDateChanged>(_onStartDateChanged);
     on<EndDateChanged>(_onEndDateChanged);
-    on<ToggleExpenseSubItem>(_onToggleSubItem);
     on<ToggleAllocationCategory>(_onToggleCategory);
+    on<UpdateAllocationValue>(_onUpdateValue);
+    on<ToggleExpenseSubItem>(_onToggleSub);
+    on<ResetDateConfirmation>(_onResetDateConfirmation);
   }
+
   final BudgetingRepository repository;
 
   Future<void> _onLoad(
@@ -22,14 +25,23 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
   ) async {
     emit(state.copyWith(loading: true));
     try {
-      final incomes = await repository.getIncomes();
-      final allocations = await repository.getAllocations();
+      final incomes = await repository.getIncomeBuckets(
+        state.startDate ?? DateTime.now(),
+        state.endDate ?? DateTime.now(),
+      );
+      final allocations = await repository.getExpenseBuckets(
+        state.startDate ?? DateTime.now(),
+        state.endDate ?? DateTime.now(),
+      );
+      final totalIncome = incomes.fold<int>(0, (sum, inc) => sum + inc.value);
       final initValues = {for (final a in allocations) a.id: 0.0};
       emit(
         state.copyWith(
           incomes: incomes,
           allocations: allocations,
+          totalIncome: totalIncome,
           allocationValues: initValues,
+          dateConfirmed: true,
           loading: false,
         ),
       );
@@ -38,26 +50,45 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
     }
   }
 
-  void _onSelectIncome(
-    SelectIncomeCategory event,
+  Future<void> _onConfirmDateRange(
+    ConfirmDateRange ev,
     Emitter<BudgetingState> emit,
-  ) {
-    final selected = List<String>.from(state.selectedIncomeIds);
-    if (selected.contains(event.id)) {
-      selected.remove(event.id);
-    } else {
-      selected.add(event.id);
+  ) async {
+    // validate + fetch
+    try {
+      emit(
+        state.copyWith(
+          startDate: ev.start,
+          endDate: ev.end,
+          dateConfirmed: false,
+          loading: true,
+        ),
+      );
+
+      final incomes = await repository.getIncomeBuckets(ev.start, ev.end);
+      final allocations = await repository.getExpenseBuckets(ev.start, ev.end);
+      final totalIncome = incomes.fold<int>(0, (sum, inc) => sum + inc.value);
+      final initValues = {for (final a in allocations) a.title: 0.0};
+
+      emit(
+        state.copyWith(
+          dateConfirmed: true,
+          incomes: incomes,
+          totalIncome: totalIncome,
+          allocations: allocations,
+          allocationValues: initValues,
+          loading: false,
+        ),
+      );
+    } catch (e) {
+      emit(state.copyWith(dateError: e.toString(), loading: false));
     }
-    emit(state.copyWith(selectedIncomeIds: selected));
   }
 
-  void _onUpdateAlloc(
-    UpdateAllocationValue event,
-    Emitter<BudgetingState> emit,
-  ) {
-    final values = Map<String, double>.from(state.allocationValues);
-    values[event.id] = event.value;
-    emit(state.copyWith(allocationValues: values));
+  void _onSelectIncome(SelectIncomeCategory ev, Emitter<BudgetingState> emit) {
+    final sel = List<String>.from(state.selectedIncomeIds);
+    sel.contains(ev.id) ? sel.remove(ev.id) : sel.add(ev.id);
+    emit(state.copyWith(selectedIncomeIds: sel));
   }
 
   void _onStartDateChanged(
@@ -74,47 +105,55 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
     emit(state.copyWith(endDate: event.date));
   }
 
-  void _onToggleSubItem(
-    ToggleExpenseSubItem event,
+  void _onToggleCategory(
+    ToggleAllocationCategory ev,
     Emitter<BudgetingState> emit,
   ) {
-    final mapCopy = Map<String, Set<String>>.from(state.selectedSubExpenses);
-    final currentSet =
-        Set<String>.from(mapCopy[event.allocationId] ?? <String>{});
-
-    if (event.isSelected) {
-      currentSet.add(event.subItem);
+    final cats = Set<String>.from(state.selectedCategories);
+    if (ev.isSelected) {
+      cats.add(ev.category);
     } else {
-      currentSet.remove(event.subItem);
+      cats.remove(ev.category);
     }
-
-    mapCopy[event.allocationId] = currentSet;
-    emit(state.copyWith(selectedSubExpenses: mapCopy));
+    emit(state.copyWith(selectedCategories: cats));
   }
 
-  void _onToggleCategory(
-    ToggleAllocationCategory e,
+  void _onUpdateValue(UpdateAllocationValue ev, Emitter<BudgetingState> emit) {
+    final vals = Map<String, double>.from(state.allocationValues);
+    vals[ev.id] = ev.value;
+    emit(state.copyWith(allocationValues: vals));
+  }
+
+  void _onToggleSub(ToggleExpenseSubItem event, Emitter<BudgetingState> emit) {
+    // 1. Convert any existing Iterable to List and build a fresh map
+    final updatedSubs = <String, List<String>>{
+      for (final e in state.selectedSubExpenses.entries)
+        e.key: e.value.toList(),
+    };
+
+    // 2. Copy or initialize the list for this category:
+    final currentList = List<String>.from(
+      updatedSubs[event.allocationId] ?? <String>[],
+    );
+
+    // 3. Add or remove the subItem:
+    if (event.isSelected) {
+      currentList.add(event.subItem);
+    } else {
+      currentList.remove(event.subItem);
+    }
+
+    // 4. Put the new list back into the map:
+    updatedSubs[event.allocationId] = currentList;
+
+    // 5. Emit a new state with the updated map:
+    emit(state.copyWith(selectedSubExpenses: updatedSubs));
+  }
+
+  void _onResetDateConfirmation(
+    ResetDateConfirmation event,
     Emitter<BudgetingState> emit,
   ) {
-    final newSet = Set<String>.from(state.selectedCategories);
-    if (e.isSelected) {
-      newSet.add(e.category);
-    } else {
-      newSet.remove(e.category);
-    }
-    // also zero out percentage & clear sub-items if unselected
-    final newValues = Map<String, double>.from(state.allocationValues);
-    final newSubs = Map<String, Set<String>>.from(state.selectedSubExpenses);
-    if (!e.isSelected) {
-      newValues[e.category] = 0.0;
-      newSubs.remove(e.category);
-    }
-    emit(
-      state.copyWith(
-        selectedCategories: newSet,
-        allocationValues: newValues,
-        selectedSubExpenses: newSubs,
-      ),
-    );
+    emit(state.copyWith(dateConfirmed: false));
   }
 }

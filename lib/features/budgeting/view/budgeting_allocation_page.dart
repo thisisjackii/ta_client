@@ -4,10 +4,10 @@ import 'package:another_xlider/another_xlider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
-import 'package:ta_client/core/constants/category_mapping.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
-import 'package:ta_client/core/constants/app_colors.dart';
+import 'package:ta_client/core/constants/category_mapping.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
@@ -19,9 +19,14 @@ class BudgetingAllocation extends StatefulWidget {
   _BudgetingAllocationState createState() => _BudgetingAllocationState();
 }
 
-class _BudgetingAllocationState extends State<BudgetingAllocation> {
+class _BudgetingAllocationState extends State<BudgetingAllocation>
+    with RouteAware {
   // local copy of slider positions to force UI bounce-back
   final Map<String, double> _localValues = {};
+
+  // single controller to prevent repeats
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
+      _snackBarController;
 
   @override
   void didChangeDependencies() {
@@ -56,14 +61,9 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
         final allocationData = categoryMapping.entries
             .where((e) => _isExpenseCategory(e.key))
             .toList();
-        final selectedSubs = state.selectedSubExpenses;
         final selectedCategories = state.selectedCategories;
-
-        ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
-            _snackBarController;
-
         final totalAllocation = state.allocationValues.values.fold(
-          0.0,
+          0.toDouble(),
           (sum, v) => sum + v,
         );
 
@@ -89,7 +89,6 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
               // One card per expense category
               ...allocationData.map((entry) {
                 final category = entry.key;
-                final subItems = entry.value;
 
                 // use local value if present, else fallback to bloc state
                 final currentValue = _localValues[category] ??
@@ -97,9 +96,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
                     0.0;
 
                 final isSelected = selectedCategories.contains(category);
-                final hasSubChecked =
-                    (selectedSubs[category]?.isNotEmpty ?? false);
-                final sliderEnabled = isSelected && hasSubChecked;
+                final sliderEnabled = isSelected;
 
                 // compute max so total ≤ 100%
                 final othersSum = state.allocationValues.entries
@@ -202,34 +199,11 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
                             });
                           },
                         ),
-
-                        // Sub-items
-                        if (isSelected) ...[
-                          const SizedBox(height: AppDimensions.smallPadding),
-                          ...subItems.map((sub) {
-                            final isChecked =
-                                selectedSubs[category]?.contains(sub) ?? false;
-                            return CheckboxListTile(
-                              value: isChecked,
-                              title: Text(sub),
-                              controlAffinity: ListTileControlAffinity.leading,
-                              onChanged: (val) {
-                                context.read<BudgetingBloc>().add(
-                                      ToggleExpenseSubItem(
-                                        allocationId: category,
-                                        subItem: sub,
-                                        isSelected: val!,
-                                      ),
-                                    );
-                              },
-                            );
-                          }).toList(),
-                        ],
                       ],
                     ),
                   ),
                 );
-              }).toList(),
+              }),
 
               // Total allocation summary
               Card(
@@ -243,12 +217,16 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
                       const Text(
                         AppStrings.totalAllocation,
                         style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.bold),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         '${totalAllocation.toStringAsFixed(0)}%',
                         style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.bold),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -266,9 +244,29 @@ class _BudgetingAllocationState extends State<BudgetingAllocation> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary),
-                  onPressed: () async {
-                    await Navigator.pushNamed(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  onPressed: () {
+                    final total = state.allocationValues.values
+                        .fold<double>(0, (s, v) => s + v);
+                    if (total == 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            '⚠️ Pilih minimal 1 kategori terlebih dahulu',
+                          ),
+                        ),
+                      );
+                      return;
+                    } else if (total < 100) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('⚠️ Total alokasi harus mencapai 100%'),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.pushNamed(
                       context,
                       Routes.budgetingAllocationExpense,
                     );

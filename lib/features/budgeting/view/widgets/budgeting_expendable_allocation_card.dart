@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
+import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
@@ -25,11 +26,11 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
             title: Row(
               children: [
                 const Text(
-                  AppStrings.incomeSelectionTitle,
+                  AppStrings.expendableAllocationCardTitle,
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
-                Text(total.toString()),
+                Text(formatToRupiah(total.toDouble())),
               ],
             ),
             children: [
@@ -37,6 +38,7 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
                 final selected = state.selectedIncomeIds.contains(inc.id);
                 return CheckboxListTile(
                   value: selected,
+                  enabled: false,
                   title: Text(inc.title),
                   controlAffinity: ListTileControlAffinity.leading,
                   onChanged: (_) => context
@@ -44,14 +46,14 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
                       .add(SelectIncomeCategory(inc.id)),
                 );
               }),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.save_alt_rounded, size: 18),
-                  label: const Text(AppStrings.save),
-                  onPressed: () {},
-                ),
-              ),
+              // Align(
+              //   alignment: Alignment.centerRight,
+              //   child: TextButton.icon(
+              //     icon: const Icon(Icons.save_alt_rounded, size: 18),
+              //     label: const Text(AppStrings.save),
+              //     onPressed: () {},
+              //   ),
+              // ),
             ],
           ),
         );

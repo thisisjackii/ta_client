@@ -9,11 +9,30 @@ abstract class BudgetingEvent extends Equatable {
 
 class LoadBudgetingData extends BudgetingEvent {}
 
+class ConfirmDateRange extends BudgetingEvent {
+  const ConfirmDateRange({required this.start, required this.end});
+  final DateTime start;
+  final DateTime end;
+  @override
+  List<Object?> get props => [start, end];
+}
+
 class SelectIncomeCategory extends BudgetingEvent {
   const SelectIncomeCategory(this.id);
   final String id;
   @override
   List<Object?> get props => [id];
+}
+
+class ToggleAllocationCategory extends BudgetingEvent {
+  const ToggleAllocationCategory({
+    required this.category,
+    required this.isSelected,
+  });
+  final String category;
+  final bool isSelected;
+  @override
+  List<Object?> get props => [category, isSelected];
 }
 
 class UpdateAllocationValue extends BudgetingEvent {
@@ -47,18 +66,8 @@ class ToggleExpenseSubItem extends BudgetingEvent {
   final String allocationId;
   final String subItem;
   final bool isSelected;
-
   @override
   List<Object?> get props => [allocationId, subItem, isSelected];
 }
 
-class ToggleAllocationCategory extends BudgetingEvent {
-  const ToggleAllocationCategory({
-    required this.category,
-    required this.isSelected,
-  });
-  final String category;
-  final bool isSelected;
-  @override
-  List<Object?> get props => [category, isSelected];
-}
+class ResetDateConfirmation extends BudgetingEvent {}

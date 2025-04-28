@@ -5,58 +5,61 @@ import 'package:ta_client/features/budgeting/models/income.dart';
 
 class BudgetingState extends Equatable {
   const BudgetingState({
-    required this.incomes,
-    required this.selectedIncomeIds,
-    required this.allocations,
-    required this.allocationValues,
-    required this.selectedSubExpenses,
-    required this.selectedCategories,
     this.startDate,
     this.endDate,
+    this.dateConfirmed = false,
+    this.dateError,
+    this.incomes = const [],
+    this.totalIncome = 0,
+    this.selectedIncomeIds = const [],
+    this.allocations = const [],
+    this.allocationValues = const {},
+    this.selectedCategories = const {},
+    this.selectedSubExpenses = const {},
     this.loading = false,
     this.error,
   });
-  factory BudgetingState.initial() => const BudgetingState(
-        incomes: [],
-        selectedIncomeIds: [],
-        allocations: [],
-        allocationValues: {},
-        selectedSubExpenses: {},
-        selectedCategories: {},
-        loading: true,
-      );
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final bool dateConfirmed;
+  final String? dateError;
   final List<Income> incomes;
+  final int totalIncome;
   final List<String> selectedIncomeIds;
   final List<Allocation> allocations;
   final Map<String, double> allocationValues;
-  final Map<String, Set<String>> selectedSubExpenses;
   final Set<String> selectedCategories;
-  final DateTime? startDate;
-  final DateTime? endDate;
+  final Map<String, List<String>> selectedSubExpenses;
   final bool loading;
   final String? error;
 
   BudgetingState copyWith({
+    DateTime? startDate,
+    DateTime? endDate,
+    bool? dateConfirmed,
+    String? dateError,
     List<Income>? incomes,
+    int? totalIncome,
     List<String>? selectedIncomeIds,
     List<Allocation>? allocations,
     Map<String, double>? allocationValues,
-    Map<String, Set<String>>? selectedSubExpenses,
     Set<String>? selectedCategories,
-    DateTime? startDate,
-    DateTime? endDate,
+    Map<String, List<String>>? selectedSubExpenses,
     bool? loading,
     String? error,
   }) {
     return BudgetingState(
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      dateConfirmed: dateConfirmed ?? this.dateConfirmed,
+      dateError: dateError,
       incomes: incomes ?? this.incomes,
+      totalIncome: totalIncome ?? this.totalIncome,
       selectedIncomeIds: selectedIncomeIds ?? this.selectedIncomeIds,
       allocations: allocations ?? this.allocations,
       allocationValues: allocationValues ?? this.allocationValues,
-      selectedSubExpenses: selectedSubExpenses ?? this.selectedSubExpenses,
       selectedCategories: selectedCategories ?? this.selectedCategories,
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
+      selectedSubExpenses: selectedSubExpenses ?? this.selectedSubExpenses,
       loading: loading ?? this.loading,
       error: error,
     );
@@ -64,14 +67,17 @@ class BudgetingState extends Equatable {
 
   @override
   List<Object?> get props => [
+        startDate,
+        endDate,
+        dateConfirmed,
+        dateError,
         incomes,
+        totalIncome,
         selectedIncomeIds,
         allocations,
         allocationValues,
-        selectedSubExpenses,
         selectedCategories,
-        startDate,
-        endDate,
+        selectedSubExpenses,
         loading,
         error,
       ];

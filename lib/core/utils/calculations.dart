@@ -4,12 +4,12 @@ import 'package:intl/intl.dart';
 double clampAllocation(double value, double totalOthers) =>
     value.clamp(0.0, 100.0 - totalOthers);
 
-int parseRupiah(String value) =>
-    int.tryParse(value.replaceAll(RegExp('[^0-9]'), '')) ?? 0;
+double parseRupiah(String value) =>
+    double.tryParse(value.replaceAll(RegExp('[^0-9]'), '')) ?? 0;
 
-String formatToRupiah(int value) {
+String formatToRupiah(double value) {
   final formatter =
-      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp. ', decimalDigits: 0);
+      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
   return formatter.format(value);
 }
 

@@ -15,9 +15,12 @@ class EvaluationDatePage extends StatefulWidget {
   _EvaluationDatePageState createState() => _EvaluationDatePageState();
 }
 
-class _EvaluationDatePageState extends State<EvaluationDatePage> {
+class _EvaluationDatePageState extends State<EvaluationDatePage>
+    with RouteAware {
   DateTime? _start;
-  DateTime? _end;
+  DateTime? _end; // single controller to prevent repeats
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
+      _snackBarController;
 
   @override
   void initState() {
@@ -61,8 +64,18 @@ class _EvaluationDatePageState extends State<EvaluationDatePage> {
                 context
                     .read<EvaluationBloc>()
                     .add(SelectDateRange(_start!, _end!));
+                context.read<EvaluationBloc>().add(LoadDashboard());
+                Navigator.pushNamed(context, Routes.evaluationDashboard);
+              } else {
+                _snackBarController =
+                    ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(AppStrings.dateRangePrompt),
+                  ),
+                );
+                _snackBarController!.closed
+                    .then((_) => _snackBarController = null);
               }
-              Navigator.pushNamed(context, Routes.evaluationDashboard);
             },
             child: const Text(AppStrings.ok),
           ),

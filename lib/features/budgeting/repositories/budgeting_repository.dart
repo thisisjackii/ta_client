@@ -6,6 +6,8 @@ import 'package:ta_client/features/budgeting/services/budgeting_service.dart';
 class BudgetingRepository {
   BudgetingRepository(this._service);
   final BudgetingService _service;
-  Future<List<Income>> getIncomes() => _service.fetchIncomeData();
-  Future<List<Allocation>> getAllocations() => _service.fetchAllocationData();
+  Future<List<Income>> getIncomeBuckets(DateTime s, DateTime e) =>
+      _service.fetchIncomeBuckets(s, e);
+  Future<List<Allocation>> getExpenseBuckets(DateTime s, DateTime e) =>
+      _service.fetchExpenseBuckets(s, e);
 }

@@ -1,3 +1,4 @@
+// lib/features/evaluation/view/widgets/custom_slider_single_range.dart
 import 'package:another_xlider/another_xlider.dart';
 import 'package:another_xlider/models/handler.dart';
 import 'package:another_xlider/models/hatch_mark.dart';
@@ -78,15 +79,18 @@ class CustomSliderSingleRange extends StatelessWidget {
                         activeTrackBar: BoxDecoration(
                           color: isIdeal ? AppColors.ideal : AppColors.notIdeal,
                         ),
-                        inactiveTrackBar:
-                            const BoxDecoration(color: Colors.transparent),
+                        inactiveTrackBar: const BoxDecoration(
+                          color: Colors.transparent,
+                        ),
                       ),
                       tooltip: FlutterSliderTooltip(
                         alwaysShowTooltip: true,
                         format: (x) => formatPercent(v),
                       ),
                       hatchMark: FlutterSliderHatchMark(
-                          displayLines: true, density: 0.4,),
+                        displayLines: true,
+                        density: 0.4,
+                      ),
                     ),
                   ],
                 ),

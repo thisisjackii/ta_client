@@ -18,7 +18,7 @@ class StatisticPieChart extends StatefulWidget {
   }
 }
 
-class _StatisticPieChartState extends State<StatisticPieChart> {
+class _StatisticPieChartState extends State<StatisticPieChart> with RouteAware {
   String selectedType = 'Aset';
   DateTime selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
@@ -128,7 +128,7 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
     final filteredTransactions = transactions.where((t) {
       final isSameMonth = t.date.year == selectedMonth.year &&
           t.date.month == selectedMonth.month;
-      return t.type == selectedType && isSameMonth;
+      return t.accountType == selectedType && isSameMonth;
     }).toList();
 
     if (filteredTransactions.isEmpty) {
@@ -144,7 +144,7 @@ class _StatisticPieChartState extends State<StatisticPieChart> {
     final categoryMap = <String, double>{};
     for (final transaction in filteredTransactions) {
       categoryMap.update(
-        transaction.category,
+        transaction.categoryName,
         (value) => value + transaction.amount,
         ifAbsent: () => transaction.amount,
       );

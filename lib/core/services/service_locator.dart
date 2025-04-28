@@ -36,7 +36,7 @@ void setupServiceLocator() {
       () => BudgetingRepository(sl<BudgetingService>()),
     )
     ..registerLazySingleton<EvaluationService>(
-      EvaluationService.new,
+      () => EvaluationService(transactionService: sl<TransactionService>()),
     )
     ..registerLazySingleton<EvaluationRepository>(
       () => EvaluationRepository(sl<EvaluationService>()),
