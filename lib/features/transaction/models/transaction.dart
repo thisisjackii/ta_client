@@ -1,24 +1,28 @@
+// lib/features/transaction/models/transaction.dart
 class Transaction {
   Transaction({
     required this.id,
-    required this.type,
+    required this.categoryId,
+    required this.accountType,
     required this.description,
     required this.date,
-    required this.category,
-    required this.subcategory,
+    required this.categoryName,
+    required this.subcategoryName,
     required this.amount,
     required this.isBookmarked,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     try {
+      final cat = json['category'] as Map<String, dynamic>? ?? {};
       return Transaction(
         id: json['id'] as String? ?? '',
-        type: json['type'] as String? ?? '',
+        categoryId: json['categoryId'] as String? ?? '',
+        accountType: cat['accountType'] as String? ?? '',
         description: json['description'] as String? ?? '',
         date: DateTime.parse(json['date'] as String? ?? '').toLocal(),
-        category: json['category'] as String? ?? '',
-        subcategory: json['subcategory'] as String? ?? '',
+        categoryName: cat['categoryName'] as String? ?? '',
+        subcategoryName: cat['subcategoryName'] as String? ?? '',
         amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
         isBookmarked: json['isBookmarked'] as bool? ?? false,
       );
@@ -29,21 +33,20 @@ class Transaction {
     }
   }
   final String id;
-  final String type;
+  final String categoryId;
+  final String accountType;
   final String description;
   final DateTime date;
-  final String category;
-  final String subcategory;
+  final String categoryName;
+  final String subcategoryName;
   final double amount;
   final bool isBookmarked;
 
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{
-      'type': type,
+      'categoryId': categoryId,
       'description': description,
       'date': date.toUtc().toIso8601String(),
-      'category': category,
-      'subcategory': subcategory,
       'amount': amount,
       'isBookmarked': isBookmarked,
     };

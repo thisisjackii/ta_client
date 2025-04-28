@@ -93,10 +93,8 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       final created = event.transaction;
       final found = updatedItems.any(
         (t) =>
-            t.type == created.type &&
+            t.categoryId == created.categoryId &&
             t.description == created.description &&
-            t.category == created.category &&
-            t.subcategory == created.subcategory &&
             t.amount == created.amount &&
             t.isBookmarked == created.isBookmarked &&
             t.date.difference(created.date).inSeconds.abs() < 1,

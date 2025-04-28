@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 
 class TransactionGroupedItemsWidget extends StatelessWidget {
@@ -133,7 +134,9 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.category.length > 10 ? '${item.category.substring(0, 10)}...' : item.category,
+                    item.categoryName.length > 10
+                        ? '${item.categoryName.substring(0, 10)}...'
+                        : item.categoryName,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 10,
@@ -141,7 +144,9 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.subcategory.length > 10 ? '${item.subcategory.substring(0, 10)}...' : item.subcategory,
+                    item.subcategoryName.length > 10
+                        ? '${item.subcategoryName.substring(0, 10)}...'
+                        : item.subcategoryName,
                     style: const TextStyle(fontSize: 8, color: Colors.grey),
                   ),
                 ],
@@ -150,7 +155,9 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.type.length > 15 ? '${item.type.substring(0, 15)}...' : item.type,
+                    item.accountType.length > 15
+                        ? '${item.accountType.substring(0, 15)}...'
+                        : item.accountType,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -165,9 +172,8 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
                   ),
                 ],
               ),
-
               Text(
-                'Rp.${item.amount}',
+                formatToRupiah(item.amount),
                 style:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),

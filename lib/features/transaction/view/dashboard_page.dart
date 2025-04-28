@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/core/widgets/custom_appbar.dart';
 import 'package:ta_client/core/widgets/custom_bottom_navbar.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_grouped_items.dart';
+import 'package:ta_client/features/transaction/view/widgets/transaction_totals_summary.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -18,12 +19,6 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> with RouteAware {
   int _currentTab = 0;
   final ValueNotifier<bool> isSelectionMode = ValueNotifier(false);
-
-  final NumberFormat _rupiahFormatter = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp. ',
-    decimalDigits: 0,
-  );
 
   // Track the selected month-year.
   DateTime selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
@@ -47,80 +42,22 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
           } else if (state is DashboardLoaded) {
             final filteredItems = _filterAndSortTransactions(state.items);
             final totalPemasukan = filteredItems
-                .where((t) => t.type == 'Pemasukan')
+                .where((t) => t.accountType == 'Pemasukan')
                 .fold<double>(0, (sum, t) => sum + t.amount);
             final totalPengeluaran = filteredItems
-                .where((t) => t.type == 'Pengeluaran')
+                .where((t) => t.accountType == 'Pengeluaran')
                 .fold<double>(0, (sum, t) => sum + t.amount);
             final totalAkhir = totalPemasukan - totalPengeluaran;
-            final formattedPemasukan = _rupiahFormatter.format(totalPemasukan);
-            final formattedPengeluaran =
-                _rupiahFormatter.format(totalPengeluaran);
-            final formattedAkhir = _rupiahFormatter.format(totalAkhir);
+            final formattedPemasukan = formatToRupiah(totalPemasukan);
+            final formattedPengeluaran = formatToRupiah(totalPengeluaran);
+            final formattedAkhir = formatToRupiah(totalAkhir);
 
             return Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        children: [
-                          const Text(
-                            'Total Pemasukan',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                          Text(
-                            formattedPemasukan,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          const Text(
-                            'Total Pengeluaran',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                          Text(
-                            formattedPengeluaran,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          const Text(
-                            'Total',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                          Text(
-                            formattedAkhir,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                TransactionTotalsSummary(
+                  pemasukan: formattedPemasukan,
+                  pengeluaran: formattedPengeluaran,
+                  total: formattedAkhir,
                 ),
                 Expanded(
                   child: TransactionGroupedItemsWidget(
@@ -141,9 +78,9 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => context
-                        .read<DashboardBloc>()
-                        .add(DashboardReloadRequested()),
+                    onPressed: () => context.read<DashboardBloc>().add(
+                      DashboardReloadRequested(),
+                    ),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -157,8 +94,10 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add',
         onPressed: () async {
-          final result =
-              await Navigator.pushNamed(context, Routes.createTransaction);
+          final result = await Navigator.pushNamed(
+            context,
+            Routes.createTransaction,
+          );
           if (context.mounted) {
             if (result is Transaction) {
               context.read<DashboardBloc>().add(DashboardItemAdded(result));
@@ -195,35 +134,38 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
 
   // Filter and sort transactions using the selected month and filter criteria.
   List<Transaction> _filterAndSortTransactions(List<Transaction> transactions) {
-    final filtered = transactions.where((t) {
-      // Apply the month filter.
-      final monthMatch = t.date.year == selectedMonth.year &&
-          t.date.month == selectedMonth.month;
+    final filtered =
+        transactions.where((t) {
+            // Apply the month filter.
+            final monthMatch =
+                t.date.year == selectedMonth.year &&
+                t.date.month == selectedMonth.month;
 
-      // Apply parent category filter.
-      final parentMatch =
-          (filterCriteria == null || filterCriteria!['parent'] == null) ||
-              t.type == filterCriteria!['parent'];
+            // Apply parent category filter.
+            final parentMatch =
+                (filterCriteria == null || filterCriteria!['parent'] == null) ||
+                t.accountType == filterCriteria!['parent'];
 
-      // Apply child category filter.
-      // (Assuming your Transaction model has a property 'category')
-      final childMatch =
-          (filterCriteria == null || filterCriteria!['child'] == null) ||
-              t.category == filterCriteria!['child'];
+            // Apply child category filter.
+            // (Assuming your Transaction model has a property 'category')
+            final childMatch =
+                (filterCriteria == null || filterCriteria!['child'] == null) ||
+                t.categoryName == filterCriteria!['child'];
 
-      // Apply date range filter.
-      final startDate = filterCriteria?['startDate'] as DateTime?;
-      final endDate = filterCriteria?['endDate'] as DateTime?;
-      var dateMatch = true;
-      if (startDate != null && endDate != null) {
-        // t.date must be between startDate and endDate (inclusive).
-        dateMatch = !t.date.isBefore(startDate) && !t.date.isAfter(endDate);
-      }
+            // Apply date range filter.
+            final startDate = filterCriteria?['startDate'] as DateTime?;
+            final endDate = filterCriteria?['endDate'] as DateTime?;
+            var dateMatch = true;
+            if (startDate != null && endDate != null) {
+              // t.date must be between startDate and endDate (inclusive).
+              dateMatch =
+                  !t.date.isBefore(startDate) && !t.date.isAfter(endDate);
+            }
 
-      return monthMatch && parentMatch && childMatch && dateMatch;
-    }).toList()
-      // Sort descending: newest first.
-      ..sort((a, b) => b.date.compareTo(a.date));
+            return monthMatch && parentMatch && childMatch && dateMatch;
+          }).toList()
+          // Sort descending: newest first.
+          ..sort((a, b) => b.date.compareTo(a.date));
     return filtered;
   }
 
