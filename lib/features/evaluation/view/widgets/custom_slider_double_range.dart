@@ -72,7 +72,7 @@ class CustomSliderDoubleRange extends StatelessWidget {
                       alwaysShowTooltip: true,
                       format: (v) {
                         // v may be int or double underneath, so toString safely
-                        final dv = double.tryParse(v.toString()) ?? 0.0;
+                        final dv = double.tryParse(v) ?? 0.0;
                         return '${dv.toStringAsFixed(1).split('.')[0]} bulan';
                       },
                       textStyle: const TextStyle(color: Colors.black),
