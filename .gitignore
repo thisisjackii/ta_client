@@ -42,6 +42,9 @@ unlinked_spec.ds
 .fvm/
 
 # Android related
+android/
+android/**
+android
 **/android/**
 **/android/**/gradle-wrapper.jar
 **/android/.gradle
