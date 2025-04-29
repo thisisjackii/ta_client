@@ -10,4 +10,7 @@ class BudgetingRepository {
       _service.fetchIncomeBuckets(s, e);
   Future<List<Allocation>> getExpenseBuckets(DateTime s, DateTime e) =>
       _service.fetchExpenseBuckets(s, e);
+  // call ensuredates from service
+  Future<void> ensureDates(DateTime? s, DateTime? e) =>
+      _service.ensureDates(s, e);
 }

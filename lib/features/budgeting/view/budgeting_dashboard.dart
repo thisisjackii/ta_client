@@ -40,8 +40,9 @@ class _BudgetingDashboardState extends State<BudgetingDashboard>
                 child: Card(
                   color: AppColors.dateCardBackground,
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.cardRadius),
+                    borderRadius: BorderRadius.circular(
+                      AppDimensions.cardRadius,
+                    ),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -58,9 +59,9 @@ class _BudgetingDashboardState extends State<BudgetingDashboard>
                         ),
                         const SizedBox(width: AppDimensions.smallPadding),
                         Text(
-                          '${state.startDate != null ? DateFormat('dd/MM/yyyy').format(state.startDate!) : '--'}'
+                          '${state.expenseStartDate != null ? DateFormat('dd/MM/yyyy').format(state.expenseStartDate!) : '--'}'
                           ' - '
-                          '${state.endDate != null ? DateFormat('dd/MM/yyyy').format(state.endDate!) : '--'}',
+                          '${state.expenseEndDate != null ? DateFormat('dd/MM/yyyy').format(state.expenseEndDate!) : '--'}',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -74,9 +75,9 @@ class _BudgetingDashboardState extends State<BudgetingDashboard>
               const SizedBox(height: AppDimensions.smallPadding),
 
               // --- Allocation cards + progress bars ---
-              ...state.allocations
-                  .where((a) => state.selectedCategories.contains(a.title))
-                  .map((alloc) {
+              ...state.allocations.where((a) => state.selectedCategories.contains(a.title)).map((
+                alloc,
+              ) {
                 final current =
                     state.allocationValues[alloc.id]! / 100 * alloc.target;
                 final ratio = alloc.target == 0 ? 0.0 : current / alloc.target;
@@ -84,8 +85,8 @@ class _BudgetingDashboardState extends State<BudgetingDashboard>
                 final Color barColor = percent <= 32
                     ? Colors.green
                     : percent <= 65
-                        ? Colors.orange
-                        : Colors.red;
+                    ? Colors.orange
+                    : Colors.red;
                 final inputsEnabled = percent <= 0;
                 final subs = categoryMapping[alloc.title] ?? [];
 
@@ -132,11 +133,13 @@ class _BudgetingDashboardState extends State<BudgetingDashboard>
                 }
 
                 return Card(
-                  margin:
-                      const EdgeInsets.only(bottom: AppDimensions.smallPadding),
+                  margin: const EdgeInsets.only(
+                    bottom: AppDimensions.smallPadding,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.cardRadius),
+                    borderRadius: BorderRadius.circular(
+                      AppDimensions.cardRadius,
+                    ),
                   ),
                   child: ExpansionTile(
                     title: Row(
@@ -144,11 +147,14 @@ class _BudgetingDashboardState extends State<BudgetingDashboard>
                         const Icon(Icons.category),
                         const SizedBox(width: 8),
                         Expanded(
-                            child: Text(alloc.title,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold,),),),
+                          child: Text(
+                            alloc.title,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
                         Text(
-                            '${formatToRupiah(current)} / ${formatToRupiah(alloc.target)}',),
+                          '${formatToRupiah(current)} / ${formatToRupiah(alloc.target)}',
+                        ),
                       ],
                     ),
                     subtitle: LinearProgressIndicator(
@@ -158,26 +164,30 @@ class _BudgetingDashboardState extends State<BudgetingDashboard>
                     ),
                     children: [
                       ...subs.map((sub) {
-                        final checked = state.selectedSubExpenses[alloc.title]
-                                ?.contains(sub) ??
+                        final checked =
+                            state.selectedSubExpenses[alloc.title]?.contains(
+                              sub,
+                            ) ??
                             false;
                         return CheckboxListTile(
                           title: Text(sub),
                           value: checked,
                           onChanged: inputsEnabled
                               ? (val) => context.read<BudgetingBloc>().add(
-                                    ToggleExpenseSubItem(
-                                      allocationId: alloc.title,
-                                      subItem: sub,
-                                      isSelected: val!,
-                                    ),
-                                  )
+                                  ToggleExpenseSubItem(
+                                    allocationId: alloc.title,
+                                    subItem: sub,
+                                    isSelected: val!,
+                                  ),
+                                )
                               : null,
                         );
                       }),
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8,),
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         child: ElevatedButton(
                           onPressed: inputsEnabled
                               ? () {

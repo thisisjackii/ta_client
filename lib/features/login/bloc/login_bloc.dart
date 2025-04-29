@@ -6,20 +6,16 @@ import 'package:ta_client/features/login/bloc/login_state.dart';
 import 'package:ta_client/features/login/services/login_service.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
-
   LoginBloc({required LoginService loginService})
-      : _authRepo = loginService,
-        super(const LoginFormState()) {
+    : _loginService = loginService,
+      super(const LoginFormState()) {
     on<LoginEmailChanged>(_onEmailChanged);
     on<LoginPasswordChanged>(_onPasswordChanged);
     on<LoginSubmitted>(_onSubmitted);
   }
-  final LoginService _authRepo;
+  final LoginService _loginService;
 
-  void _onEmailChanged(
-    LoginEmailChanged event,
-    Emitter<LoginState> emit,
-  ) {
+  void _onEmailChanged(LoginEmailChanged event, Emitter<LoginState> emit) {
     final current = state as LoginFormState;
     emit(current.copyWith(email: event.email, errorMessage: ''));
   }
@@ -44,7 +40,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
     emit(const LoginLoading());
     try {
-      final resp = await _authRepo.login(
+      final resp = await _loginService.login(
         email: current.email,
         password: current.password,
       );

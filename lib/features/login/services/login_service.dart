@@ -5,14 +5,14 @@ import 'package:http/http.dart' as http;
 import 'package:ta_client/features/login/models/login_response.dart';
 
 class LoginService {
-  LoginService({this.baseUrl = 'https://your-api.example.com'});
+  LoginService({this.baseUrl = 'http://localhost:4000/api/v1'});
   final String baseUrl;
 
   Future<LoginResponse> login({
     required String email,
     required String password,
   }) async {
-    final uri = Uri.parse('$baseUrl/login');
+    final uri = Uri.parse('$baseUrl/users/login');
     final resp = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},

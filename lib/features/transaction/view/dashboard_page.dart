@@ -1,3 +1,4 @@
+// lib/features/transaction/view/dashboard_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
@@ -35,7 +36,12 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
         onMonthChanged: updateSelectedMonth,
         onFilterChanged: updateFilterCriteria, // Pass filter criteria upward.
       ),
-      body: BlocBuilder<DashboardBloc, DashboardState>(
+      body: BlocConsumer<DashboardBloc, DashboardState>(
+        listener: (context, state) {
+          if (state is DashboardUnauthenticated) {
+            Navigator.pushReplacementNamed(context, Routes.login);
+          }
+        },
         builder: (context, state) {
           if (state is DashboardLoading) {
             return const Center(child: CircularProgressIndicator());

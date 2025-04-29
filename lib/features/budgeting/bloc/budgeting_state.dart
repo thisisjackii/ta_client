@@ -1,65 +1,76 @@
-// lib/features/budgeting/bloc/budgeting_state.dart
 import 'package:equatable/equatable.dart';
 import 'package:ta_client/features/budgeting/models/allocation.dart';
 import 'package:ta_client/features/budgeting/models/income.dart';
 
 class BudgetingState extends Equatable {
   const BudgetingState({
-    this.startDate,
-    this.endDate,
-    this.dateConfirmed = false,
+    this.incomeStartDate,
+    this.incomeEndDate,
+    this.incomeDateConfirmed = false,
     this.dateError,
+    this.expenseStartDate,
+    this.expenseEndDate,
+    this.expenseDateConfirmed = false,
     this.incomes = const [],
-    this.totalIncome = 0,
     this.selectedIncomeIds = const [],
     this.allocations = const [],
-    this.allocationValues = const {},
-    this.selectedCategories = const {},
+    this.selectedCategories = const [],
     this.selectedSubExpenses = const {},
+    this.allocationValues = const {},
     this.loading = false,
     this.error,
   });
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final bool dateConfirmed;
+  final DateTime? incomeStartDate;
+  final DateTime? incomeEndDate;
+  final bool incomeDateConfirmed;
   final String? dateError;
+
+  final DateTime? expenseStartDate;
+  final DateTime? expenseEndDate;
+  final bool expenseDateConfirmed;
+
   final List<Income> incomes;
-  final int totalIncome;
   final List<String> selectedIncomeIds;
+
   final List<Allocation> allocations;
-  final Map<String, double> allocationValues;
-  final Set<String> selectedCategories;
+  final List<String> selectedCategories;
   final Map<String, List<String>> selectedSubExpenses;
+  final Map<String, double> allocationValues;
+
   final bool loading;
   final String? error;
 
   BudgetingState copyWith({
-    DateTime? startDate,
-    DateTime? endDate,
-    bool? dateConfirmed,
+    DateTime? incomeStartDate,
+    DateTime? incomeEndDate,
+    bool? incomeDateConfirmed,
     String? dateError,
+    DateTime? expenseStartDate,
+    DateTime? expenseEndDate,
+    bool? expenseDateConfirmed,
     List<Income>? incomes,
-    int? totalIncome,
     List<String>? selectedIncomeIds,
     List<Allocation>? allocations,
-    Map<String, double>? allocationValues,
-    Set<String>? selectedCategories,
+    List<String>? selectedCategories,
     Map<String, List<String>>? selectedSubExpenses,
+    Map<String, double>? allocationValues,
     bool? loading,
     String? error,
   }) {
     return BudgetingState(
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
-      dateConfirmed: dateConfirmed ?? this.dateConfirmed,
+      incomeStartDate: incomeStartDate ?? this.incomeStartDate,
+      incomeEndDate: incomeEndDate ?? this.incomeEndDate,
+      incomeDateConfirmed: incomeDateConfirmed ?? this.incomeDateConfirmed,
       dateError: dateError,
+      expenseStartDate: expenseStartDate ?? this.expenseStartDate,
+      expenseEndDate: expenseEndDate ?? this.expenseEndDate,
+      expenseDateConfirmed: expenseDateConfirmed ?? this.expenseDateConfirmed,
       incomes: incomes ?? this.incomes,
-      totalIncome: totalIncome ?? this.totalIncome,
       selectedIncomeIds: selectedIncomeIds ?? this.selectedIncomeIds,
       allocations: allocations ?? this.allocations,
-      allocationValues: allocationValues ?? this.allocationValues,
       selectedCategories: selectedCategories ?? this.selectedCategories,
       selectedSubExpenses: selectedSubExpenses ?? this.selectedSubExpenses,
+      allocationValues: allocationValues ?? this.allocationValues,
       loading: loading ?? this.loading,
       error: error,
     );
@@ -67,18 +78,20 @@ class BudgetingState extends Equatable {
 
   @override
   List<Object?> get props => [
-        startDate,
-        endDate,
-        dateConfirmed,
-        dateError,
-        incomes,
-        totalIncome,
-        selectedIncomeIds,
-        allocations,
-        allocationValues,
-        selectedCategories,
-        selectedSubExpenses,
-        loading,
-        error,
-      ];
+    incomeStartDate,
+    incomeEndDate,
+    incomeDateConfirmed,
+    dateError,
+    expenseStartDate,
+    expenseEndDate,
+    expenseDateConfirmed,
+    incomes,
+    selectedIncomeIds,
+    allocations,
+    selectedCategories,
+    selectedSubExpenses,
+    allocationValues,
+    loading,
+    error,
+  ];
 }

@@ -1,159 +1,182 @@
-// lib/features/budgeting/bloc/budgeting_bloc.dart
-import 'package:bloc/bloc.dart';
+import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
 
 class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
-  BudgetingBloc({required this.repository}) : super(const BudgetingState()) {
-    on<LoadBudgetingData>(_onLoad);
-    on<ConfirmDateRange>(_onConfirmDateRange);
+  BudgetingBloc(this._repo) : super(const BudgetingState()) {
+    on<ResetIncomeDateConfirmation>(_onResetIncomeDate);
+    on<ConfirmIncomeDateRange>(_onConfirmIncomeDate);
+    on<ResetExpenseDateConfirmation>(_onResetExpenseDate);
+    on<ConfirmExpenseDateRange>(_onConfirmExpenseDate);
+
     on<SelectIncomeCategory>(_onSelectIncome);
-    on<StartDateChanged>(_onStartDateChanged);
-    on<EndDateChanged>(_onEndDateChanged);
-    on<ToggleAllocationCategory>(_onToggleCategory);
-    on<UpdateAllocationValue>(_onUpdateValue);
-    on<ToggleExpenseSubItem>(_onToggleSub);
-    on<ResetDateConfirmation>(_onResetDateConfirmation);
+    on<ToggleExpenseSubItem>(_onToggleSubExpense);
+    on<ToggleAllocationCategory>(_onToggleAllocationCategory);
+    on<UpdateAllocationValue>(_onUpdateAllocationValue);
+    on<LoadDashboard>(_onLoadDashboard);
+    on<IncomeStartDateChanged>(_onIncomeStartDateChanged);
+    on<IncomeEndDateChanged>(_onIncomeEndDateChanged);
+    on<ExpenseStartDateChanged>(_onExpenseStartDateChanged);
+    on<ExpenseEndDateChanged>(_onExpenseEndDateChanged);
+  }
+  final BudgetingRepository _repo;
+
+  Future<void> _onResetIncomeDate(
+    ResetIncomeDateConfirmation e,
+    Emitter<BudgetingState> emit,
+  ) {
+    emit(state.copyWith(incomeDateConfirmed: false));
+    return Future.value();
   }
 
-  final BudgetingRepository repository;
-
-  Future<void> _onLoad(
-    LoadBudgetingData event,
+  Future<void> _onConfirmIncomeDate(
+    ConfirmIncomeDateRange e,
     Emitter<BudgetingState> emit,
   ) async {
-    emit(state.copyWith(loading: true));
     try {
-      final incomes = await repository.getIncomeBuckets(
-        state.startDate ?? DateTime.now(),
-        state.endDate ?? DateTime.now(),
-      );
-      final allocations = await repository.getExpenseBuckets(
-        state.startDate ?? DateTime.now(),
-        state.endDate ?? DateTime.now(),
-      );
-      final totalIncome = incomes.fold<int>(0, (sum, inc) => sum + inc.value);
-      final initValues = {for (final a in allocations) a.id: 0.0};
+      await _repo.ensureDates(e.start, e.end);
       emit(
         state.copyWith(
-          incomes: incomes,
-          allocations: allocations,
-          totalIncome: totalIncome,
-          allocationValues: initValues,
-          dateConfirmed: true,
-          loading: false,
-        ),
-      );
-    } catch (e) {
-      emit(state.copyWith(error: e.toString(), loading: false));
-    }
-  }
-
-  Future<void> _onConfirmDateRange(
-    ConfirmDateRange ev,
-    Emitter<BudgetingState> emit,
-  ) async {
-    // validate + fetch
-    try {
-      emit(
-        state.copyWith(
-          startDate: ev.start,
-          endDate: ev.end,
-          dateConfirmed: false,
+          incomeStartDate: e.start,
+          incomeEndDate: e.end,
+          incomeDateConfirmed: true,
           loading: true,
         ),
       );
+      final incomes = await _repo.getIncomeBuckets(e.start, e.end);
+      emit(state.copyWith(incomes: incomes, loading: false));
+    } catch (err) {
+      emit(state.copyWith(dateError: err.toString(), loading: false));
+    }
+  }
 
-      final incomes = await repository.getIncomeBuckets(ev.start, ev.end);
-      final allocations = await repository.getExpenseBuckets(ev.start, ev.end);
-      final totalIncome = incomes.fold<int>(0, (sum, inc) => sum + inc.value);
-      final initValues = {for (final a in allocations) a.title: 0.0};
+  Future<void> _onResetExpenseDate(
+    ResetExpenseDateConfirmation e,
+    Emitter<BudgetingState> emit,
+  ) {
+    emit(state.copyWith(expenseDateConfirmed: false));
+    return Future.value();
+  }
 
+  Future<void> _onConfirmExpenseDate(
+    ConfirmExpenseDateRange e,
+    Emitter<BudgetingState> emit,
+  ) async {
+    try {
+      await _repo.ensureDates(e.start, e.end);
       emit(
         state.copyWith(
-          dateConfirmed: true,
-          incomes: incomes,
-          totalIncome: totalIncome,
-          allocations: allocations,
-          allocationValues: initValues,
-          loading: false,
+          expenseStartDate: e.start,
+          expenseEndDate: e.end,
+          expenseDateConfirmed: true,
+          loading: true,
         ),
       );
-    } catch (e) {
-      emit(state.copyWith(dateError: e.toString(), loading: false));
+      final allocations = await _repo.getExpenseBuckets(e.start, e.end);
+      emit(state.copyWith(allocations: allocations, loading: false));
+    } catch (err) {
+      emit(state.copyWith(dateError: err.toString(), loading: false));
     }
   }
 
-  void _onSelectIncome(SelectIncomeCategory ev, Emitter<BudgetingState> emit) {
-    final sel = List<String>.from(state.selectedIncomeIds);
-    sel.contains(ev.id) ? sel.remove(ev.id) : sel.add(ev.id);
-    emit(state.copyWith(selectedIncomeIds: sel));
+  // … keep your existing handlers for SelectIncomeCategory, ToggleExpenseSubItem, etc. …
+  void _onSelectIncome(SelectIncomeCategory e, Emitter<BudgetingState> emit) {
+    final ids = List<String>.from(state.selectedIncomeIds);
+    ids.contains(e.id) ? ids.remove(e.id) : ids.add(e.id);
+    emit(state.copyWith(selectedIncomeIds: ids));
   }
 
-  void _onStartDateChanged(
-    StartDateChanged event,
+  void _onToggleSubExpense(
+    ToggleExpenseSubItem e,
     Emitter<BudgetingState> emit,
   ) {
-    emit(state.copyWith(startDate: event.date));
+    final map = Map<String, List<String>>.from(state.selectedSubExpenses);
+    final list = List<String>.from(map[e.allocationId] ?? []);
+    e.isSelected ? list.add(e.subItem) : list.remove(e.subItem);
+    map[e.allocationId] = list;
+    emit(state.copyWith(selectedSubExpenses: map));
   }
 
-  void _onEndDateChanged(
-    EndDateChanged event,
+  void _onToggleAllocationCategory(
+    ToggleAllocationCategory e,
     Emitter<BudgetingState> emit,
   ) {
-    emit(state.copyWith(endDate: event.date));
-  }
-
-  void _onToggleCategory(
-    ToggleAllocationCategory ev,
-    Emitter<BudgetingState> emit,
-  ) {
-    final cats = Set<String>.from(state.selectedCategories);
-    if (ev.isSelected) {
-      cats.add(ev.category);
-    } else {
-      cats.remove(ev.category);
-    }
+    final cats = List<String>.from(state.selectedCategories);
+    e.isSelected ? cats.add(e.category) : cats.remove(e.category);
     emit(state.copyWith(selectedCategories: cats));
   }
 
-  void _onUpdateValue(UpdateAllocationValue ev, Emitter<BudgetingState> emit) {
-    final vals = Map<String, double>.from(state.allocationValues);
-    vals[ev.id] = ev.value;
-    emit(state.copyWith(allocationValues: vals));
-  }
-
-  void _onToggleSub(ToggleExpenseSubItem event, Emitter<BudgetingState> emit) {
-    // 1. Convert any existing Iterable to List and build a fresh map
-    final updatedSubs = <String, List<String>>{
-      for (final e in state.selectedSubExpenses.entries)
-        e.key: e.value.toList(),
-    };
-
-    // 2. Copy or initialize the list for this category:
-    final currentList = List<String>.from(
-      updatedSubs[event.allocationId] ?? <String>[],
-    );
-
-    // 3. Add or remove the subItem:
-    if (event.isSelected) {
-      currentList.add(event.subItem);
-    } else {
-      currentList.remove(event.subItem);
-    }
-
-    // 4. Put the new list back into the map:
-    updatedSubs[event.allocationId] = currentList;
-
-    // 5. Emit a new state with the updated map:
-    emit(state.copyWith(selectedSubExpenses: updatedSubs));
-  }
-
-  void _onResetDateConfirmation(
-    ResetDateConfirmation event,
+  void _onUpdateAllocationValue(
+    UpdateAllocationValue e,
     Emitter<BudgetingState> emit,
   ) {
-    emit(state.copyWith(dateConfirmed: false));
+    final values = Map<String, double>.from(state.allocationValues);
+    values[e.id] = e.value;
+    emit(state.copyWith(allocationValues: values));
+  }
+
+  Future<void> _onLoadDashboard(
+    LoadDashboard e,
+    Emitter<BudgetingState> emit,
+  ) async {
+    final st = state;
+    // Require both ranges
+    if (!st.incomeDateConfirmed || !st.expenseDateConfirmed) {
+      // Nothing to do yet
+      return;
+    }
+
+    emit(st.copyWith(loading: true));
+    try {
+      // fetch incomes
+      final incomes = await _repo.getIncomeBuckets(
+        st.incomeStartDate!,
+        st.incomeEndDate!,
+      );
+      // fetch allocations
+      final allocations = await _repo.getExpenseBuckets(
+        st.expenseStartDate!,
+        st.expenseEndDate!,
+      );
+      emit(
+        st.copyWith(incomes: incomes, allocations: allocations, loading: false),
+      );
+    } catch (err) {
+      emit(st.copyWith(error: err.toString(), loading: false));
+    }
+  }
+
+  Future<void> _onIncomeStartDateChanged(
+    IncomeStartDateChanged e,
+    Emitter<BudgetingState> emit,
+  ) {
+    emit(state.copyWith(incomeStartDate: e.start));
+    return Future.value();
+  }
+
+  Future<void> _onIncomeEndDateChanged(
+    IncomeEndDateChanged e,
+    Emitter<BudgetingState> emit,
+  ) {
+    emit(state.copyWith(incomeEndDate: e.end));
+    return Future.value();
+  }
+
+  Future<void> _onExpenseStartDateChanged(
+    ExpenseStartDateChanged e,
+    Emitter<BudgetingState> emit,
+  ) {
+    emit(state.copyWith(expenseStartDate: e.start));
+    return Future.value();
+  }
+
+  Future<void> _onExpenseEndDateChanged(
+    ExpenseEndDateChanged e,
+    Emitter<BudgetingState> emit,
+  ) {
+    emit(state.copyWith(expenseEndDate: e.end));
+    return Future.value();
   }
 }

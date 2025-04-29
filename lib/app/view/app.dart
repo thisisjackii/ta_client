@@ -38,20 +38,15 @@ class App extends StatelessWidget {
           ),
         ),
         BlocProvider<BudgetingBloc>(
-          create: (context) =>
-              BudgetingBloc(repository: sl<BudgetingRepository>()),
+          create: (context) => BudgetingBloc(sl<BudgetingRepository>()),
         ),
         BlocProvider<EvaluationBloc>(
-          create: (context) => EvaluationBloc(
-            sl<EvaluationRepository>(),
-          ),
+          create: (context) => EvaluationBloc(sl<EvaluationRepository>()),
         ),
       ],
       child: MultiProvider(
         providers: [
-          ChangeNotifierProvider<AuthState>(
-            create: (_) => sl<AuthState>(),
-          ),
+          ChangeNotifierProvider<AuthState>(create: (_) => sl<AuthState>()),
         ],
         child: MaterialApp(
           navigatorObservers: [CustomRouteObserver()],
@@ -61,7 +56,7 @@ class App extends StatelessWidget {
             ),
             useMaterial3: true,
           ),
-          initialRoute: Routes.dashboard,
+          initialRoute: Routes.welcome,
           onGenerateRoute: Routes.generateRoute,
         ),
       ),

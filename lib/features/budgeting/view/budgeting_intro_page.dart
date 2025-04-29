@@ -1,12 +1,9 @@
 // lib/features/budgeting/view/budgeting_intro_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
-import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
-import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 
 class BudgetingIntro extends StatelessWidget {
   const BudgetingIntro({super.key});
@@ -30,8 +27,9 @@ class BudgetingIntro extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: AppDimensions.padding),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.padding,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -51,7 +49,6 @@ class BudgetingIntro extends StatelessWidget {
                       backgroundColor: AppColors.primary,
                     ),
                     onPressed: () {
-                      context.read<BudgetingBloc>().add(LoadBudgetingData());
                       Navigator.pushNamed(context, Routes.budgetingIncomeDate);
                     },
                     child: const Text(

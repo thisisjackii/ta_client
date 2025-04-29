@@ -1,9 +1,7 @@
-// lib/features/budgeting/view/budgeting_allocation_date.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
-import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
@@ -13,36 +11,35 @@ import 'package:ta_client/features/budgeting/view/widgets/budgeting_date_selecti
 
 class BudgetingAllocationDate extends StatefulWidget {
   const BudgetingAllocationDate({super.key});
-
   @override
-  State<BudgetingAllocationDate> createState() =>
+  _BudgetingAllocationDateState createState() =>
       _BudgetingAllocationDateState();
 }
 
-class _BudgetingAllocationDateState extends State<BudgetingAllocationDate>
-    with RouteAware {
+class _BudgetingAllocationDateState extends State<BudgetingAllocationDate> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // reset the expense‐date flag before showing the dialog
+      context.read<BudgetingBloc>().add(ResetExpenseDateConfirmation());
       _showDatePickerModal();
     });
   }
 
   Future<void> _showDatePickerModal() async {
-    context.read<BudgetingBloc>().add(ResetDateConfirmation());
     final parentCtx = context;
-
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) {
         return BlocConsumer<BudgetingBloc, BudgetingState>(
           listenWhen: (prev, cur) =>
-              prev.dateError != cur.dateError ||
-              prev.dateConfirmed != cur.dateConfirmed,
+              prev.expenseDateConfirmed != cur.expenseDateConfirmed ||
+              prev.dateError != cur.dateError,
           listener: (blocCtx, state) {
             if (state.dateError != null) {
+              // show error alert
               showDialog<void>(
                 context: dialogCtx,
                 builder: (_) => AlertDialog(
@@ -50,41 +47,48 @@ class _BudgetingAllocationDateState extends State<BudgetingAllocationDate>
                   content: Text(state.dateError!),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.of(dialogCtx).pop(),
+                      onPressed: () => Navigator.pop(dialogCtx),
                       child: const Text('OK'),
                     ),
                   ],
                 ),
               );
-            } else if (state.dateConfirmed) {
-              Navigator.of(dialogCtx).pop();
-              Navigator.of(parentCtx).pushNamed(Routes.budgetingAllocationPage);
-              ScaffoldMessenger.of(parentCtx).showSnackBar(
-                const SnackBar(
-                  content: Text('Tanggal valid, lanjut ke alokasi anggaran'),
-                ),
+            } else if (state.expenseDateConfirmed) {
+              // close the date picker
+              Navigator.pop(dialogCtx);
+              // 👉 route to the **allocation** page first (not straight to expense)
+              Navigator.pushReplacementNamed(
+                parentCtx,
+                Routes.budgetingAllocationPage,
               );
             }
           },
-          builder: (blocCtx, state) {
+          builder: (_, state) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
               ),
-              contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              content: const BudgetingDateSelection(),
+              contentPadding: const EdgeInsets.all(24),
+              content: BudgetingDateSelection(
+                // wire up the EXPENSE fields & events:
+                startDate: state.expenseStartDate,
+                endDate: state.expenseEndDate,
+                onStartDateChanged: (d) => dialogCtx.read<BudgetingBloc>().add(
+                  ExpenseStartDateChanged(d),
+                ),
+                onEndDateChanged: (d) => dialogCtx.read<BudgetingBloc>().add(
+                  ExpenseEndDateChanged(d),
+                ),
+              ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                  onPressed: () => Navigator.pop(dialogCtx),
                   child: const Text(AppStrings.cancel),
                 ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                  ),
                   onPressed: () {
-                    final s = state.startDate;
-                    final e = state.endDate;
+                    final s = state.expenseStartDate;
+                    final e = state.expenseEndDate;
                     if (s == null || e == null) {
                       showDialog<void>(
                         context: dialogCtx,
@@ -95,7 +99,7 @@ class _BudgetingAllocationDateState extends State<BudgetingAllocationDate>
                           ),
                           actions: [
                             TextButton(
-                              onPressed: () => Navigator.of(dialogCtx).pop(),
+                              onPressed: () => Navigator.pop(dialogCtx),
                               child: const Text('OK'),
                             ),
                           ],
@@ -103,9 +107,9 @@ class _BudgetingAllocationDateState extends State<BudgetingAllocationDate>
                       );
                       return;
                     }
-                    blocCtx.read<BudgetingBloc>().add(
-                          ConfirmDateRange(start: s, end: e),
-                        );
+                    dialogCtx.read<BudgetingBloc>().add(
+                      ConfirmExpenseDateRange(start: s, end: e),
+                    );
                   },
                   child: const Text(AppStrings.ok),
                 ),
@@ -118,7 +122,5 @@ class _BudgetingAllocationDateState extends State<BudgetingAllocationDate>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold();
-  }
+  Widget build(BuildContext context) => const Scaffold();
 }

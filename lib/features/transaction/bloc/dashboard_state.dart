@@ -27,3 +27,5 @@ class DashboardError extends DashboardState {
   @override
   List<Object> get props => [errorMessage];
 }
+
+class DashboardUnauthenticated extends DashboardState {}

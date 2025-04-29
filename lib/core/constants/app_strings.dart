@@ -13,7 +13,7 @@ class AppStrings {
   static const String selectDateAllocation = 'Pilih Tanggal Alokasi Dana';
   static const String selectDateIncome = 'Pilih Tanggal Pemasukan';
   static const String allocationExpenseDescription =
-      'Pilih kategori pengeluaran sesuai dengan alokasi dana yang telah ditetapkan sebelumnya.';
+      'Pilih subkategori pengeluaran sesuai dengan alokasi dana yang telah ditetapkan sebelumnya.';
   static const String evaluationIntroTitle = 'Evaluasi Keuangan';
   static const String evaluationIntroSubtitle =
       'Ingin tahu ke mana uangmu pergi? Cek kesehatan keuanganmu dengan mencatat transaksi secara rutin. Dijamin gak ribet!';

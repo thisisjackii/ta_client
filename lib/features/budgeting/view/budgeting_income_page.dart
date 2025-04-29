@@ -29,8 +29,8 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
     final bloc = context.read<BudgetingBloc>();
     final state = bloc.state;
 
-    final initialStart = state.startDate ?? DateTime.now();
-    final initialEnd = state.endDate ?? DateTime.now();
+    final initialStart = state.incomeStartDate ?? DateTime.now();
+    final initialEnd = state.incomeEndDate ?? DateTime.now();
 
     final picked = await showDateRangePicker(
       context: context,
@@ -41,7 +41,7 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
 
     if (picked != null) {
       // dispatch and auto-load data for the chosen range
-      bloc.add(ConfirmDateRange(start: picked.start, end: picked.end));
+      bloc.add(ConfirmIncomeDateRange(start: picked.start, end: picked.end));
     }
   }
 
@@ -49,8 +49,9 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
   Widget build(BuildContext context) {
     return BlocBuilder<BudgetingBloc, BudgetingState>(
       builder: (ctx, state) {
-        final rangeText = (state.startDate != null && state.endDate != null)
-            ? '${_dateFormat.format(state.startDate!)} - ${_dateFormat.format(state.endDate!)}'
+        final rangeText =
+            (state.incomeStartDate != null && state.incomeEndDate != null)
+            ? '${_dateFormat.format(state.incomeStartDate!)} - ${_dateFormat.format(state.incomeEndDate!)}'
             : 'Pilih rentang tanggal';
 
         return Scaffold(
@@ -70,8 +71,9 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
                         horizontal: 12,
                       ),
                       decoration: BoxDecoration(
-                        border:
-                            Border.all(color: Theme.of(context).dividerColor),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -93,7 +95,7 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
                   Center(child: Text('Error: ${state.error}')),
 
                 // show incomes only after user-selected date range has been confirmed
-                if (!state.loading && state.dateConfirmed)
+                if (!state.loading && state.incomeDateConfirmed)
                   Expanded(
                     child: ListView(
                       children: [
@@ -103,18 +105,18 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
                             title: Text(
                               '${inc.title} — ${formatToRupiah(inc.value.toDouble())}',
                             ),
-                            onChanged: (_) => ctx
-                                .read<BudgetingBloc>()
-                                .add(SelectIncomeCategory(inc.id)),
+                            onChanged: (_) => ctx.read<BudgetingBloc>().add(
+                              SelectIncomeCategory(inc.id),
+                            ),
                           ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: state.selectedIncomeIds.isEmpty
                               ? null
                               : () => Navigator.pushNamed(
-                                    context,
-                                    Routes.budgetingAllocationPage,
-                                  ),
+                                  context,
+                                  Routes.budgetingAllocationDate,
+                                ),
                           child: const Text('Lanjut ke Alokasi'),
                         ),
                       ],

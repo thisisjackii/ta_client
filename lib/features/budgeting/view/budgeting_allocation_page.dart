@@ -1,5 +1,4 @@
 // lib/features/budgeting/view/budgeting_allocation_page.dart
-
 import 'package:another_xlider/another_xlider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,17 +20,13 @@ class BudgetingAllocation extends StatefulWidget {
 
 class _BudgetingAllocationState extends State<BudgetingAllocation>
     with RouteAware {
-  // local copy of slider positions to force UI bounce-back
   final Map<String, double> _localValues = {};
-
-  // single controller to prevent repeats
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
-      _snackBarController;
+  _snackBarController;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // initialize local values from bloc state once
     if (_localValues.isEmpty) {
       final blocState = context.read<BudgetingBloc>().state;
       _localValues.addAll(blocState.allocationValues);
@@ -61,9 +56,8 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
         final allocationData = categoryMapping.entries
             .where((e) => _isExpenseCategory(e.key))
             .toList();
-        final selectedCategories = state.selectedCategories;
-        final totalAllocation = state.allocationValues.values.fold(
-          0.toDouble(),
+        final total = state.allocationValues.values.fold<double>(
+          0,
           (sum, v) => sum + v,
         );
 
@@ -88,114 +82,93 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
 
               // One card per expense category
               ...allocationData.map((entry) {
-                final category = entry.key;
-
-                // use local value if present, else fallback to bloc state
-                final currentValue = _localValues[category] ??
-                    state.allocationValues[category] ??
-                    0.0;
-
-                final isSelected = selectedCategories.contains(category);
-                final sliderEnabled = isSelected;
-
-                // compute max so total ≤ 100%
+                final cat = entry.key;
+                final current =
+                    _localValues[cat] ?? state.allocationValues[cat] ?? 0.0;
+                final enabled = state.selectedCategories.contains(cat);
                 final othersSum = state.allocationValues.entries
-                    .where((e) => e.key != category)
-                    .fold(0, (sum, e) => sum + e.value.toInt());
-                final maxForCat = (100 - othersSum).clamp(0.0, 100.0);
+                    .where((e) => e.key != cat)
+                    .fold(0.toDouble(), (s, e) => s + e.value);
+                final maxForCat = (100.0 - othersSum).clamp(0.0, 100.0);
 
                 return Card(
-                  margin:
-                      const EdgeInsets.only(bottom: AppDimensions.smallPadding),
+                  margin: const EdgeInsets.only(
+                    bottom: AppDimensions.smallPadding,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(AppDimensions.smallPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header row
                         Row(
                           children: [
                             Checkbox(
-                              value: isSelected,
-                              onChanged: (val) {
-                                context.read<BudgetingBloc>().add(
-                                      ToggleAllocationCategory(
-                                        category: category,
-                                        isSelected: val!,
-                                      ),
-                                    );
-                              },
+                              value: enabled,
+                              onChanged: (v) =>
+                                  context.read<BudgetingBloc>().add(
+                                    ToggleAllocationCategory(
+                                      category: cat,
+                                      isSelected: v!,
+                                    ),
+                                  ),
                             ),
                             const SizedBox(width: AppDimensions.smallPadding),
                             Expanded(
                               child: Text(
-                                category,
+                                cat,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color:
-                                      isSelected ? Colors.black : Colors.grey,
+                                  color: enabled ? Colors.black : Colors.grey,
                                 ),
                               ),
                             ),
                             Text(
-                              '${currentValue.toStringAsFixed(0)}%',
+                              '${current.toStringAsFixed(0)}%',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isSelected ? Colors.black : Colors.grey,
+                                color: enabled ? Colors.black : Colors.grey,
                               ),
                             ),
                           ],
                         ),
 
-                        // Slider with clamp + bounce-back
                         FlutterSlider(
-                          values: [currentValue],
-                          max: 100,
+                          values: [current],
                           min: 0,
-                          disabled: !sliderEnabled,
-                          onDragging: (handlerIndex, lowerValue, upperValue) {
-                            final attempt = (lowerValue as num).toDouble();
+                          max: 100,
+                          disabled: !enabled,
+                          onDragging: (__, lower, ___) {
+                            final attempt = (lower as num).toDouble();
                             final clamped = attempt.clamp(0.0, maxForCat);
-
                             if (attempt > maxForCat &&
                                 _snackBarController == null) {
                               _snackBarController =
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    '⚠️ Total alokasi tidak boleh melebihi 100%',
-                                  ),
-                                  backgroundColor: Colors.redAccent,
-                                  duration: Duration(seconds: 2),
-                                ),
+                                    const SnackBar(
+                                      content: Text(
+                                        '⚠️ Total alokasi tidak boleh melebihi 100%',
+                                      ),
+                                      backgroundColor: Colors.redAccent,
+                                    ),
+                                  );
+                              _snackBarController!.closed.then(
+                                (_) => _snackBarController = null,
                               );
-                              _snackBarController!.closed
-                                  .then((_) => _snackBarController = null);
                             }
-
-                            // update local for immediate UI bounce-back
                             setState(() {
-                              _localValues[category] = clamped.toDouble();
+                              _localValues[cat] = clamped;
                             });
-
-                            // dispatch to bloc
                             context.read<BudgetingBloc>().add(
-                                  UpdateAllocationValue(
-                                    id: category,
-                                    value: clamped.toDouble(),
-                                  ),
-                                );
+                              UpdateAllocationValue(id: cat, value: clamped),
+                            );
                           },
-                          onDragCompleted:
-                              (handlerIndex, lowerValue, upperValue) {
-                            final finalVal =
-                                (lowerValue as num).toDouble().clamp(
-                                      0.0,
-                                      maxForCat,
-                                    );
-                            // ensure local also respects clamp
+                          onDragCompleted: (__, lower, ___) {
+                            final finalVal = (lower as num).toDouble().clamp(
+                              0.0,
+                              maxForCat,
+                            );
                             setState(() {
-                              _localValues[category] = finalVal.toDouble();
+                              _localValues[cat] = finalVal;
                             });
                           },
                         ),
@@ -205,7 +178,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                 );
               }),
 
-              // Total allocation summary
+              // Total summary
               Card(
                 color: AppColors.greyBackground,
                 elevation: 0,
@@ -221,13 +194,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        '${totalAllocation.toStringAsFixed(0)}%',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text('${total.toStringAsFixed(0)}%'),
                     ],
                   ),
                 ),
@@ -235,7 +202,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
 
               const SizedBox(height: AppDimensions.smallPadding),
               const Text(
-                'Perhitungan anggaran dalam penelitian ini merujuk pada standar yang ditetapkan oleh Kapoor et al. (2015), yang didasarkan pada data dari lembaga statistik Amerika.',
+                'Perhitungan anggaran dalam penelitian ini merujuk pada standar yang ditetapkan oleh Kapoor et al. (2015)…',
                 style: TextStyle(fontSize: 8, color: Colors.grey),
               ),
 
@@ -247,8 +214,6 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                     backgroundColor: AppColors.primary,
                   ),
                   onPressed: () {
-                    final total = state.allocationValues.values
-                        .fold<double>(0, (s, v) => s + v);
                     if (total == 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -258,7 +223,8 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                         ),
                       );
                       return;
-                    } else if (total < 100) {
+                    }
+                    if (total < 100) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('⚠️ Total alokasi harus mencapai 100%'),

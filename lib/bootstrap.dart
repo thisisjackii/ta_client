@@ -15,6 +15,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   Bloc.observer = const AppBlocObserver();
 
   await Hive.initFlutter();
+  await Hive.openBox<String>('secureBox');
   await Hive.openBox<dynamic>('transactionBox');
 
   // Add cross-flavor configuration here

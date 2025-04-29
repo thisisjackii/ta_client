@@ -2,146 +2,148 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:ta_client/core/utils/authenticated_client.dart';
 import 'package:ta_client/features/budgeting/models/allocation.dart';
 import 'package:ta_client/features/budgeting/models/income.dart';
 
-class BudgetingService {
-  BudgetingService({required this.baseUrl});
-  final String baseUrl;
+/// Thrown when the server returns a 401.
+class UnauthorizedException implements Exception {
+  UnauthorizedException([this.message = 'Unauthorized']);
+  final String message;
+  @override
+  String toString() => 'UnauthorizedException: $message';
+}
 
-  Future<void> _ensureDates(DateTime? s, DateTime? e) async {
-    if (s == null || e == null) throw ArgumentError('Dates not set');
+class BudgetingService {
+  BudgetingService({required String baseUrl})
+    : _baseUrl = baseUrl,
+      _client = AuthenticatedClient(http.Client());
+
+  final String _baseUrl;
+  final http.Client _client;
+
+  Future<void> ensureDates(DateTime? s, DateTime? e) async {
+    if (s == null || e == null) {
+      throw ArgumentError('Dates not set');
+    }
     final diff = e.difference(s).inDays;
-    if (diff < 0) throw ArgumentError('End date must be after start date');
-    if (diff > 31) throw ArgumentError('Range cannot exceed 1 month');
+    if (diff < 0) {
+      throw ArgumentError('End date must be after start date');
+    }
+    if (diff > 31) {
+      throw ArgumentError('Range cannot exceed 1 month');
+    }
   }
 
   Future<List<Income>> fetchIncomeBuckets(DateTime start, DateTime end) async {
-    await _ensureDates(start, end);
+    await ensureDates(start, end);
 
-    final uri = Uri.parse('$baseUrl/transactions');
-    print('[BudgetingService] ▶ FETCHING incomes from $start to $end');
-    print('[BudgetingService] ▶ GET $uri');
-
-    final resp = await http.get(uri);
-    print(
-      '[BudgetingService] ▶ HTTP ${resp.statusCode}: ${resp.body.length} bytes',
+    final uri = Uri.parse('$_baseUrl/transactions');
+    final resp = await _client.get(
+      uri,
+      headers: {'Content-Type': 'application/json'},
     );
 
-    // Decode raw JSON
-    final raw = json.decode(resp.body) as List<dynamic>;
-    print('[BudgetingService] ▶ DECODED ${raw.length} total transactions');
+    if (resp.statusCode == 200) {
+      final rawList = json.decode(resp.body) as List<dynamic>;
+      // filter, sum, and map to Income
+      final filtered = rawList.where((item) {
+        final tx = item as Map<String, dynamic>;
+        final txDate = DateTime.parse(tx['date'] as String);
+        final type = (tx['category']['accountType'] as String).toLowerCase();
+        return (type == 'income' || type == 'pemasukan') &&
+            !txDate.isBefore(start) &&
+            !txDate.isAfter(end);
+      }).toList();
 
-    // Apply date + type filter
-    final filtered = raw.where((item) {
-      final tx = item as Map<String, dynamic>;
-      final txDate = DateTime.parse(tx['date'] as String);
+      // sum by categoryName
+      final sums = <String, double>{};
+      for (final tx in filtered) {
+        final map = tx as Map<String, dynamic>;
+        final name = map['category']['categoryName'] as String;
+        final amt = (map['amount'] as num).toDouble();
+        sums[name] = (sums[name] ?? 0) + amt;
+      }
 
-      // **CHANGE THIS** if your backend uses a different key or casing!
-      final catMap = tx['category'] as Map<String, dynamic>;
-      final type = (catMap['accountType'] as String).toLowerCase();
-
-      return (type.toLowerCase() == 'income' ||
-              type.toLowerCase() == 'pemasukan') &&
-          !txDate.isBefore(start) &&
-          !txDate.isAfter(end);
-    }).toList();
-
-    print(
-      '[BudgetingService] ▶ FILTERED ${filtered.length} “income” txns between $start → $end',
-    );
-    for (final tx in filtered.take(5)) {
-      final date = tx['date'];
-      final catMap = tx['category'] as Map<String, dynamic>;
-      final rawType = catMap['accountType'];
-      final amt = tx['amount'];
-      print('    • $date │ type=$rawType │ amount=$amt');
+      // build Income models
+      return sums.entries.map((e) {
+        return Income.fromJson({
+          'id': e.key,
+          'title': e.key,
+          'value': e.value.toInt(),
+        });
+      }).toList();
     }
 
-    // Sum per categoryName
-    final sums = <String, double>{};
-    for (final tx in filtered) {
-      final catJson = tx['category'] as Map<String, dynamic>;
-      final catName = catJson['categoryName'] as String;
-      final amt = (tx['amount'] as num).toDouble();
-      sums[catName] = (sums[catName] ?? 0) + amt;
+    // non-200: parse error JSON
+    String msg;
+    try {
+      final err = json.decode(resp.body) as Map<String, dynamic>;
+      msg = err['message'] as String? ?? 'Unknown error';
+    } catch (_) {
+      msg = 'Server error (${resp.statusCode})';
     }
 
-    // Map to Income models
-    final incomes = sums.entries.map((e) {
-      final jsonMap = {
-        'id': e.key,
-        'title': e.key,
-        'value': e.value.toInt(),
-      };
-      return Income.fromJson(jsonMap);
-    }).toList();
-
-    print('[BudgetingService] ▶ RETURNING ${incomes.length} income buckets');
-    return incomes;
+    if (resp.statusCode == 401) {
+      throw UnauthorizedException(msg);
+    }
+    throw Exception('Error fetching incomes: $msg');
   }
 
   Future<List<Allocation>> fetchExpenseBuckets(
     DateTime start,
     DateTime end,
   ) async {
-    await _ensureDates(start, end);
+    await ensureDates(start, end);
 
-    final uri = Uri.parse('$baseUrl/transactions');
-    print('[BudgetingService] ▶ FETCHING expenses from $start to $end');
-    print('[BudgetingService] ▶ GET $uri');
-
-    final resp = await http.get(uri);
-    print(
-      '[BudgetingService] ▶ HTTP ${resp.statusCode}: ${resp.body.length} bytes',
+    final uri = Uri.parse('$_baseUrl/transactions');
+    final resp = await _client.get(
+      uri,
+      headers: {'Content-Type': 'application/json'},
     );
 
-    final raw = json.decode(resp.body) as List<dynamic>;
-    print('[BudgetingService] ▶ DECODED ${raw.length} total transactions');
+    if (resp.statusCode == 200) {
+      final rawList = json.decode(resp.body) as List<dynamic>;
+      // filter, sum, and map to Allocation
+      final filtered = rawList.where((item) {
+        final tx = item as Map<String, dynamic>;
+        final txDate = DateTime.parse(tx['date'] as String);
+        final type = (tx['category']['accountType'] as String).toLowerCase();
+        return (type == 'expense' || type == 'pengeluaran') &&
+            !txDate.isBefore(start) &&
+            !txDate.isAfter(end);
+      }).toList();
 
-    final filtered = raw.where((item) {
-      final tx = item as Map<String, dynamic>;
-      final txDate = DateTime.parse(tx['date'] as String);
+      // sum by categoryName
+      final sums = <String, double>{};
+      for (final tx in filtered) {
+        final map = tx as Map<String, dynamic>;
+        final name = map['category']['categoryName'] as String;
+        final amt = (map['amount'] as num).toDouble();
+        sums[name] = (sums[name] ?? 0) + amt;
+      }
 
-      final catMap = tx['category'] as Map<String, dynamic>;
-      final type = (catMap['accountType'] as String).toLowerCase();
-
-      return (type == 'expense' || type == 'pengeluaran') &&
-          !txDate.isBefore(start) &&
-          !txDate.isAfter(end);
-    }).toList();
-
-    print(
-      '[BudgetingService] ▶ FILTERED ${filtered.length} “expense” txns between $start → $end',
-    );
-    for (final tx in filtered.take(5)) {
-      final date = tx['date'];
-      final catMap = tx['category'] as Map<String, dynamic>;
-      final rawType = catMap['accountType'];
-      final amt = tx['amount'];
-      print('    • $date │ type=$rawType │ amount=$amt');
+      return sums.entries.map((e) {
+        return Allocation.fromJson({
+          'id': e.key,
+          'title': e.key,
+          'target': e.value,
+        });
+      }).toList();
     }
 
-    final sums = <String, double>{};
-    for (final tx in filtered) {
-      final catJson = tx['category'] as Map<String, dynamic>;
-      final catName = catJson['categoryName'] as String;
-      final amt = (tx['amount'] as num).toDouble();
-      sums[catName] = (sums[catName] ?? 0) + amt;
+    // non-200: parse error JSON
+    String msg;
+    try {
+      final err = json.decode(resp.body) as Map<String, dynamic>;
+      msg = err['message'] as String? ?? 'Unknown error';
+    } catch (_) {
+      msg = 'Server error (${resp.statusCode})';
     }
 
-    final allocations = sums.entries.map((e) {
-      final jsonMap = {
-        'id': e.key,
-        'title': e.key,
-        'target': e.value,
-      };
-      return Allocation.fromJson(jsonMap);
-    }).toList();
-
-    print(
-      '[BudgetingService] ▶ RETURNING ${allocations.length} allocation buckets',
-    );
-    return allocations;
+    if (resp.statusCode == 401) {
+      throw UnauthorizedException(msg);
+    }
+    throw Exception('Error fetching expenses: $msg');
   }
 }
