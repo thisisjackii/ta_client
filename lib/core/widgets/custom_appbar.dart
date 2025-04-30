@@ -10,12 +10,14 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.selectedMonth,
     required this.onMonthChanged,
     required this.onFilterChanged, // New callback to send filter criteria upward.
+    required this.onShowDoubleEntryRecap,
     super.key,
   });
   final ValueNotifier<bool> isSelectionMode;
   final DateTime selectedMonth;
   final ValueChanged<DateTime> onMonthChanged;
   final ValueChanged<Map<String, dynamic>?> onFilterChanged;
+  final VoidCallback onShowDoubleEntryRecap;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -104,8 +106,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
                 onSelected: (value) {
                   if (value == 'statistic') {
                     Navigator.pushNamed(context, Routes.statistik);
-                  } else if (value == 'download_pdf') {
-                    // Navigator.pushNamed(context, Routes.showDoubleEntryRecap);
+                  } else if (value == 'show_double_entry_recap') {
+                    widget.onShowDoubleEntryRecap();
                   }
                 },
                 itemBuilder: (BuildContext context) => [
@@ -114,8 +116,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
                     child: Text('Statistic'),
                   ),
                   const PopupMenuItem(
-                    value: 'download_pdf',
-                    child: Text('Download PDF File ...'),
+                    value: 'show_double_entry_recap',
+                    child: Text('Lihat Double Entry'),
                   ),
                 ],
               ),

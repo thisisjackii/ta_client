@@ -37,6 +37,16 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
         selectedMonth: selectedMonth,
         onMonthChanged: updateSelectedMonth,
         onFilterChanged: updateFilterCriteria, // Pass filter criteria upward.
+        onShowDoubleEntryRecap: () {
+          final allItems = context.read<DashboardBloc>().state;
+          if (allItems is DashboardLoaded) {
+            Navigator.pushNamed(
+              context,
+              Routes.doubleEntryRecapPage,
+              arguments: allItems.items,
+            );
+          }
+        },
       ),
       body: BlocConsumer<DashboardBloc, DashboardState>(
         listener: (context, state) {

@@ -31,6 +31,7 @@ dependencies:
   provider: ^6.1.2
   quickalert: ^1.1.0
   toggle_switch: ^2.3.0
+  two_dimensional_scrollables: ^0.3.3
 
 dev_dependencies:
   bloc_test: ^10.0.0

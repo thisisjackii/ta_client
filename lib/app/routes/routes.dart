@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:ta_client/core/screens/screens.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
+import 'package:ta_client/features/transaction/view/double_entry_recap_page.dart';
 
 class Routes {
   static const welcome = '/';
@@ -28,6 +29,8 @@ class Routes {
   static const budgetingAllocationExpense = '/budgeting-allocation-expense';
   static const budgetingAllocationPage = '/budgeting-allocation-page';
   static const budgetingDashboard = '/budgeting-dashboard';
+
+  static const doubleEntryRecapPage = '/double-entry-recap-page';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -130,6 +133,12 @@ class Routes {
       case budgetingDashboard:
         return MaterialPageRoute(
           builder: (_) => const BudgetingDashboard(),
+          settings: settings,
+        );
+case doubleEntryRecapPage:
+        final txns = settings.arguments! as List<Transaction>;
+        return MaterialPageRoute(
+          builder: (_) => DoubleEntryRecapPage(transactions: txns),
           settings: settings,
         );
       // case editTransaction:
