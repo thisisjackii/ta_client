@@ -137,16 +137,24 @@ class EvaluationService {
     final netWorth = (liquidAssets + nonLiquid) - liabilities;
     final totalAssets = liquidAssets + nonLiquid;
 
-    debugPrint('— Computed: '
-        'liquid=$liquidAssets, '
-        'expense=$monthlyExpense, '
-        'nonLiquid=$nonLiquid, '
-        'liab=$liabilities, '
-        'savings=$savings, '
-        'income=$grossIncome, '
-        'invested=$invested, '
-        'netWorth=$netWorth, '
-        'totalAssets=$totalAssets');
+    debugPrint(
+      '— Computed: '
+      'liquid=$liquidAssets, '
+      'expense=$monthlyExpense, '
+      'nonLiquid=$nonLiquid, '
+      'liab=$liabilities, '
+      'savings=$savings, '
+      'income=$grossIncome, '
+      'invested=$invested, '
+      'netWorth=$netWorth, '
+      'totalAssets=$totalAssets',
+    );
+
+    bool inRange(double v, double? low, double? high) {
+      if (low != null && v < low) return false;
+      if (high != null && v > high) return false;
+      return true;
+    }
 
     // Build each Evaluation, matching your UI ids:
     return [
@@ -156,6 +164,11 @@ class EvaluationService {
         title: 'Rasio Likuiditas',
         yourValue: monthlyExpense > 0 ? liquidAssets / monthlyExpense : 0.0,
         idealText: '3–6 Bulan',
+        isIdeal: inRange(
+          monthlyExpense > 0 ? liquidAssets / monthlyExpense : 0.0,
+          3.0,
+          6.0,
+        ),
         breakdown: {
           'Aset Likuid': liquidAssets,
           'Pengeluaran Bulanan': monthlyExpense,
@@ -168,10 +181,8 @@ class EvaluationService {
         title: 'Aset Lancar / Kekayaan Bersih',
         yourValue: netWorth != 0 ? (liquidAssets / netWorth) * 100 : 0.0,
         idealText: '> 15%',
-        breakdown: {
-          'Aset Likuid': liquidAssets,
-          'Kekayaan Bersih': netWorth,
-        },
+        isIdeal: (netWorth != 0 ? (liquidAssets / netWorth) * 100 : 0.0) >= 15,
+        breakdown: {'Aset Likuid': liquidAssets, 'Kekayaan Bersih': netWorth},
       ),
 
       // 2: Debt-to-Asset (%)
@@ -180,10 +191,9 @@ class EvaluationService {
         title: 'Utang / Aset',
         yourValue: totalAssets > 0 ? (liabilities / totalAssets) * 100 : 0.0,
         idealText: '≤ 50%',
-        breakdown: {
-          'Total Utang': liabilities,
-          'Total Aset': totalAssets,
-        },
+        isIdeal:
+            (totalAssets > 0 ? (liabilities / totalAssets) * 100 : 0.0) <= 50,
+        breakdown: {'Total Utang': liabilities, 'Total Aset': totalAssets},
       ),
 
       // 3: Saving Ratio (%)
@@ -192,10 +202,8 @@ class EvaluationService {
         title: 'Rasio Tabungan',
         yourValue: grossIncome > 0 ? (savings / grossIncome) * 100 : 0.0,
         idealText: '≥ 10%',
-        breakdown: {
-          'Tabungan': savings,
-          'Pendapatan Kotor': grossIncome,
-        },
+        isIdeal: (grossIncome > 0 ? (savings / grossIncome) * 100 : 0.0) >= 10,
+        breakdown: {'Tabungan': savings, 'Pendapatan Kotor': grossIncome},
       ),
 
       // 4: Debt Service Ratio (%)
@@ -204,6 +212,7 @@ class EvaluationService {
         title: 'Debt Service Ratio',
         yourValue: netIncome > 0 ? (debtPayments / netIncome) * 100 : 0.0,
         idealText: '≤ 45%',
+        isIdeal: (netIncome > 0 ? (debtPayments / netIncome) * 100 : 0.0) <= 45,
         breakdown: {
           'Pembayaran Utang': debtPayments,
           'Pendapatan Bersih': netIncome,
@@ -216,10 +225,8 @@ class EvaluationService {
         title: 'Investasi / Kekayaan Bersih',
         yourValue: netWorth > 0 ? (invested / netWorth) * 100 : 0.0,
         idealText: '≥ 50%',
-        breakdown: {
-          'Investasi': invested,
-          'Kekayaan Bersih': netWorth,
-        },
+        isIdeal: (netWorth > 0 ? (invested / netWorth) * 100 : 0.0) >= 50,
+        breakdown: {'Investasi': invested, 'Kekayaan Bersih': netWorth},
       ),
 
       // 6: Solvability Ratio (%)
@@ -228,18 +235,17 @@ class EvaluationService {
         title: 'Rasio Solvabilitas',
         yourValue: totalAssets > 0 ? (netWorth / totalAssets) * 100 : 0.0,
         idealText: '—',
-        breakdown: {
-          'Kekayaan Bersih': netWorth,
-          'Total Aset': totalAssets,
-        },
+        isIdeal: false,
+        breakdown: {'Kekayaan Bersih': netWorth, 'Total Aset': totalAssets},
       ),
     ];
   }
 
   Future<Evaluation> fetchDetail(DateTime start, DateTime end, String id) {
-    return fetchDashboard(start, end).then(
-      (list) => list.firstWhere((e) => e.id == id),
-    );
+    return fetchDashboard(
+      start,
+      end,
+    ).then((list) => list.firstWhere((e) => e.id == id));
   }
 
   Future<List<History>> fetchHistory() async {

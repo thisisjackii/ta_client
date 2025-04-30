@@ -64,7 +64,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.budgetingTitle),
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.greyBackground,
           ),
           body: ListView(
             padding: const EdgeInsets.all(AppDimensions.padding),

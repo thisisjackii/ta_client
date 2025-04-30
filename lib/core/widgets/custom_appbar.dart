@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -29,6 +30,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
     final monthYearText = DateFormat('MMM yyyy').format(widget.selectedMonth);
 
     return AppBar(
+      backgroundColor: AppColors.greyBackground,
       automaticallyImplyLeading: false,
       title: Row(
         mainAxisSize: MainAxisSize.min,
@@ -87,8 +89,10 @@ class _CustomAppBarState extends State<CustomAppBar> {
               IconButton(
                 icon: const Icon(Icons.filter_alt_rounded),
                 onPressed: () async {
-                  final result =
-                      await Navigator.pushNamed(context, Routes.filter);
+                  final result = await Navigator.pushNamed(
+                    context,
+                    Routes.filter,
+                  );
                   if (result != null && result is Map<String, dynamic>) {
                     // Propagate filter criteria upward.
                     widget.onFilterChanged(result);

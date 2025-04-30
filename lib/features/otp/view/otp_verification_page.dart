@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/features/otp/bloc/otp_bloc.dart';
 import 'package:ta_client/features/otp/bloc/otp_event.dart';
 import 'package:ta_client/features/otp/bloc/otp_state.dart';
@@ -19,15 +20,18 @@ class OtpVerificationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('OTP Verification')),
+      appBar: AppBar(
+        title: const Text('OTP Verification'),
+        backgroundColor: AppColors.greyBackground,
+      ),
       body: BlocListener<OtpBloc, OtpState>(
         listener: (context, state) {
           if (state is OtpSuccess) {
             Navigator.pushReplacementNamed(context, Routes.dashboard);
           } else if (state is OtpFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.errorMessage)));
           }
         },
         child: Padding(

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/core/widgets/custom_appbar.dart';
 import 'package:ta_client/core/widgets/custom_bottom_navbar.dart';
@@ -30,6 +31,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.greyBackground,
       appBar: CustomAppBar(
         isSelectionMode: isSelectionMode,
         selectedMonth: selectedMonth,

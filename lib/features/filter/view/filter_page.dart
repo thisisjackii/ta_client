@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/features/filter/view/widgets/filter_form_page.dart';
 
 class FilterPage extends StatelessWidget {
@@ -8,7 +9,7 @@ class FilterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xffFBFDFF),
+        backgroundColor: AppColors.greyBackground,
         automaticallyImplyLeading: false,
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -19,10 +20,7 @@ class FilterPage extends StatelessWidget {
             ),
             const Text(
               'Filter',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
           ],
         ),

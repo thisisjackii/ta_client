@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inset_shadow/flutter_inset_shadow.dart';
 import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 
@@ -26,7 +27,7 @@ class _StatisticPieChartState extends State<StatisticPieChart> with RouteAware {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xffFBFDFF),
+        backgroundColor: AppColors.greyBackground,
         automaticallyImplyLeading: false,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -39,10 +40,7 @@ class _StatisticPieChartState extends State<StatisticPieChart> with RouteAware {
                 ),
                 const Text(
                   'Statistik',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -62,12 +60,7 @@ class _StatisticPieChartState extends State<StatisticPieChart> with RouteAware {
           DropdownButton<String>(
             value: selectedType,
             items: ['Aset', 'Liabilitas', 'Pemasukan', 'Pengeluaran']
-                .map(
-                  (type) => DropdownMenuItem(
-                    value: type,
-                    child: Text(type),
-                  ),
-                )
+                .map((type) => DropdownMenuItem(value: type, child: Text(type)))
                 .toList(),
             onChanged: (value) {
               if (value != null) {
@@ -126,17 +119,15 @@ class _StatisticPieChartState extends State<StatisticPieChart> with RouteAware {
   Widget _buildPieChart(List<Transaction> transactions) {
     // Filter transactions by selected type
     final filteredTransactions = transactions.where((t) {
-      final isSameMonth = t.date.year == selectedMonth.year &&
+      final isSameMonth =
+          t.date.year == selectedMonth.year &&
           t.date.month == selectedMonth.month;
       return t.accountType == selectedType && isSameMonth;
     }).toList();
 
     if (filteredTransactions.isEmpty) {
       return const Center(
-        child: Text(
-          'No Data',
-          style: TextStyle(color: Colors.black),
-        ),
+        child: Text('No Data', style: TextStyle(color: Colors.black)),
       );
     }
 
@@ -151,8 +142,10 @@ class _StatisticPieChartState extends State<StatisticPieChart> with RouteAware {
     }
 
     // Calculate total amount for percentage calculation
-    final totalAmount =
-        categoryMap.values.fold<double>(0, (sum, amount) => sum + amount);
+    final totalAmount = categoryMap.values.fold<double>(
+      0,
+      (sum, amount) => sum + amount,
+    );
 
     // Generate pie chart sections with percentages
     final sections = categoryMap.entries.map((entry) {

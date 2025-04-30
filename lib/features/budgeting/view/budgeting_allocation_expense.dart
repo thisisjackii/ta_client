@@ -20,15 +20,13 @@ class BudgetingAllocationExpense extends StatelessWidget {
       builder: (context, state) {
         // Filter to only allocations whose category title was selected
         final selectedAllocations = state.allocations
-            .where(
-              (alloc) => state.selectedCategories.contains(alloc.title),
-            )
+            .where((alloc) => state.selectedCategories.contains(alloc.title))
             .toList();
 
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.budgetingTitle),
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.greyBackground,
           ),
           body: ListView(
             padding: const EdgeInsets.all(AppDimensions.padding),
@@ -58,10 +56,11 @@ class BudgetingAllocationExpense extends StatelessWidget {
                   children: subItems.map((sub) {
                     final isChecked =
                         state.selectedSubExpenses[title]?.contains(sub) ??
-                            false;
+                        false;
                     return CheckboxListTile(
-                      key:
-                          ValueKey('${title}_$sub}'), // unique key per checkbox
+                      key: ValueKey(
+                        '${title}_$sub}',
+                      ), // unique key per checkbox
                       controlAffinity: ListTileControlAffinity
                           .leading, // checkbox on the left
                       contentPadding: EdgeInsets.zero, // consistent tap area
@@ -69,12 +68,12 @@ class BudgetingAllocationExpense extends StatelessWidget {
                       title: Text(sub),
                       onChanged: (val) {
                         context.read<BudgetingBloc>().add(
-                              ToggleExpenseSubItem(
-                                allocationId: alloc.id,
-                                subItem: sub,
-                                isSelected: val ?? false,
-                              ),
-                            );
+                          ToggleExpenseSubItem(
+                            allocationId: alloc.id,
+                            subItem: sub,
+                            isSelected: val ?? false,
+                          ),
+                        );
                       },
                     );
                   }).toList(),

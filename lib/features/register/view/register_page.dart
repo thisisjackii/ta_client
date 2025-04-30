@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/widgets/custom_button.dart';
 import 'package:ta_client/core/widgets/custom_date_selector.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
@@ -24,7 +25,7 @@ class RegisterPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         scrolledUnderElevation: 0,
-        backgroundColor: const Color(0xffFBFDFF),
+        backgroundColor: AppColors.greyBackground,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -33,11 +34,7 @@ class RegisterPage extends StatelessWidget {
         ),
         title: const Text(
           'Daftar',
-          style: TextStyle(
-            fontVariations: [
-              FontVariation('wght', 800),
-            ],
-          ),
+          style: TextStyle(fontVariations: [FontVariation('wght', 800)]),
         ),
         centerTitle: true,
       ),
@@ -46,9 +43,9 @@ class RegisterPage extends StatelessWidget {
           if (state is RegisterSuccess) {
             Navigator.pushReplacementNamed(context, Routes.dashboard);
           } else if (state is RegisterFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.errorMessage)));
           }
         },
         child: SingleChildScrollView(
@@ -63,9 +60,7 @@ class RegisterPage extends StatelessWidget {
                     'Nama Lengkap',
                     style: TextStyle(
                       fontSize: 12,
-                      fontVariations: [
-                        FontVariation('wght', 600),
-                      ],
+                      fontVariations: [FontVariation('wght', 600)],
                     ),
                   ),
                 ),
@@ -73,9 +68,9 @@ class RegisterPage extends StatelessWidget {
                 CustomTextField(
                   label: 'Nama Lengkap',
                   icons: Icons.person,
-                  onChanged: (value) => context
-                      .read<RegisterBloc>()
-                      .add(RegisterNameChanged(value)),
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterNameChanged(value),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Align(
@@ -84,9 +79,7 @@ class RegisterPage extends StatelessWidget {
                     'Username',
                     style: TextStyle(
                       fontSize: 12,
-                      fontVariations: [
-                        FontVariation('wght', 600),
-                      ],
+                      fontVariations: [FontVariation('wght', 600)],
                     ),
                   ),
                 ),
@@ -94,9 +87,9 @@ class RegisterPage extends StatelessWidget {
                 CustomTextField(
                   label: 'Username',
                   icons: Icons.person,
-                  onChanged: (value) => context
-                      .read<RegisterBloc>()
-                      .add(RegisterNameChanged(value)),
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterNameChanged(value),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Align(
@@ -105,9 +98,7 @@ class RegisterPage extends StatelessWidget {
                     'Email',
                     style: TextStyle(
                       fontSize: 12,
-                      fontVariations: [
-                        FontVariation('wght', 600),
-                      ],
+                      fontVariations: [FontVariation('wght', 600)],
                     ),
                   ),
                 ),
@@ -116,9 +107,9 @@ class RegisterPage extends StatelessWidget {
                   label: 'Email',
                   icons: Icons.email,
                   keyboardType: TextInputType.emailAddress,
-                  onChanged: (value) => context
-                      .read<RegisterBloc>()
-                      .add(RegisterEmailChanged(value)),
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterEmailChanged(value),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Align(
@@ -127,9 +118,7 @@ class RegisterPage extends StatelessWidget {
                     'Password',
                     style: TextStyle(
                       fontSize: 12,
-                      fontVariations: [
-                        FontVariation('wght', 600),
-                      ],
+                      fontVariations: [FontVariation('wght', 600)],
                     ),
                   ),
                 ),
@@ -138,9 +127,9 @@ class RegisterPage extends StatelessWidget {
                   label: 'Password',
                   icons: Icons.lock,
                   isObscured: true,
-                  onChanged: (value) => context
-                      .read<RegisterBloc>()
-                      .add(RegisterPasswordChanged(value)),
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterPasswordChanged(value),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Align(
@@ -149,9 +138,7 @@ class RegisterPage extends StatelessWidget {
                     'Alamat Domisili',
                     style: TextStyle(
                       fontSize: 12,
-                      fontVariations: [
-                        FontVariation('wght', 600),
-                      ],
+                      fontVariations: [FontVariation('wght', 600)],
                     ),
                   ),
                 ),
@@ -159,9 +146,9 @@ class RegisterPage extends StatelessWidget {
                 CustomTextField(
                   label: 'Alamat',
                   icons: Icons.location_on,
-                  onChanged: (value) => context
-                      .read<RegisterBloc>()
-                      .add(RegisterNameChanged(value)),
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterNameChanged(value),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Align(
@@ -170,9 +157,7 @@ class RegisterPage extends StatelessWidget {
                     'Tanggal Lahir',
                     style: TextStyle(
                       fontSize: 12,
-                      fontVariations: [
-                        FontVariation('wght', 600),
-                      ],
+                      fontVariations: [FontVariation('wght', 600)],
                     ),
                   ),
                 ),
@@ -181,7 +166,9 @@ class RegisterPage extends StatelessWidget {
                   label: 'Tanggal Lahir',
                   icons: Icons.date_range_rounded,
                   onDateSelected: (selectedDate) {
-                    context.read<RegisterBloc>().add(RegisterNameChanged(selectedDate));
+                    context.read<RegisterBloc>().add(
+                      RegisterNameChanged(selectedDate),
+                    );
                   },
                 ),
                 const SizedBox(height: 4),

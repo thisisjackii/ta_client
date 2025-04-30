@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
@@ -55,7 +56,10 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
             : 'Pilih rentang tanggal';
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Pilih Sumber Dana')),
+          appBar: AppBar(
+            title: const Text('Pilih Sumber Dana'),
+            backgroundColor: AppColors.greyBackground,
+          ),
           body: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

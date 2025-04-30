@@ -30,7 +30,7 @@ class _BudgetingDashboardState extends State<BudgetingDashboard>
         return Scaffold(
           appBar: AppBar(
             title: const Text('Alokasi Keuanganmu'),
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.greyBackground,
           ),
           body: ListView(
             padding: const EdgeInsets.all(AppDimensions.padding),

@@ -9,61 +9,58 @@ class EvaluationIntroPage extends StatelessWidget {
   const EvaluationIntroPage({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          backgroundColor: AppColors.info,
-          automaticallyImplyLeading: false,
-          title: const Text(AppStrings.evaluationIntroTitle),
+    appBar: AppBar(
+      backgroundColor: AppColors.info,
+      automaticallyImplyLeading: false,
+      title: const Text(AppStrings.evaluationIntroTitle),
+    ),
+    body: Column(
+      children: [
+        Expanded(
+          child: Image.asset(
+            'assets/img/10078322.png',
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: Image.asset(
-                'assets/img/10078322.png',
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.padding,
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.padding,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                const Text(
+                  'Bagaimana Kondisi Keuanganmu? Cek Kesehatan Keuanganmu Yuk!',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    const Text(
-                      'Bagaimana Kondisi Keuanganmu? Cek Kesehatan Keuanganmu Yuk!',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const Text(
-                      AppStrings.evaluationIntroSubtitle,
-                      style: TextStyle(fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                      ),
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          Routes.evaluationDateSelection,
-                        );
-                      },
-                      child: const Text(
-                        AppStrings.start,
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
+                const Text(
+                  AppStrings.evaluationIntroSubtitle,
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
                 ),
-              ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      Routes.evaluationDateSelection,
+                    );
+                  },
+                  child: const Text(
+                    AppStrings.start,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }

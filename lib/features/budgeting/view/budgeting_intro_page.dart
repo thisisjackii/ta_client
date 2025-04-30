@@ -12,7 +12,7 @@ class BudgetingIntro extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.info,
         automaticallyImplyLeading: false,
         title: const Text(AppStrings.budgetingTitle),
       ),

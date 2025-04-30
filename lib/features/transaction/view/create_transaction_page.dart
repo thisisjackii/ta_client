@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_form.dart';
 
@@ -36,7 +37,7 @@ class CreateTransactionPage extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xffFBFDFF),
+          backgroundColor: AppColors.greyBackground,
           automaticallyImplyLeading: false,
           title: Row(
             mainAxisSize: MainAxisSize.min,
@@ -57,14 +58,14 @@ class CreateTransactionPage extends StatelessWidget {
         ),
         body: TransactionForm(
           onSubmit: (transaction) {
-            context
-                .read<TransactionBloc>()
-                .add(CreateTransactionRequested(transaction));
+            context.read<TransactionBloc>().add(
+              CreateTransactionRequested(transaction),
+            );
           },
           onDescriptionChanged: (description) {
-            context
-                .read<TransactionBloc>()
-                .add(ClassifyTransactionRequested(description));
+            context.read<TransactionBloc>().add(
+              ClassifyTransactionRequested(description),
+            );
           },
         ),
       ),

@@ -15,10 +15,14 @@ class EvaluationHistoryPage extends StatelessWidget {
       builder: (context, state) {
         if (state.loading) {
           return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),);
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         return Scaffold(
-          appBar: AppBar(title: const Text(AppStrings.evaluationHistoryTitle)),
+          appBar: AppBar(
+            title: const Text(AppStrings.evaluationHistoryTitle),
+            backgroundColor: AppColors.greyBackground,
+          ),
           body: Padding(
             padding: const EdgeInsets.all(AppDimensions.padding),
             child: Column(
@@ -37,8 +41,9 @@ class EvaluationHistoryPage extends StatelessWidget {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppDimensions.cardRadius),
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.cardRadius,
+                          ),
                         ),
                         elevation: 2,
                         child: Padding(

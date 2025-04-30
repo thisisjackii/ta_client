@@ -53,6 +53,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.evaluationDashboardTitle),
+            backgroundColor: AppColors.greyBackground,
             actions: [
               IconButton(
                 icon: const Icon(Icons.restart_alt_rounded),
@@ -131,6 +132,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // 1) Title sits on its own row
                                 Text(
                                   item.title,
                                   style: const TextStyle(
@@ -138,50 +140,74 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  AppStrings.yourRatioLabel,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  item.id == '0'
-                                      ? formatMonths(item.yourValue)
-                                      : formatPercent(item.yourValue),
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                const SizedBox(height: 8),
+
+                                // 2) now this Row lines up both "your" and "ideal" labels/values
+                                Row(
+                                  children: [
+                                    // Your Ratio block
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            AppStrings.yourRatioLabel,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${item.id == '0' ? formatMonths(item.yourValue) : formatPercent(item.yourValue)}'
+                                            ' ${item.id != '6'
+                                                ? item.isIdeal
+                                                      ? '(Ideal)'
+                                                      : '(Not Ideal)'
+                                                : ''}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: item.isIdeal
+                                                  ? Colors.green[700]
+                                                  : Colors.red[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Ideal Ratio block (if any)
+                                    if (item.idealText != null)
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              AppStrings.idealRatioLabel,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              item.idealText!,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                          if (item.idealText != null)
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    AppStrings.idealRatioLabel,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item.idealText!,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                         ],
                       ),
                     ),

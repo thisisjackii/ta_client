@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/features/login/bloc/login_bloc.dart';
 import 'package:ta_client/features/login/bloc/login_event.dart';
 import 'package:ta_client/features/login/bloc/login_state.dart';
@@ -30,7 +31,7 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
     return Scaffold(
       appBar: AppBar(
         scrolledUnderElevation: 0,
-        backgroundColor: const Color(0xffFBFDFF),
+        backgroundColor: AppColors.greyBackground,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -39,11 +40,7 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
         ),
         title: const Text(
           'Masuk',
-          style: TextStyle(
-            fontVariations: [
-              FontVariation('wght', 800),
-            ],
-          ),
+          style: TextStyle(fontVariations: [FontVariation('wght', 800)]),
         ),
         centerTitle: true,
       ),
@@ -52,9 +49,9 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
           if (state is LoginSuccess) {
             Navigator.pushReplacementNamed(context, Routes.dashboard);
           } else if (state is LoginFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.error)));
           }
         },
         child: Padding(
@@ -68,9 +65,7 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
                 child: Text(
                   'Username',
                   style: TextStyle(
-                    fontVariations: [
-                      FontVariation('wght', 600),
-                    ],
+                    fontVariations: [FontVariation('wght', 600)],
                   ),
                 ),
               ),
@@ -80,10 +75,7 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.blueGrey),
                   ),
-                  prefixIcon: Opacity(
-                    opacity: 0.3,
-                    child: Icon(Icons.person),
-                  ),
+                  prefixIcon: Opacity(opacity: 0.3, child: Icon(Icons.person)),
                   hintText: 'Email or Username',
                 ),
                 onChanged: (value) =>
@@ -95,9 +87,7 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
                 child: Text(
                   'Kata Sandi',
                   style: TextStyle(
-                    fontVariations: [
-                      FontVariation('wght', 600),
-                    ],
+                    fontVariations: [FontVariation('wght', 600)],
                   ),
                 ),
               ),
@@ -141,20 +131,20 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
                   const Text(
                     'Atau login dengan',
                     style: TextStyle(
-                      fontVariations: [
-                        FontVariation('wght', 500),
-                      ],
+                      fontVariations: [FontVariation('wght', 500)],
                     ),
                   ),
                   const SizedBox(height: 10),
                   Material(
                     color: Colors
                         .transparent, // Transparent Material to use custom decoration
-                    borderRadius:
-                        BorderRadius.circular(64), // Match decoration corners
+                    borderRadius: BorderRadius.circular(
+                      64,
+                    ), // Match decoration corners
                     child: InkWell(
-                      borderRadius:
-                          BorderRadius.circular(64), // Match decoration corners
+                      borderRadius: BorderRadius.circular(
+                        64,
+                      ), // Match decoration corners
                       onTap: () {
                         // Your onPressed logic here
                         debugPrint('Button clicked!');
@@ -186,8 +176,9 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
                               spreadRadius: 1,
                             ),
                           ],
-                          borderRadius:
-                              BorderRadius.circular(64), // Rounded corners
+                          borderRadius: BorderRadius.circular(
+                            64,
+                          ), // Rounded corners
                         ),
                         child: SvgPicture.asset(
                           'assets/icons/devicon_google.svg',
@@ -205,25 +196,18 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
                   const Text(
                     'Belum Punya Akun?',
                     style: TextStyle(
-                      fontVariations: [
-                        FontVariation('wght', 500),
-                      ],
+                      fontVariations: [FontVariation('wght', 500)],
                     ),
                   ),
                   const SizedBox(height: 10),
                   TextButton(
                     onPressed: () {
-                      Navigator.pushReplacementNamed(
-                        context,
-                        '/register',
-                      );
+                      Navigator.pushReplacementNamed(context, '/register');
                     },
                     child: Text(
                       'Daftar disini',
                       style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                        fontVariations: [
-                          const FontVariation('wght', 800),
-                        ],
+                        fontVariations: [const FontVariation('wght', 800)],
                       ),
                     ),
                   ),

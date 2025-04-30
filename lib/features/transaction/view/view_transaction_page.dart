@@ -1,6 +1,7 @@
 // lib/features/transaction/view/view_transaction_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 // import 'package:quickalert/quickalert.dart';
 // import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
@@ -16,11 +17,12 @@ class ViewTransactionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<TransactionBloc, TransactionState>(
       builder: (context, state) {
-        final currentTransaction = state.createdTransaction ??
+        final currentTransaction =
+            state.createdTransaction ??
             transaction; // Use updatedTransaction if available
         return Scaffold(
           appBar: AppBar(
-            backgroundColor: const Color(0xffFBFDFF),
+            backgroundColor: AppColors.greyBackground,
             automaticallyImplyLeading: false,
             title: Row(
               mainAxisSize: MainAxisSize.min,
@@ -34,10 +36,7 @@ class ViewTransactionPage extends StatelessWidget {
             actions: [
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.info),
-                    onPressed: () {},
-                  ),
+                  IconButton(icon: const Icon(Icons.info), onPressed: () {}),
                   IconButton(
                     icon: Icon(
                       currentTransaction.isBookmarked
@@ -48,9 +47,9 @@ class ViewTransactionPage extends StatelessWidget {
                           : Colors.black,
                     ),
                     onPressed: () {
-                      context
-                          .read<TransactionBloc>()
-                          .add(ToggleBookmarkRequested(currentTransaction.id));
+                      context.read<TransactionBloc>().add(
+                        ToggleBookmarkRequested(currentTransaction.id),
+                      );
                     },
                   ),
                 ],
@@ -61,14 +60,14 @@ class ViewTransactionPage extends StatelessWidget {
             mode: TransactionFormMode.view,
             transaction: currentTransaction,
             onSubmit: (updatedTransaction) {
-              context
-                  .read<TransactionBloc>()
-                  .add(UpdateTransactionRequested(updatedTransaction));
+              context.read<TransactionBloc>().add(
+                UpdateTransactionRequested(updatedTransaction),
+              );
             },
             onDelete: () {
-              context
-                  .read<TransactionBloc>()
-                  .add(DeleteTransactionRequested(currentTransaction.id));
+              context.read<TransactionBloc>().add(
+                DeleteTransactionRequested(currentTransaction.id),
+              );
             },
           ),
         );

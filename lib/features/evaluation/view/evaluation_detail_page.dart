@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
 import 'package:ta_client/core/utils/calculations.dart';
@@ -42,6 +43,7 @@ class EvaluationDetailPage extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.ratioSummaryTitle),
+            backgroundColor: AppColors.greyBackground,
             actions: item.id == '6'
                 ? []
                 : [
@@ -91,8 +93,12 @@ class EvaluationDetailPage extends StatelessWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.grey),
+                          color: item.isIdeal
+                              ? Colors.green[50]
+                              : Colors.red[50],
+                          border: Border.all(
+                            color: item.isIdeal ? Colors.green : Colors.red,
+                          ),
                           borderRadius: BorderRadius.circular(
                             AppDimensions.cardRadius,
                           ),
@@ -104,9 +110,15 @@ class EvaluationDetailPage extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: const Text(
-                          'Status',
-                          style: TextStyle(fontSize: 14),
+                        child: Text(
+                          item.isIdeal ? 'Ideal' : 'Tidak Ideal',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: item.isIdeal
+                                ? Colors.green[800]
+                                : Colors.red[800],
+                          ),
                         ),
                       ),
                   ],
