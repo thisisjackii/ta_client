@@ -1,3 +1,4 @@
+// lib/features/transaction/view/widgets/transaction_double_entry_map.dart
 import 'package:ta_client/features/transaction/models/transaction.dart';
 
 class Sums {

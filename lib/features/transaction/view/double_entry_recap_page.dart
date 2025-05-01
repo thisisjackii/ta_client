@@ -1,3 +1,4 @@
+// lib/features/transaction/view/widgets/double_entry_recap_page.dart
 import 'package:flutter/material.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_double_entry_map.dart';
