@@ -42,7 +42,7 @@ class EvaluationDetailPage extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(AppStrings.ratioSummaryTitle),
+            title: const Text(AppStrings.ratioSummaryTitle, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),),
             backgroundColor: AppColors.greyBackground,
             actions: item.id == '6'
                 ? []
@@ -50,16 +50,27 @@ class EvaluationDetailPage extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.info_rounded),
                       onPressed: () {
+                        final breakdown = item.breakdown ?? [];
+                        final keys = _ratioInputs[item.id] ?? [];
+
+                        final Map<String, double> breakdownMap =
+                            (item.breakdown as Map<String, double>?) ?? {};
+
+                        final numerator   = breakdownMap[keys[0]] ?? 0.0;
+                        final denominator = breakdownMap[keys[1]] ?? 1.0;
+
                         showDialog<void>(
                           context: context,
                           builder: (ctx) => AlertDialog(
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppDimensions.cardRadius,
-                              ),
+                              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
                             ),
                             title: const Text('Penjelasan Rasio'),
-                            content: FormulaExplanationDialog(id: item.id),
+                            content: FormulaExplanationDialog(
+                              id: item.id,
+                              numerator: numerator,
+                              denominator: denominator,
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.of(ctx).pop(),

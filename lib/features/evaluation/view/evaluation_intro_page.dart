@@ -11,8 +11,22 @@ class EvaluationIntroPage extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       backgroundColor: AppColors.info,
+      // automaticallyImplyLeading: false,
+      // title: const Text(AppStrings.evaluationIntroTitle),
       automaticallyImplyLeading: false,
-      title: const Text(AppStrings.evaluationIntroTitle),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          const Text(
+            AppStrings.evaluationIntroTitle,
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
     ),
     body: Column(
       children: [

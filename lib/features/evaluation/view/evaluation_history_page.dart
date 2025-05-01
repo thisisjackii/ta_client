@@ -20,7 +20,9 @@ class EvaluationHistoryPage extends StatelessWidget {
         }
         return Scaffold(
           appBar: AppBar(
-            title: const Text(AppStrings.evaluationHistoryTitle),
+            title: const Text(AppStrings.evaluationHistoryTitle,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
             backgroundColor: AppColors.greyBackground,
           ),
           body: Padding(

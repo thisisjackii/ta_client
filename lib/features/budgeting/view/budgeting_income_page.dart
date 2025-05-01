@@ -52,12 +52,15 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
       builder: (ctx, state) {
         final rangeText =
             (state.incomeStartDate != null && state.incomeEndDate != null)
-            ? '${_dateFormat.format(state.incomeStartDate!)} - ${_dateFormat.format(state.incomeEndDate!)}'
-            : 'Pilih rentang tanggal';
+                ? '${_dateFormat.format(state.incomeStartDate!)} - ${_dateFormat.format(state.incomeEndDate!)}'
+                : 'Pilih rentang tanggal';
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Pilih Sumber Dana'),
+            title: const Text(
+              'Pilih Sumber Dana',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
             backgroundColor: AppColors.greyBackground,
           ),
           body: Padding(
@@ -109,18 +112,20 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
                             title: Text(
                               '${inc.title} — ${formatToRupiah(inc.value.toDouble())}',
                             ),
-                            onChanged: (_) => ctx.read<BudgetingBloc>().add(
-                              SelectIncomeCategory(inc.id),
-                            ),
+                            onChanged:
+                                (_) => ctx.read<BudgetingBloc>().add(
+                                  SelectIncomeCategory(inc.id),
+                                ),
                           ),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: state.selectedIncomeIds.isEmpty
-                              ? null
-                              : () => Navigator.pushNamed(
-                                  context,
-                                  Routes.budgetingAllocationDate,
-                                ),
+                          onPressed:
+                              state.selectedIncomeIds.isEmpty
+                                  ? null
+                                  : () => Navigator.pushNamed(
+                                    context,
+                                    Routes.budgetingAllocationDate,
+                                  ),
                           child: const Text('Lanjut ke Alokasi'),
                         ),
                       ],

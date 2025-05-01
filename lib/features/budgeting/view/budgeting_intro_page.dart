@@ -14,7 +14,19 @@ class BudgetingIntro extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.info,
         automaticallyImplyLeading: false,
-        title: const Text(AppStrings.budgetingTitle),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            const Text(
+              AppStrings.budgetingTitle,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [

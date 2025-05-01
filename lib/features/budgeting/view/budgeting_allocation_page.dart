@@ -53,9 +53,10 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
   Widget build(BuildContext context) {
     return BlocBuilder<BudgetingBloc, BudgetingState>(
       builder: (context, state) {
-        final allocationData = categoryMapping.entries
-            .where((e) => _isExpenseCategory(e.key))
-            .toList();
+        final allocationData =
+            categoryMapping.entries
+                .where((e) => _isExpenseCategory(e.key))
+                .toList();
         final total = state.allocationValues.values.fold<double>(
           0,
           (sum, v) => sum + v,
@@ -63,7 +64,10 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(AppStrings.budgetingTitle),
+            title: const Text(
+              AppStrings.budgetingTitle,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
             backgroundColor: AppColors.greyBackground,
           ),
           body: ListView(
@@ -104,8 +108,8 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                           children: [
                             Checkbox(
                               value: enabled,
-                              onChanged: (v) =>
-                                  context.read<BudgetingBloc>().add(
+                              onChanged:
+                                  (v) => context.read<BudgetingBloc>().add(
                                     ToggleAllocationCategory(
                                       category: cat,
                                       isSelected: v!,
@@ -142,15 +146,16 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                             final clamped = attempt.clamp(0.0, maxForCat);
                             if (attempt > maxForCat &&
                                 _snackBarController == null) {
-                              _snackBarController =
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        '⚠️ Total alokasi tidak boleh melebihi 100%',
-                                      ),
-                                      backgroundColor: Colors.redAccent,
-                                    ),
-                                  );
+                              _snackBarController = ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    '⚠️ Total alokasi tidak boleh melebihi 100%',
+                                  ),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
                               _snackBarController!.closed.then(
                                 (_) => _snackBarController = null,
                               );

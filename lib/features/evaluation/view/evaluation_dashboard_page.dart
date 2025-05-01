@@ -52,7 +52,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(AppStrings.evaluationDashboardTitle),
+            title: const Text(AppStrings.evaluationDashboardTitle, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),),
             backgroundColor: AppColors.greyBackground,
             actions: [
               IconButton(

@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:ta_client/features/login/models/login_response.dart';
 
 class LoginService {
-  LoginService({this.baseUrl = 'http://localhost:4000/api/v1'});
+  LoginService({this.baseUrl = 'http://192.168.1.16:4000/api/v1'});
   final String baseUrl;
 
   Future<LoginResponse> login({

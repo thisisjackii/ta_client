@@ -149,11 +149,12 @@ class _BudgetingDashboardState extends State<BudgetingDashboard>
                         Expanded(
                           child: Text(
                             alloc.title,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                         ),
                         Text(
                           '${formatToRupiah(current)} / ${formatToRupiah(alloc.target)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ],
                     ),

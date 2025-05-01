@@ -27,10 +27,10 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
               children: [
                 const Text(
                   AppStrings.expendableAllocationCardTitle,
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const Spacer(),
-                Text(formatToRupiah(total.toDouble())),
+                Text(formatToRupiah(total.toDouble()), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
               ],
             ),
             children: [

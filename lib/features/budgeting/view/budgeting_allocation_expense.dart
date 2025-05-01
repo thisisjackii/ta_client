@@ -19,13 +19,19 @@ class BudgetingAllocationExpense extends StatelessWidget {
     return BlocBuilder<BudgetingBloc, BudgetingState>(
       builder: (context, state) {
         // Filter to only allocations whose category title was selected
-        final selectedAllocations = state.allocations
-            .where((alloc) => state.selectedCategories.contains(alloc.title))
-            .toList();
+        final selectedAllocations =
+            state.allocations
+                .where(
+                  (alloc) => state.selectedCategories.contains(alloc.title),
+                )
+                .toList();
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(AppStrings.budgetingTitle),
+            title: const Text(
+              AppStrings.budgetingTitle,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
             backgroundColor: AppColors.greyBackground,
           ),
           body: ListView(
@@ -53,30 +59,31 @@ class BudgetingAllocationExpense extends StatelessWidget {
                   maintainState:
                       true, // retains child widget state when collapsed
                   title: Text(title),
-                  children: subItems.map((sub) {
-                    final isChecked =
-                        state.selectedSubExpenses[title]?.contains(sub) ??
-                        false;
-                    return CheckboxListTile(
-                      key: ValueKey(
-                        '${title}_$sub}',
-                      ), // unique key per checkbox
-                      controlAffinity: ListTileControlAffinity
-                          .leading, // checkbox on the left
-                      contentPadding: EdgeInsets.zero, // consistent tap area
-                      value: isChecked,
-                      title: Text(sub),
-                      onChanged: (val) {
-                        context.read<BudgetingBloc>().add(
-                          ToggleExpenseSubItem(
-                            allocationId: alloc.id,
-                            subItem: sub,
-                            isSelected: val ?? false,
-                          ),
+                  children:
+                      subItems.map((sub) {
+                        final isChecked =
+                            state.selectedSubExpenses[title]?.contains(sub) ??
+                            false;
+                        return CheckboxListTile(
+                          key: ValueKey('${title}_$sub}'),
+                          // unique key per checkbox
+                          controlAffinity: ListTileControlAffinity.leading,
+                          // checkbox on the left
+                          contentPadding: EdgeInsets.zero,
+                          // consistent tap area
+                          value: isChecked,
+                          title: Text(sub),
+                          onChanged: (val) {
+                            context.read<BudgetingBloc>().add(
+                              ToggleExpenseSubItem(
+                                allocationId: alloc.id,
+                                subItem: sub,
+                                isSelected: val ?? false,
+                              ),
+                            );
+                          },
                         );
-                      },
-                    );
-                  }).toList(),
+                      }).toList(),
                 );
               }),
 
@@ -87,8 +94,11 @@ class BudgetingAllocationExpense extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                   ),
-                  onPressed: () =>
-                      Navigator.pushNamed(context, Routes.budgetingDashboard),
+                  onPressed:
+                      () => Navigator.pushNamed(
+                        context,
+                        Routes.budgetingDashboard,
+                      ),
                   child: const Text(
                     AppStrings.save,
                     style: TextStyle(color: Colors.white),

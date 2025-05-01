@@ -1,10 +1,19 @@
 // lib/features/evaluation/view/widgets/formula_explanation_dialog.dart
 import 'package:flutter/material.dart';
-// import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 class FormulaExplanationDialog extends StatelessWidget {
-  const FormulaExplanationDialog({required this.id, super.key});
+  const FormulaExplanationDialog({
+    required this.id,
+    this.numerator,
+    this.denominator,
+    super.key,
+  });
+
   final String id;
+  final double? numerator;
+  final double? denominator;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -13,14 +22,11 @@ class FormulaExplanationDialog extends StatelessWidget {
         children: [
           const Text('Formula:', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          _formulaWidget(),
+          _formulaWidget(showActualValues: false),
           const SizedBox(height: 16),
-          const Text(
-            'Hasil Anda:',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          const Text('Perhitungan:', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          _formulaWidget(),
+          _formulaWidget(showActualValues: true),
           const SizedBox(height: 16),
           Text(
             _description(),
@@ -32,21 +38,29 @@ class FormulaExplanationDialog extends StatelessWidget {
     );
   }
 
-  Widget _formulaWidget() {
-    final formulas = {
+  Widget _formulaWidget({required bool showActualValues}) {
+    final rawFormulas = {
       '0': r'\frac{Aset Likuid}{Pengeluaran bulanan}',
       '1': r'\frac{Aset Likuid}{Total Kekayaan Bersih} \times 100\%',
       '2': r'\frac{Total Utang}{Total Aset} \times 100\%',
       '3': r'\frac{Total Tabungan}{Penghasilan Kotor} \times 100\%',
       '4': r'\frac{Total Pembayaran Utang}{Penghasilan Bersih} \times 100\%',
-      '5':
-          r'\frac{Total Aset Diinvestasikan}{Total Kekayaan Bersih} \times 100\%',
+      '5': r'\frac{Total Aset Diinvestasikan}{Total Kekayaan Bersih} \times 100\%',
     };
-    // return Math.tex(
-    //   formulas[id] ?? '',
-    //   textStyle: const TextStyle(fontSize: 18),
-    // );
-    return const SizedBox.shrink();
+
+    final fraction = showActualValues && numerator != null && denominator != null
+        ? r'\frac{' +
+        numerator!.toStringAsFixed(0) +
+        r'}{' +
+        denominator!.toStringAsFixed(0) +
+        r'}' +
+        (id == '0' ? '' : r' \times 100\%')
+        : rawFormulas[id] ?? '';
+
+    return Math.tex(
+      fraction,
+      textStyle: const TextStyle(fontSize: 18),
+    );
   }
 
   String _description() {
