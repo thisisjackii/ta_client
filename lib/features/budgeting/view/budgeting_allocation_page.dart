@@ -21,6 +21,7 @@ class BudgetingAllocation extends StatefulWidget {
 class _BudgetingAllocationState extends State<BudgetingAllocation>
     with RouteAware {
   final Map<String, double> _localValues = {};
+  final Map<String, TextEditingController> _controllers = {};
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
   _snackBarController;
 
@@ -53,10 +54,9 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
   Widget build(BuildContext context) {
     return BlocBuilder<BudgetingBloc, BudgetingState>(
       builder: (context, state) {
-        final allocationData =
-            categoryMapping.entries
-                .where((e) => _isExpenseCategory(e.key))
-                .toList();
+        final allocationData = categoryMapping.entries
+            .where((e) => _isExpenseCategory(e.key))
+            .toList();
         final total = state.allocationValues.values.fold<double>(
           0,
           (sum, v) => sum + v,
@@ -108,8 +108,8 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                           children: [
                             Checkbox(
                               value: enabled,
-                              onChanged:
-                                  (v) => context.read<BudgetingBloc>().add(
+                              onChanged: (v) =>
+                                  context.read<BudgetingBloc>().add(
                                     ToggleAllocationCategory(
                                       category: cat,
                                       isSelected: v!,
@@ -126,11 +126,36 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                                 ),
                               ),
                             ),
-                            Text(
-                              '${current.toStringAsFixed(0)}%',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: enabled ? Colors.black : Colors.grey,
+                            // Editable percent field:
+                            SizedBox(
+                              width: 50,
+                              child: TextFormField(
+                                controller: _controllers[cat] =
+                                    TextEditingController(
+                                      text: '${current.toStringAsFixed(0)}',
+                                    ),
+                                enabled: enabled,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.right,
+                                decoration: InputDecoration(
+                                  suffixText: '%',
+                                  isDense: true,
+                                ),
+                                onFieldSubmitted: (str) {
+                                  final p = (double.tryParse(str) ?? 0).clamp(
+                                    0.0,
+                                    maxForCat,
+                                  );
+                                  setState(() {
+                                    _localValues[cat] = p;
+                                    _controllers[cat]!.text = p.toStringAsFixed(
+                                      0,
+                                    );
+                                  });
+                                  context.read<BudgetingBloc>().add(
+                                    UpdateAllocationValue(id: cat, value: p),
+                                  );
+                                },
                               ),
                             ),
                           ],
@@ -146,22 +171,24 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                             final clamped = attempt.clamp(0.0, maxForCat);
                             if (attempt > maxForCat &&
                                 _snackBarController == null) {
-                              _snackBarController = ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    '⚠️ Total alokasi tidak boleh melebihi 100%',
-                                  ),
-                                  backgroundColor: Colors.redAccent,
-                                ),
-                              );
+                              _snackBarController =
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        '⚠️ Total alokasi tidak boleh melebihi 100%',
+                                      ),
+                                      backgroundColor: Colors.redAccent,
+                                    ),
+                                  );
                               _snackBarController!.closed.then(
                                 (_) => _snackBarController = null,
                               );
                             }
                             setState(() {
                               _localValues[cat] = clamped;
+                              _controllers[cat]!.text = clamped.toStringAsFixed(
+                                0,
+                              );
                             });
                             context.read<BudgetingBloc>().add(
                               UpdateAllocationValue(id: cat, value: clamped),
@@ -174,6 +201,8 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                             );
                             setState(() {
                               _localValues[cat] = finalVal;
+                              _controllers[cat]!.text = finalVal
+                                  .toStringAsFixed(0);
                             });
                           },
                         ),

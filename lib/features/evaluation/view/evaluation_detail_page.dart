@@ -53,8 +53,8 @@ class EvaluationDetailPage extends StatelessWidget {
                         final breakdown = item.breakdown ?? [];
                         final keys = _ratioInputs[item.id] ?? [];
 
-                        final Map<String, double> breakdownMap =
-                            (item.breakdown as Map<String, double>?) ?? {};
+                        final breakdownMap =
+                            item.breakdown ?? {};
 
                         final numerator   = breakdownMap[keys[0]] ?? 0.0;
                         final denominator = breakdownMap[keys[1]] ?? 1.0;

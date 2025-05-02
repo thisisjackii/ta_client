@@ -103,9 +103,21 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
     ToggleAllocationCategory e,
     Emitter<BudgetingState> emit,
   ) {
+    // 1. Copy current lists/maps so we don’t mutate the original state
     final cats = List<String>.from(state.selectedCategories);
-    e.isSelected ? cats.add(e.category) : cats.remove(e.category);
-    emit(state.copyWith(selectedCategories: cats));
+    final allocs = Map<String, double>.from(state.allocationValues);
+
+    // 2. Add or remove the category
+    if (e.isSelected) {
+      cats.add(e.category);
+    } else {
+      cats.remove(e.category);
+      // 3. Reset its allocation to 0 when unchecked
+      allocs[e.category] = 0.0;
+    }
+
+    // 4. Emit a new state with both updated selections and values
+    emit(state.copyWith(selectedCategories: cats, allocationValues: allocs));
   }
 
   void _onUpdateAllocationValue(

@@ -166,8 +166,8 @@ class EvaluationService {
         idealText: '3–6 Bulan',
         isIdeal: inRange(
           monthlyExpense > 0 ? liquidAssets / monthlyExpense : 0.0,
-          3.0,
-          6.0,
+          3,
+          6,
         ),
         breakdown: {
           'Aset Likuid': liquidAssets,
