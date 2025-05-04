@@ -52,11 +52,14 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(AppStrings.evaluationDashboardTitle, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),),
+            title: const Text(
+              AppStrings.evaluationDashboardTitle,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
             backgroundColor: AppColors.greyBackground,
             actions: [
               IconButton(
-                icon: const Icon(Icons.restart_alt_rounded),
+                icon: const Icon(Icons.history),
                 onPressed: () {
                   debugPrint('🔄 tapping history button, dispatch LoadHistory');
                   context.read<EvaluationBloc>().add(LoadHistory());
