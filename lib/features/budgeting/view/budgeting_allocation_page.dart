@@ -132,12 +132,12 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                               child: TextFormField(
                                 controller: _controllers[cat] =
                                     TextEditingController(
-                                      text: '${current.toStringAsFixed(0)}',
+                                      text: current.toStringAsFixed(0),
                                     ),
                                 enabled: enabled,
                                 keyboardType: TextInputType.number,
                                 textAlign: TextAlign.right,
-                                decoration: InputDecoration(
+                                decoration: const InputDecoration(
                                   suffixText: '%',
                                   isDense: true,
                                 ),
