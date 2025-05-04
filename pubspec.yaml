@@ -16,6 +16,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.0
+  flutter_dotenv: ^5.2.1
   flutter_gen: ^5.10.0
   flutter_inset_shadow: ^2.0.3
   flutter_localizations:
@@ -46,6 +47,7 @@ flutter:
   uses-material-design: true
   generate: true
   assets:
+    - .env.dev
     - assets/icons/devicon_google.svg
     - assets/icons/fluent_vehicle-car-profile-ltr-clock-16-filled.svg
     - assets/icons/material-symbols_credit-card.svg
