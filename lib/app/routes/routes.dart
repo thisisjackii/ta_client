@@ -41,12 +41,12 @@ class Routes {
         );
       case login:
         return MaterialPageRoute(
-          builder: (_) => LoginPage.create(),
+          builder: (_) => const LoginPage(),
           settings: settings,
         );
       case register:
         return MaterialPageRoute(
-          builder: (_) => RegisterPage.create(),
+          builder: (_) => const RegisterPage(),
           settings: settings,
         );
       case otpVerification:
@@ -135,7 +135,7 @@ class Routes {
           builder: (_) => const BudgetingDashboard(),
           settings: settings,
         );
-case doubleEntryRecapPage:
+      case doubleEntryRecapPage:
         final txns = settings.arguments! as List<Transaction>;
         return MaterialPageRoute(
           builder: (_) => DoubleEntryRecapPage(transactions: txns),

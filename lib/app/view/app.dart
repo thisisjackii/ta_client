@@ -11,6 +11,10 @@ import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
+import 'package:ta_client/features/login/bloc/login_bloc.dart';
+import 'package:ta_client/features/login/services/login_service.dart';
+import 'package:ta_client/features/register/bloc/register_bloc.dart';
+import 'package:ta_client/features/register/services/register_service.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
@@ -23,6 +27,13 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider<RegisterBloc>(
+          create: (context) =>
+              RegisterBloc(registerService: sl<RegisterService>()),
+        ),
+        BlocProvider<LoginBloc>(
+          create: (context) => LoginBloc(loginService: sl<LoginService>()),
+        ),
         BlocProvider<DashboardBloc>(
           create: (context) => DashboardBloc(
             repository: sl<TransactionRepository>(),

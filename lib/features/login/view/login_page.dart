@@ -7,16 +7,9 @@ import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/features/login/bloc/login_bloc.dart';
 import 'package:ta_client/features/login/bloc/login_event.dart';
 import 'package:ta_client/features/login/bloc/login_state.dart';
-import 'package:ta_client/features/login/services/login_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-  static Widget create() {
-    return BlocProvider(
-      create: (context) => LoginBloc(loginService: LoginService()),
-      child: const LoginPage(),
-    );
-  }
 
   @override
   State<LoginPage> createState() => _LoginPageState();

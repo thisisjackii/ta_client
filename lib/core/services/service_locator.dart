@@ -7,6 +7,8 @@ import 'package:ta_client/features/budgeting/repositories/budgeting_repository.d
 import 'package:ta_client/features/budgeting/services/budgeting_service.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/evaluation/services/evaluation_service.dart';
+import 'package:ta_client/features/login/services/login_service.dart';
+import 'package:ta_client/features/register/services/register_service.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart';
 import 'package:ta_client/features/transaction/services/transaction_sync_service.dart';
@@ -17,6 +19,10 @@ final baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:4000/api/v1';
 void setupServiceLocator() {
   sl
     ..registerLazySingleton<AuthState>(AuthState.new)
+    ..registerLazySingleton<RegisterService>(
+      () => RegisterService(baseUrl: baseUrl),
+    )
+    ..registerLazySingleton<LoginService>(() => LoginService(baseUrl: baseUrl))
     ..registerLazySingleton<TransactionService>(
       () => TransactionService(
         baseUrl: baseUrl,
