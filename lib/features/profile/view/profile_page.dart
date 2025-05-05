@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
+import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/widgets/custom_bottom_navbar.dart';
 
 import 'package:ta_client/features/profile/bloc/profile_bloc.dart';
@@ -45,7 +46,10 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil Pengguna')),
+      appBar: AppBar(
+        title: const Text('Profil Pengguna'),
+        backgroundColor: AppColors.greyBackground,
+      ),
       body: BlocBuilder<ProfileBloc, ProfileState>(
         builder: (context, state) {
           if (state is ProfileLoadInProgress) {

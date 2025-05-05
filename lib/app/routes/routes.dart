@@ -1,6 +1,7 @@
 // routes.dart
 import 'package:flutter/material.dart';
 import 'package:ta_client/core/screens/screens.dart';
+import 'package:ta_client/features/profile/view/profile_edit_page.dart';
 import 'package:ta_client/features/profile/view/profile_page.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/double_entry_recap_page.dart';
@@ -156,6 +157,11 @@ class Routes {
       case profilePage:
         return MaterialPageRoute(
           builder: (_) => const ProfilePage(),
+          settings: settings,
+        );
+      case profileEdit:
+        return MaterialPageRoute(
+          builder: (_) => const ProfileEditPage(),
           settings: settings,
         );
       default:
