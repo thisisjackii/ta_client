@@ -20,7 +20,12 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
   DateTime? _start;
   DateTime? _end; // single controller to prevent repeats
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
-      _snackBarController;
+  _snackBarController;
+
+  bool isAtLeastOneMonthApart(DateTime start, DateTime end) {
+    final oneMonthLater = DateTime(start.year, start.month + 1, start.day);
+    return !end.isBefore(oneMonthLater);
+  }
 
   @override
   void initState() {
@@ -60,21 +65,33 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              if (_start != null && _end != null) {
-                context
-                    .read<EvaluationBloc>()
-                    .add(SelectDateRange(_start!, _end!));
+              if (!isAtLeastOneMonthApart(_start!, _end!)) {
+                final difference = _end!.difference(_start!).inDays;
+                if (difference < 30) {
+                  _snackBarController = ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                        const SnackBar(
+                          content: Text('Date range must be at least 1 month.'),
+                        ),
+                      );
+                  _snackBarController!.closed.then(
+                    (_) => _snackBarController = null,
+                  );
+                  return;
+                }
+                context.read<EvaluationBloc>().add(
+                  SelectDateRange(_start!, _end!),
+                );
                 context.read<EvaluationBloc>().add(LoadDashboard());
                 Navigator.pushNamed(context, Routes.evaluationDashboard);
               } else {
-                _snackBarController =
-                    ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(AppStrings.dateRangePrompt),
-                  ),
+                _snackBarController = ScaffoldMessenger.of(context)
+                    .showSnackBar(
+                      const SnackBar(content: Text(AppStrings.dateRangePrompt)),
+                    );
+                _snackBarController!.closed.then(
+                  (_) => _snackBarController = null,
                 );
-                _snackBarController!.closed
-                    .then((_) => _snackBarController = null);
               }
             },
             child: const Text(AppStrings.ok),

@@ -17,6 +17,11 @@ class BudgetingAllocationDate extends StatefulWidget {
 }
 
 class _BudgetingAllocationDateState extends State<BudgetingAllocationDate> {
+  bool isAtMostOneMonthApart(DateTime start, DateTime end) {
+    final oneMonthLater = DateTime(start.year, start.month + 1, start.day);
+    return end.isBefore(oneMonthLater) || end.isAtSameMomentAs(oneMonthLater);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -107,6 +112,26 @@ class _BudgetingAllocationDateState extends State<BudgetingAllocationDate> {
                       );
                       return;
                     }
+
+                    if (!isAtMostOneMonthApart(s, e)) {
+                      showDialog<void>(
+                        context: dialogCtx,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Gagal'),
+                          content: const Text(
+                            'Rentang tanggal tidak boleh lebih dari satu bulan.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogCtx),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
+                      return;
+                    }
+
                     dialogCtx.read<BudgetingBloc>().add(
                       ConfirmExpenseDateRange(start: s, end: e),
                     );
