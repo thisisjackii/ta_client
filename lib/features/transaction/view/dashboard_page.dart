@@ -35,6 +35,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
       appBar: CustomAppBar(
         isSelectionMode: isSelectionMode,
         selectedMonth: selectedMonth,
+        filterCriteria: filterCriteria,
         onMonthChanged: updateSelectedMonth,
         onFilterChanged: updateFilterCriteria, // Pass filter criteria upward.
         onShowDoubleEntryRecap: () {
@@ -59,16 +60,19 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
             return const Center(child: CircularProgressIndicator());
           } else if (state is DashboardLoaded) {
             final filteredItems = _filterAndSortTransactions(state.items);
+
+            // 2) Compute totals off that
             final totalPemasukan = filteredItems
                 .where((t) => t.accountType == 'Pemasukan')
                 .fold<double>(0, (sum, t) => sum + t.amount);
             final totalPengeluaran = filteredItems
                 .where((t) => t.accountType == 'Pengeluaran')
                 .fold<double>(0, (sum, t) => sum + t.amount);
-            final totalAkhir = totalPemasukan - totalPengeluaran;
             final formattedPemasukan = formatToRupiah(totalPemasukan);
             final formattedPengeluaran = formatToRupiah(totalPengeluaran);
-            final formattedAkhir = formatToRupiah(totalAkhir);
+            final formattedAkhir = formatToRupiah(
+              totalPemasukan - totalPengeluaran,
+            );
 
             return Column(
               children: [
@@ -140,6 +144,17 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   void updateFilterCriteria(Map<String, dynamic>? criteria) {
     setState(() {
       filterCriteria = criteria;
+
+      final startDate = criteria?['startDate'] as DateTime?;
+      final endDate = criteria?['endDate'] as DateTime?;
+
+      if (startDate != null) {
+        // prefer startDate’s month
+        selectedMonth = DateTime(startDate.year, startDate.month);
+      } else if (endDate != null) {
+        // fallback to endDate’s month
+        selectedMonth = DateTime(endDate.year, endDate.month);
+      }
     });
   }
 
@@ -173,14 +188,27 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
             // Apply date range filter.
             final startDate = filterCriteria?['startDate'] as DateTime?;
             final endDate = filterCriteria?['endDate'] as DateTime?;
+            final bookmarkedOnly =
+                filterCriteria?['bookmarked'] as bool? ?? false;
+            final bookmarkMatch = !bookmarkedOnly || t.isBookmarked;
+
             var dateMatch = true;
             if (startDate != null && endDate != null) {
-              // t.date must be between startDate and endDate (inclusive).
+              // both bounds
               dateMatch =
                   !t.date.isBefore(startDate) && !t.date.isAfter(endDate);
+            } else if (startDate != null) {
+              // only start bound
+              dateMatch = !t.date.isBefore(startDate);
+            } else if (endDate != null) {
+              // only end bound
+              dateMatch = !t.date.isAfter(endDate);
             }
-
-            return monthMatch && parentMatch && childMatch && dateMatch;
+            return monthMatch &&
+                parentMatch &&
+                childMatch &&
+                bookmarkMatch &&
+                dateMatch;
           }).toList()
           // Sort descending: newest first.
           ..sort((a, b) => b.date.compareTo(a.date));

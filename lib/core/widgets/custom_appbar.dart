@@ -1,3 +1,4 @@
+// lib/core/widgets/custom_appbar.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
@@ -11,6 +12,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.onMonthChanged,
     required this.onFilterChanged, // New callback to send filter criteria upward.
     required this.onShowDoubleEntryRecap,
+    required this.filterCriteria,
     super.key,
   });
   final ValueNotifier<bool> isSelectionMode;
@@ -18,6 +20,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final ValueChanged<DateTime> onMonthChanged;
   final ValueChanged<Map<String, dynamic>?> onFilterChanged;
   final VoidCallback onShowDoubleEntryRecap;
+  final Map<String, dynamic>? filterCriteria;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -91,12 +94,18 @@ class _CustomAppBarState extends State<CustomAppBar> {
               IconButton(
                 icon: const Icon(Icons.filter_alt_rounded),
                 onPressed: () async {
+                  final args = {
+                    'month': widget.selectedMonth,
+                    'criteria': widget.onFilterChanged,
+                    'filterCriteria': widget
+                        .filterCriteria, // you'll need to pass filterCriteria into CustomAppBar
+                  };
                   final result = await Navigator.pushNamed(
                     context,
                     Routes.filter,
+                    arguments: args,
                   );
                   if (result != null && result is Map<String, dynamic>) {
-                    // Propagate filter criteria upward.
                     widget.onFilterChanged(result);
                   }
                 },

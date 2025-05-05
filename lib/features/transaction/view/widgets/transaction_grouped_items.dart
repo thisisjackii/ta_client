@@ -18,11 +18,13 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // Group items by date
     final groupedItems = <DateTime, List<Transaction>>{};
-    for (final item in items) {
+    final sortedItems = items..sort((a, b) => b.date.compareTo(a.date));
+    for (final item in sortedItems) {
       final date = DateTime(item.date.year, item.date.month, item.date.day);
       groupedItems.putIfAbsent(date, () => []).add(item);
     }
-    final groupedKeys = groupedItems.keys.toList()..sort();
+    final groupedKeys = groupedItems.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
 
     return ListView.builder(
       itemCount: groupedKeys.length,
@@ -103,11 +105,7 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
       },
       onTap: () {
         if (!isSelectionMode.value) {
-          Navigator.pushNamed(
-            context,
-            Routes.viewTransaction,
-            arguments: item,
-          );
+          Navigator.pushNamed(context, Routes.viewTransaction, arguments: item);
         }
       },
       child: Container(
@@ -174,8 +172,10 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
               ),
               Text(
                 formatToRupiah(item.amount),
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),

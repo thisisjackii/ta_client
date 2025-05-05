@@ -1,3 +1,4 @@
+// lib/core/widgets/custom_date_picker.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
@@ -14,6 +15,8 @@ class CustomDatePicker extends StatefulWidget {
     this.validator,
     this.selectedDate,
     this.isEnabled = true, // this toggles enable/disable
+    this.firstDate,
+    this.lastDate,
   });
 
   final String label;
@@ -23,9 +26,12 @@ class CustomDatePicker extends StatefulWidget {
   final DateTime? initialDate;
   final TimeOfDay? initialTime;
   final String? Function(String?)? validator;
-
   final DateTime? selectedDate;
   final bool isEnabled;
+
+  // New parameters for bounding the date picker
+  final DateTime? firstDate;
+  final DateTime? lastDate;
 
   @override
   State<CustomDatePicker> createState() => _CustomDatePickerState();
@@ -65,8 +71,8 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         context: context,
         initialDate:
             widget.selectedDate ?? widget.initialDate ?? DateTime.now(),
-        firstDate: DateTime(2000),
-        lastDate: DateTime(2100),
+        firstDate: widget.firstDate ?? DateTime(2000),
+        lastDate: widget.lastDate ?? DateTime(2100),
       );
       if (picked != null) {
         _controller.text = DateFormat('dd/MM/yyyy').format(picked);

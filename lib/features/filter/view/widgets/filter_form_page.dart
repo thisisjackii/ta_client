@@ -1,9 +1,13 @@
+// lib/features/filter/view/widgets/filter_form_page.dart
 import 'package:flutter/material.dart';
 import 'package:ta_client/core/widgets/custom_date_picker.dart';
 import 'package:ta_client/core/widgets/dropdown_field.dart';
 
 class FilterFormPage extends StatefulWidget {
-  const FilterFormPage({super.key});
+  const FilterFormPage({super.key, this.initialCriteria, this.initialMonth});
+
+  final Map<String, dynamic>? initialCriteria;
+  final DateTime? initialMonth;
 
   @override
   State<FilterFormPage> createState() => _FilterFormPageState();
@@ -68,11 +72,32 @@ class _FilterFormPageState extends State<FilterFormPage> with RouteAware {
   };
 
   // Use two date pickers for a date range.
+  late bool bookmarkedOnly;
+  String? selectedValue;
+  String? selectedChild;
   DateTime? startDate;
   DateTime? endDate;
-  String? selectedValue;
+  DateTime monthLimitStart = DateTime.now();
+  DateTime monthLimitEnd = DateTime.now();
   List<String> filteredChildItems = [];
-  String? selectedChild;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 1) Load last‐used criteria, or defaults
+    final crit = widget.initialCriteria ?? {};
+    bookmarkedOnly = crit['bookmarked'] as bool? ?? false;
+    selectedValue = crit['parent'] as String?;
+    selectedChild = crit['child'] as String?;
+    startDate = crit['startDate'] as DateTime?;
+    endDate = crit['endDate'] as DateTime?;
+
+    // 2) Compute month bounds
+    final m = widget.initialMonth ?? DateTime.now();
+    monthLimitStart = DateTime(m.year, m.month);
+    monthLimitEnd = DateTime(m.year, m.month + 1, 0); // last day of month
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,10 +139,7 @@ class _FilterFormPageState extends State<FilterFormPage> with RouteAware {
                 padding: EdgeInsets.zero,
                 decoration: const BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(
-                      color: Colors.grey,
-                      width: 1.5,
-                    ),
+                    bottom: BorderSide(color: Colors.grey, width: 1.5),
                   ),
                 ),
                 child: Row(
@@ -128,17 +150,19 @@ class _FilterFormPageState extends State<FilterFormPage> with RouteAware {
                           hint: const Text('-- Pilih Kategori --'),
                           value: selectedChild,
                           isExpanded: true,
-                          items: (filteredChildItems.isNotEmpty
-                                  ? filteredChildItems
-                                  : childItemsMap.values
-                                      .expand((e) => e)
-                                      .toList())
-                              .map((child) {
-                            return DropdownMenuItem<String>(
-                              value: child,
-                              child: Text(child),
-                            );
-                          }).toList(),
+                          items:
+                              (filteredChildItems.isNotEmpty
+                                      ? filteredChildItems
+                                      : childItemsMap.values
+                                            .expand((e) => e)
+                                            .toList())
+                                  .map((child) {
+                                    return DropdownMenuItem<String>(
+                                      value: child,
+                                      child: Text(child),
+                                    );
+                                  })
+                                  .toList(),
                           onChanged: (value) {
                             setState(() {
                               selectedChild = value;
@@ -174,11 +198,10 @@ class _FilterFormPageState extends State<FilterFormPage> with RouteAware {
                     child: CustomDatePicker(
                       label: 'Start Date',
                       isDatePicker: true,
-                      onDateChanged: (date) {
-                        setState(() {
-                          startDate = date;
-                        });
-                      },
+                      initialDate: startDate ?? monthLimitStart,
+                      firstDate: monthLimitStart,
+                      lastDate: monthLimitEnd,
+                      onDateChanged: (date) => setState(() => startDate = date),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -186,16 +209,21 @@ class _FilterFormPageState extends State<FilterFormPage> with RouteAware {
                     child: CustomDatePicker(
                       label: 'End Date',
                       isDatePicker: true,
-                      onDateChanged: (date) {
-                        setState(() {
-                          endDate = date;
-                        });
-                      },
+                      initialDate: endDate ?? monthLimitEnd,
+                      firstDate: monthLimitStart,
+                      lastDate: monthLimitEnd,
+                      onDateChanged: (date) => setState(() => endDate = date),
                     ),
                   ),
                 ],
               ),
             ],
+          ),
+          const SizedBox(height: 24),
+          CheckboxListTile(
+            title: const Text('Hanya Bookmark'),
+            value: bookmarkedOnly,
+            onChanged: (v) => setState(() => bookmarkedOnly = v!),
           ),
           const SizedBox(height: 24),
           // Submit button returns the filter criteria.
@@ -211,13 +239,16 @@ class _FilterFormPageState extends State<FilterFormPage> with RouteAware {
                   'child': selectedChild,
                   'startDate': startDate,
                   'endDate': endDate,
+                  'bookmarked': bookmarkedOnly,
                 };
                 Navigator.pop(context, filters);
               },
               child: const Text(
                 'Filter',
-                style:
-                    TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
