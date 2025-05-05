@@ -13,6 +13,8 @@ import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/login/bloc/login_bloc.dart';
 import 'package:ta_client/features/login/services/login_service.dart';
+import 'package:ta_client/features/profile/bloc/profile_bloc.dart';
+import 'package:ta_client/features/profile/repositories/profile_repository.dart';
 import 'package:ta_client/features/register/bloc/register_bloc.dart';
 import 'package:ta_client/features/register/services/register_service.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
@@ -53,6 +55,9 @@ class App extends StatelessWidget {
         ),
         BlocProvider<EvaluationBloc>(
           create: (context) => EvaluationBloc(sl<EvaluationRepository>()),
+        ),
+        BlocProvider<ProfileBloc>(
+          create: (context) => ProfileBloc(repository: sl<ProfileRepository>()),
         ),
       ],
       child: MultiProvider(

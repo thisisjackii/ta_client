@@ -48,8 +48,10 @@ class CustomBottomNavbar extends StatelessWidget {
                 icon: Icons.attach_money_rounded,
                 isSelected: currentTab == 2,
                 onTap: () async {
-                  final result =
-                      await Navigator.pushNamed(context, Routes.budgetingIntro);
+                  final result = await Navigator.pushNamed(
+                    context,
+                    Routes.budgetingIntro,
+                  );
                   // Do something with the result if needed
                   debugPrint('Returned from BudgetingIntro: $result');
                 },
@@ -58,7 +60,14 @@ class CustomBottomNavbar extends StatelessWidget {
                 label: 'Akun',
                 icon: Icons.person_2_rounded,
                 isSelected: currentTab == 3,
-                onTap: () => onTabSelected(3),
+                onTap: () async {
+                  final result = await Navigator.pushNamed(
+                    context,
+                    Routes.profilePage,
+                  );
+                  // Do something with the result if needed
+                  debugPrint('Returned from Profile Page: $result');
+                },
               ),
             ]),
           ],

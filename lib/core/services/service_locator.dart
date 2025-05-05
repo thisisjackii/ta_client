@@ -8,6 +8,8 @@ import 'package:ta_client/features/budgeting/services/budgeting_service.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/evaluation/services/evaluation_service.dart';
 import 'package:ta_client/features/login/services/login_service.dart';
+import 'package:ta_client/features/profile/repositories/profile_repository.dart';
+import 'package:ta_client/features/profile/services/profile_service.dart';
 import 'package:ta_client/features/register/services/register_service.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart';
@@ -46,5 +48,11 @@ void setupServiceLocator() {
     )
     ..registerLazySingleton<EvaluationRepository>(
       () => EvaluationRepository(sl<EvaluationService>()),
+    )
+    ..registerLazySingleton<ProfileService>(
+      () => ProfileService(baseUrl: baseUrl),
+    )
+    ..registerLazySingleton<ProfileRepository>(
+      () => ProfileRepository(service: sl<ProfileService>()),
     );
 }
