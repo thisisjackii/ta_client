@@ -10,6 +10,10 @@ import 'package:ta_client/core/constants/category_mapping.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
+import 'package:ta_client/features/budgeting/view/widgets/budgeting_criteria.dart';
+import 'package:ta_client/features/profile/bloc/profile_bloc.dart';
+import 'package:ta_client/features/profile/bloc/profile_state.dart';
+import 'package:ta_client/features/profile/models/user_model.dart';
 
 class BudgetingAllocation extends StatefulWidget {
   const BudgetingAllocation({super.key});
@@ -22,6 +26,7 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
     with RouteAware {
   final Map<String, double> _localValues = {};
   final Map<String, TextEditingController> _controllers = {};
+
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
   _snackBarController;
 
@@ -52,6 +57,15 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
 
   @override
   Widget build(BuildContext context) {
+    final user = context.select<ProfileBloc, User?>(
+      (bloc) => bloc.state is ProfileLoadSuccess
+          ? (bloc.state as ProfileLoadSuccess).user
+          : null,
+    );
+
+    final occupationGroup = user != null
+        ? getOccupationGroup(user.occupation)
+        : OccupationGroup.pekerja; // fallback
     return BlocBuilder<BudgetingBloc, BudgetingState>(
       builder: (context, state) {
         final allocationData = categoryMapping.entries
@@ -94,7 +108,6 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                     .where((e) => e.key != cat)
                     .fold(0.toDouble(), (s, e) => s + e.value);
                 final maxForCat = (100.0 - othersSum).clamp(0.0, 100.0);
-
                 return Card(
                   margin: const EdgeInsets.only(
                     bottom: AppDimensions.smallPadding,
@@ -169,6 +182,27 @@ class _BudgetingAllocationState extends State<BudgetingAllocation>
                           onDragging: (__, lower, ___) {
                             final attempt = (lower as num).toDouble();
                             final clamped = attempt.clamp(0.0, maxForCat);
+                            final range = kapoorMinMax[occupationGroup]?[cat];
+                            final withinRange =
+                                range == null ||
+                                (clamped >= range[0] && clamped <= range[1]);
+
+                            if (!withinRange &&
+                                _snackBarController == null &&
+                                enabled) {
+                              _snackBarController =
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '⚠️ Alokasi untuk "$cat" harus antara ${range[0]}% - ${range[1]}% menurut standar Kapoor (2015)',
+                                      ),
+                                      backgroundColor: Colors.orangeAccent,
+                                    ),
+                                  );
+                              _snackBarController!.closed.then(
+                                (_) => _snackBarController = null,
+                              );
+                            }
                             if (attempt > maxForCat &&
                                 _snackBarController == null) {
                               _snackBarController =
