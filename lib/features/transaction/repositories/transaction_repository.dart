@@ -18,7 +18,10 @@ class TransactionRepository {
     }
   }
 
-  Future<void> createTransaction(Transaction transaction, {required bool isOnline}) async {
+  Future<void> createTransaction(
+    Transaction transaction, {
+    required bool isOnline,
+  }) async {
     if (isOnline) {
       await transactionService.createTransaction(transaction);
       final transactions = await transactionService.fetchTransactions();
@@ -29,7 +32,10 @@ class TransactionRepository {
     }
   }
 
-  Future<void> updateTransaction(Transaction transaction, {required bool isOnline}) async {
+  Future<void> updateTransaction(
+    Transaction transaction, {
+    required bool isOnline,
+  }) async {
     if (isOnline) {
       await transactionService.updateTransaction(transaction);
       final transactions = await transactionService.fetchTransactions();
@@ -39,7 +45,10 @@ class TransactionRepository {
     }
   }
 
-  Future<void> deleteTransaction(String transactionId, {required bool isOnline}) async {
+  Future<void> deleteTransaction(
+    String transactionId, {
+    required bool isOnline,
+  }) async {
     if (isOnline) {
       await transactionService.deleteTransaction(transactionId);
       final transactions = await transactionService.fetchTransactions();
@@ -73,7 +82,8 @@ class TransactionRepository {
 
   // Pending transaction (for offline create/update)
   Future<void> cachePendingTransaction(
-      Map<String, dynamic> transactionData,) async {
+    Map<String, dynamic> transactionData,
+  ) async {
     final box = Hive.box<dynamic>(_boxName);
     await box.put('pending_transaction', transactionData);
   }

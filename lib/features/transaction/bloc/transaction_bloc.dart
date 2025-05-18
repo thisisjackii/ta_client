@@ -4,7 +4,11 @@ library transaction_bloc;
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:ta_client/core/services/connectivity_service.dart';
+import 'package:ta_client/features/transaction/models/account_type.dart';
+import 'package:ta_client/features/transaction/models/category.dart';
+import 'package:ta_client/features/transaction/models/subcategory.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
+import 'package:ta_client/features/transaction/repositories/transaction_hierarchy_repository.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart';
 
@@ -14,6 +18,7 @@ part 'transaction_state.dart';
 class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   TransactionBloc({
     required this.repository,
+    required this.hierarchyRepository,
     required this.connectivityService,
     required this.transactionService,
   }) : super(const TransactionState()) {
@@ -22,8 +27,12 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     on<DeleteTransactionRequested>(_onDelete);
     on<ClassifyTransactionRequested>(_onClassify);
     on<ToggleBookmarkRequested>(_onToggleBookmark);
+    on<LoadAccountTypesRequested>(_onLoadAccountTypes);
+    on<LoadCategoriesRequested>(_onLoadCategories);
+    on<LoadSubcategoriesRequested>(_onLoadSubcategories);
   }
   final TransactionRepository repository;
+  final TransactionHierarchyRepository hierarchyRepository;
   final ConnectivityService connectivityService;
   final TransactionService transactionService;
 
@@ -33,8 +42,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   ) async {
     try {
       emit(state.copyWith(isLoading: true));
-      final result =
-          await transactionService.classifyTransaction(event.description);
+      final result = await transactionService.classifyTransaction(
+        event.description,
+      );
       if (result.containsKey('message') && result['message'] != null) {
         emit(
           state.copyWith(
@@ -51,12 +61,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         );
       }
     } catch (error) {
-      emit(
-        state.copyWith(
-          isLoading: false,
-          errorMessage: error.toString(),
-        ),
-      );
+      emit(state.copyWith(isLoading: false, errorMessage: error.toString()));
     }
   }
 
@@ -66,8 +71,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   ) async {
     emit(state.copyWith(isLoading: true));
     try {
-      final updated =
-          await transactionService.toggleBookmark(event.transactionId);
+      final updated = await transactionService.toggleBookmark(
+        event.transactionId,
+      );
       emit(state.copyWith(isLoading: false, createdTransaction: updated));
     } catch (e) {
       emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
@@ -79,10 +85,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     Emitter<TransactionState> emit,
   ) async {
     emit(
-      state.copyWith(
-        isLoading: true,
-        operation: TransactionOperation.create,
-      ),
+      state.copyWith(isLoading: true, operation: TransactionOperation.create),
     );
     try {
       final online = await connectivityService.isOnline;
@@ -126,10 +129,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     Emitter<TransactionState> emit,
   ) async {
     emit(
-      state.copyWith(
-        isLoading: true,
-        operation: TransactionOperation.delete,
-      ),
+      state.copyWith(isLoading: true, operation: TransactionOperation.delete),
     );
     try {
       final online = await connectivityService.isOnline;
@@ -159,10 +159,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     Emitter<TransactionState> emit,
   ) async {
     emit(
-      state.copyWith(
-        isLoading: true,
-        operation: TransactionOperation.update,
-      ),
+      state.copyWith(isLoading: true, operation: TransactionOperation.update),
     );
     try {
       final online = await connectivityService.isOnline;
@@ -185,6 +182,56 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           errorMessage: e.toString(),
         ),
       );
+    }
+  }
+
+  Future<void> _onLoadAccountTypes(
+    LoadAccountTypesRequested event,
+    Emitter<TransactionState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true));
+    try {
+      final online = await connectivityService.isOnline;
+      final accountTypes = await hierarchyRepository.fetchAccountTypes(
+        isOnline: online,
+      );
+      emit(state.copyWith(isLoading: false, accountTypes: accountTypes));
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+    }
+  }
+
+  Future<void> _onLoadCategories(
+    LoadCategoriesRequested event,
+    Emitter<TransactionState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true));
+    try {
+      final online = await connectivityService.isOnline;
+      final categories = await hierarchyRepository.fetchCategories(
+        event.accountTypeId,
+        isOnline: online,
+      );
+      emit(state.copyWith(isLoading: false, categories: categories));
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+    }
+  }
+
+  Future<void> _onLoadSubcategories(
+    LoadSubcategoriesRequested event,
+    Emitter<TransactionState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true));
+    try {
+      final online = await connectivityService.isOnline;
+      final subcategories = await hierarchyRepository.fetchSubcategories(
+        event.categoryId,
+        isOnline: online,
+      );
+      emit(state.copyWith(isLoading: false, subcategories: subcategories));
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
     }
   }
 }

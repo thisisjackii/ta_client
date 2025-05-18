@@ -9,6 +9,9 @@ class TransactionState extends Equatable {
     this.operation,
     this.createdTransaction,
     this.classifiedCategory,
+    this.accountTypes = const [],
+    this.categories = const [],
+    this.subcategories = const [],
   });
   final bool isLoading;
   final bool isSuccess;
@@ -16,16 +19,19 @@ class TransactionState extends Equatable {
   final TransactionOperation? operation;
   final Transaction? createdTransaction;
   final String? classifiedCategory; // e.g. raw value from API
+  final List<AccountType> accountTypes;
+  final List<Category> categories;
+  final List<Subcategory> subcategories;
 
   @override
   List<Object?> get props => [
-        isLoading,
-        isSuccess,
-        errorMessage,
-        operation,
-        createdTransaction,
-        classifiedCategory,
-      ];
+    isLoading,
+    isSuccess,
+    errorMessage,
+    operation,
+    createdTransaction,
+    classifiedCategory,
+  ];
 
   TransactionState copyWith({
     bool? isLoading,
@@ -34,6 +40,9 @@ class TransactionState extends Equatable {
     TransactionOperation? operation,
     Transaction? createdTransaction,
     String? classifiedCategory,
+    List<AccountType>? accountTypes,
+    List<Category>? categories,
+    List<Subcategory>? subcategories,
   }) {
     return TransactionState(
       isLoading: isLoading ?? this.isLoading,
@@ -42,6 +51,9 @@ class TransactionState extends Equatable {
       operation: operation ?? this.operation,
       createdTransaction: createdTransaction ?? this.createdTransaction,
       classifiedCategory: classifiedCategory ?? this.classifiedCategory,
+        accountTypes: accountTypes ?? this.accountTypes,
+      categories: categories ?? this.categories,
+      subcategories: subcategories ?? this.subcategories,
     );
   }
 }

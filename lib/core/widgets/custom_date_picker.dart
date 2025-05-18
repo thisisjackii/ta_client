@@ -14,7 +14,7 @@ class CustomDatePicker extends StatefulWidget {
     this.initialTime,
     this.validator,
     this.selectedDate,
-    this.isEnabled = true, // this toggles enable/disable
+    this.isEnabled = true,
     this.firstDate,
     this.lastDate,
   });
@@ -28,8 +28,6 @@ class CustomDatePicker extends StatefulWidget {
   final String? Function(String?)? validator;
   final DateTime? selectedDate;
   final bool isEnabled;
-
-  // New parameters for bounding the date picker
   final DateTime? firstDate;
   final DateTime? lastDate;
 
@@ -57,36 +55,12 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     if (widget.isDatePicker && dt != null) {
       _controller.text = DateFormat('dd/MM/yyyy').format(dt);
     } else if (!widget.isDatePicker && widget.initialTime != null) {
+      // ensure this runs after build
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _controller.text = widget.initialTime!.format(context);
+        if (mounted) {
+          _controller.text = widget.initialTime!.format(context);
+        }
       });
-    }
-  }
-
-  Future<void> _handleTap() async {
-    if (!widget.isEnabled) return;
-
-    if (widget.isDatePicker) {
-      final picked = await showDatePicker(
-        context: context,
-        initialDate:
-            widget.selectedDate ?? widget.initialDate ?? DateTime.now(),
-        firstDate: widget.firstDate ?? DateTime(2000),
-        lastDate: widget.lastDate ?? DateTime(2100),
-      );
-      if (picked != null) {
-        _controller.text = DateFormat('dd/MM/yyyy').format(picked);
-        widget.onDateChanged?.call(picked);
-      }
-    } else {
-      final t = await showTimePicker(
-        context: context,
-        initialTime: widget.initialTime ?? TimeOfDay.now(),
-      );
-      if (t != null && mounted) {
-        _controller.text = t.format(context);
-        widget.onTimeChanged?.call(t);
-      }
     }
   }
 
@@ -94,9 +68,41 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
   Widget build(BuildContext context) {
     return FormField<String>(
       validator: widget.validator,
-      builder: (field) {
+      builder: (FormFieldState<String> field) {
         return GestureDetector(
-          onTap: _handleTap,
+          onTap: widget.isEnabled
+              ? () async {
+                  if (widget.isDatePicker) {
+                    final initial =
+                        widget.selectedDate ??
+                        widget.initialDate ??
+                        DateTime.now();
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: initial,
+                      firstDate: widget.firstDate ?? DateTime(2000),
+                      lastDate: widget.lastDate ?? DateTime(2100),
+                    );
+                    if (picked != null) {
+                      final text = DateFormat('dd/MM/yyyy').format(picked);
+                      _controller.text = text;
+                      field.didChange(text);
+                      widget.onDateChanged?.call(picked);
+                    }
+                  } else {
+                    final t = await showTimePicker(
+                      context: context,
+                      initialTime: widget.initialTime ?? TimeOfDay.now(),
+                    );
+                    if (t != null) {
+                      final text = t.format(context);
+                      _controller.text = text;
+                      field.didChange(text);
+                      widget.onTimeChanged?.call(t);
+                    }
+                  }
+                }
+              : null,
           behavior: HitTestBehavior.opaque,
           child: IgnorePointer(
             child: CustomTextField(
@@ -111,5 +117,11 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         );
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

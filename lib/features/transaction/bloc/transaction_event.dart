@@ -1,6 +1,12 @@
 // lib/features/transaction/bloc/transaction_event.dart
 part of 'transaction_bloc.dart';
 
+abstract class TransactionEvent extends Equatable {
+  const TransactionEvent();
+  @override
+  List<Object> get props => [];
+}
+
 class ClassifyTransactionRequested extends TransactionEvent {
   const ClassifyTransactionRequested(this.description);
   final String description;
@@ -30,15 +36,25 @@ class DeleteTransactionRequested extends TransactionEvent {
   List<Object> get props => [transactionId];
 }
 
-abstract class TransactionEvent extends Equatable {
-  const TransactionEvent();
-  @override
-  List<Object> get props => [];
-}
-
 class UpdateTransactionRequested extends TransactionEvent {
   const UpdateTransactionRequested(this.transaction);
   final Transaction transaction;
   @override
   List<Object> get props => [transaction];
+}
+
+class LoadAccountTypesRequested extends TransactionEvent {}
+
+class LoadCategoriesRequested extends TransactionEvent {
+  const LoadCategoriesRequested(this.accountTypeId);
+  final String accountTypeId;
+  @override
+  List<Object> get props => [accountTypeId];
+}
+
+class LoadSubcategoriesRequested extends TransactionEvent {
+  const LoadSubcategoriesRequested(this.categoryId);
+  final String categoryId;
+  @override
+  List<Object> get props => [categoryId];
 }
