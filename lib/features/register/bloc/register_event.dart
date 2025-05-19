@@ -57,3 +57,33 @@ class RegisterOccupationChanged extends RegisterEvent {
 }
 
 class RegisterSubmitted extends RegisterEvent {}
+
+class RegisterOccupationIdChanged extends RegisterEvent {
+  // Keep name for state display
+  RegisterOccupationIdChanged(this.occupationId, this.occupationName);
+  // Changed to handle ID
+  final String occupationId;
+  final String occupationName;
+  @override
+  List<Object?> get props => [occupationId, occupationName];
+}
+
+// Submission and OTP flow
+class RegisterFormSubmitted extends RegisterEvent {
+  // Renamed from RegisterSubmitted
+  RegisterFormSubmitted();
+}
+
+class RegisterOtpVerified extends RegisterEvent {
+  // Dispatched after OTPBloc signals success
+  RegisterOtpVerified();
+}
+
+class RegisterFailure extends RegisterEvent {
+  RegisterFailure(this.errorMessage);
+  final String errorMessage;
+  @override
+  List<Object?> get props => [errorMessage];
+}
+
+class RegisterClearError extends RegisterEvent {}

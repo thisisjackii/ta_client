@@ -55,7 +55,7 @@ class Routes {
         );
       case otpVerification:
         return MaterialPageRoute(
-          builder: (_) => OtpVerificationPage.create(),
+          builder: OtpVerificationPage.create, // Use the static create method
           settings: settings,
         );
       case dashboard:

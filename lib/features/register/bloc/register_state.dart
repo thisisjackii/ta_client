@@ -1,8 +1,18 @@
-// features/register/bloc/register_state.dart
-
+// lib/features/register/bloc/register_state.dart
 import 'package:equatable/equatable.dart';
 
-enum RegisterStatus { initial, submitting, success, failure }
+// Add occupationId to the state for consistency with backend DTO
+// The 'occupation' string might be the name, and you resolve to ID before sending.
+
+// New Status
+enum RegisterStatus {
+  initial,
+  submitting,
+  awaitingOtpVerification,
+  finalizing,
+  success,
+  failure,
+}
 
 class RegisterState extends Equatable {
   const RegisterState({
@@ -12,19 +22,32 @@ class RegisterState extends Equatable {
     this.password = '',
     this.address = '',
     this.birthdate,
-    this.occupation = '',
+    this.occupationId = '', // Store ID, not name
+    this.occupationName = '', // For display in dropdown
     this.status = RegisterStatus.initial,
     this.errorMessage,
   });
+
   final String name;
   final String username;
   final String email;
   final String password;
   final String address;
   final DateTime? birthdate;
-  final String occupation;
+  final String occupationId; // Store the ID of the selected occupation
+  final String occupationName; // Store the name for display convenience
   final RegisterStatus status;
   final String? errorMessage;
+
+  // Helper to check if all required fields for OTP request are present
+  bool get canRequestOtp =>
+      name.isNotEmpty &&
+      username.isNotEmpty &&
+      email.isNotEmpty &&
+      password.isNotEmpty &&
+      address.isNotEmpty &&
+      birthdate != null &&
+      occupationId.isNotEmpty;
 
   RegisterState copyWith({
     String? name,
@@ -33,9 +56,11 @@ class RegisterState extends Equatable {
     String? password,
     String? address,
     DateTime? birthdate,
-    String? occupation,
+    String? occupationId,
+    String? occupationName,
     RegisterStatus? status,
     String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return RegisterState(
       name: name ?? this.name,
@@ -44,9 +69,12 @@ class RegisterState extends Equatable {
       password: password ?? this.password,
       address: address ?? this.address,
       birthdate: birthdate ?? this.birthdate,
-      occupation: occupation ?? this.occupation,
+      occupationId: occupationId ?? this.occupationId,
+      occupationName: occupationName ?? this.occupationName,
       status: status ?? this.status,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearErrorMessage
+          ? null
+          : errorMessage ?? this.errorMessage,
     );
   }
 
@@ -58,7 +86,8 @@ class RegisterState extends Equatable {
     password,
     address,
     birthdate,
-    occupation,
+    occupationId,
+    occupationName,
     status,
     errorMessage,
   ];

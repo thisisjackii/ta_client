@@ -11,7 +11,14 @@ class OtpInitial extends OtpState {}
 
 class OtpLoading extends OtpState {}
 
-class OtpSuccess extends OtpState {}
+class OtpSuccess extends OtpState {
+  const OtpSuccess({this.email = ''});
+
+  final String email;
+
+  @override
+  List<Object> get props => [email];
+}
 
 class OtpFailure extends OtpState {
   const OtpFailure(this.errorMessage);
