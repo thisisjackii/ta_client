@@ -13,9 +13,9 @@ Map<DateTime, Map<String, Sums>> groupTransactions(List<Transaction> txns) {
   for (final t in txns) {
     final day = DateTime(t.date.year, t.date.month, t.date.day);
     final byCat = ret.putIfAbsent(day, () => {});
-    final sums = byCat.putIfAbsent(t.categoryName, Sums.new);
+    final sums = byCat.putIfAbsent(t.categoryName!, Sums.new);
 
-    switch (t.accountType.toLowerCase()) {
+    switch (t.accountTypeName?.toLowerCase()) {
       case 'aset':
         sums.asset += t.amount;
       case 'liabilitas':

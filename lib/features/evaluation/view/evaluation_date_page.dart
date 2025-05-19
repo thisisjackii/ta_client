@@ -80,9 +80,11 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
                   return;
                 }
                 context.read<EvaluationBloc>().add(
-                  SelectDateRange(_start!, _end!),
+                  EvaluationDateRangeSelected(_start!, _end!),
                 );
-                context.read<EvaluationBloc>().add(LoadDashboard());
+                context.read<EvaluationBloc>().add(
+                  const EvaluationLoadDashboardRequested(),
+                );
                 Navigator.pushNamed(context, Routes.evaluationDashboard);
               } else {
                 _snackBarController = ScaffoldMessenger.of(context)

@@ -116,17 +116,17 @@ class Routes {
         );
       case budgetingIncomeDate:
         return MaterialPageRoute(
-          builder: (_) => const BudgetingIncomeDate(),
+          builder: (_) => const BudgetingIncomeDatePage(),
           settings: settings,
         );
       case budgetingAllocationDate:
         return MaterialPageRoute(
-          builder: (_) => const BudgetingAllocationDate(),
+          builder: (_) => const BudgetingAllocationDatePage(),
           settings: settings,
         );
       case budgetingAllocationPage:
         return MaterialPageRoute(
-          builder: (_) => const BudgetingAllocation(),
+          builder: (_) => const BudgetingAllocationPage(),
           settings: settings,
         );
       case budgetingAllocationExpense:

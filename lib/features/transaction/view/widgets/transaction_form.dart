@@ -67,8 +67,8 @@ class _TransactionFormState extends State<TransactionForm> {
       amountController.text = formatToRupiah(tx.amount);
       selectedDate = tx.date;
       selectedTime = TimeOfDay.fromDateTime(tx.date);
-      transactionType = tx.accountType;
-      selectedValue = tx.accountType;
+      transactionType = tx.accountTypeName ?? '';
+      selectedValue = tx.accountTypeName ?? '';
       // categories/subcategories will be set after load
     } else {
       selectedValue = 'Pilih Tipe Akun';
@@ -89,14 +89,14 @@ class _TransactionFormState extends State<TransactionForm> {
 
     return BlocConsumer<TransactionBloc, TransactionState>(
       listenWhen: (prev, curr) =>
-          prev.classifiedCategory != curr.classifiedCategory ||
+          prev.classifiedResult != curr.classifiedResult ||
           curr.errorMessage != null,
       listener: (ctx, state) {
         if (state.errorMessage != null) {
           ScaffoldMessenger.of(
             ctx,
           ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
-        } else if (state.classifiedCategory?.isNotEmpty ?? false) {
+        } else if (state.classifiedResult?.isNotEmpty ?? false) {
           // handle auto-classification if needed
         }
       },
@@ -208,7 +208,9 @@ class _TransactionFormState extends State<TransactionForm> {
                       .toList(),
                   onChanged: isReadOnly
                       ? null
-                      : (s) => setState(() => selectedSubcategory = s),
+                      : (s) => setState(() {
+                          selectedSubcategory = s;
+                        }),
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                   ),
@@ -293,7 +295,18 @@ class _TransactionFormState extends State<TransactionForm> {
   }
 
   void _onSubmit() {
-    if (!_formKey.currentState!.validate() || selectedDate == null) return;
+    if (!_formKey.currentState!.validate() ||
+        selectedDate == null ||
+        selectedSubcategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pastikan semua field yang wajib diisi sudah terisi dengan benar.',
+          ),
+        ),
+      );
+      return;
+    }
     final rawAmount = amountController.text.replaceAll(RegExp('[^0-9]'), '');
     final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
 
@@ -309,11 +322,12 @@ class _TransactionFormState extends State<TransactionForm> {
 
     final tx = Transaction(
       id: widget.transaction?.id ?? '',
-      accountType: transactionType,
+      accountTypeName: transactionType,
       description: descriptionController.text,
       date: combinedDate,
-      categoryId: selectedSubcategory!.id,
+      categoryId: selectedCategory!.id,
       categoryName: selectedCategory!.name,
+      subcategoryId: selectedSubcategory!.id,
       subcategoryName: selectedSubcategory!.name,
       amount: parsedAmount,
       isBookmarked: widget.transaction?.isBookmarked ?? false,

@@ -122,7 +122,8 @@ class _StatisticPieChartState extends State<StatisticPieChart> with RouteAware {
       final isSameMonth =
           t.date.year == selectedMonth.year &&
           t.date.month == selectedMonth.month;
-      return t.accountType == selectedType && isSameMonth;
+      return t.accountTypeName?.toLowerCase() == selectedType.toLowerCase() &&
+          isSameMonth;
     }).toList();
 
     if (filteredTransactions.isEmpty) {
@@ -135,7 +136,7 @@ class _StatisticPieChartState extends State<StatisticPieChart> with RouteAware {
     final categoryMap = <String, double>{};
     for (final transaction in filteredTransactions) {
       categoryMap.update(
-        transaction.categoryName,
+        transaction.categoryName ?? 'Unknown',
         (value) => value + transaction.amount,
         ifAbsent: () => transaction.amount,
       );

@@ -63,10 +63,10 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
 
             // 2) Compute totals off that
             final totalPemasukan = filteredItems
-                .where((t) => t.accountType == 'Pemasukan')
+                .where((t) => t.accountTypeName?.toLowerCase() == 'pemasukan')
                 .fold<double>(0, (sum, t) => sum + t.amount);
             final totalPengeluaran = filteredItems
-                .where((t) => t.accountType == 'Pengeluaran')
+                .where((t) => t.accountTypeName?.toLowerCase() == 'pengeluaran')
                 .fold<double>(0, (sum, t) => sum + t.amount);
             final formattedPemasukan = formatToRupiah(totalPemasukan);
             final formattedPengeluaran = formatToRupiah(totalPengeluaran);
@@ -101,7 +101,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => context.read<DashboardBloc>().add(
-                      DashboardReloadRequested(),
+                      DashboardLoadRequested(),
                     ),
                     child: const Text('Retry'),
                   ),
@@ -124,7 +124,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
             if (result is Transaction) {
               context.read<DashboardBloc>().add(DashboardItemAdded(result));
             } else {
-              context.read<DashboardBloc>().add(DashboardReloadRequested());
+              context.read<DashboardBloc>().add(DashboardLoadRequested());
             }
           }
         },
@@ -177,7 +177,8 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
             // Apply parent category filter.
             final parentMatch =
                 (filterCriteria == null || filterCriteria!['parent'] == null) ||
-                t.accountType == filterCriteria!['parent'];
+                t.accountTypeName?.toLowerCase() ==
+                    filterCriteria?['parent'].toLowerCase();
 
             // Apply child category filter.
             // (Assuming your Transaction model has a property 'category')

@@ -99,8 +99,14 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
   }
 
   Widget _buildTransaction(BuildContext context, Transaction item) {
+    // Use the denormalized fields from the Transaction model
+    final displayCategoryName = item.categoryName ?? 'N/A';
+    final displaySubcategoryName = item.subcategoryName ?? 'N/A';
+    final displayAccountTypeName = item.accountTypeName ?? 'N/A';
+
     return GestureDetector(
       onLongPress: () {
+        // Potentially show different actions if item.isLocal is true
         isSelectionMode.value = true;
       },
       onTap: () {
@@ -108,76 +114,109 @@ class TransactionGroupedItemsWidget extends StatelessWidget {
           Navigator.pushNamed(context, Routes.viewTransaction, arguments: item);
         }
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.white, width: 2),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              offset: Offset(2, 2),
-              blurRadius: 2,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.categoryName.length > 10
-                        ? '${item.categoryName.substring(0, 10)}...'
-                        : item.categoryName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.subcategoryName.length > 10
-                        ? '${item.subcategoryName.substring(0, 10)}...'
-                        : item.subcategoryName,
-                    style: const TextStyle(fontSize: 8, color: Colors.grey),
-                  ),
-                ],
+      child: Opacity(
+        // Dim local, unsynced items slightly
+        opacity: item.isLocal ? 0.7 : 1.0,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: item.isLocal
+                ? Border.all(
+                    color: Colors.orangeAccent,
+                    width: 1.5,
+                  ) // Highlight local items
+                : Border.all(color: Colors.white, width: 2),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                offset: Offset(2, 2),
+                blurRadius: 2,
+                spreadRadius: 1,
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.accountType.length > 15
-                        ? '${item.accountType.substring(0, 15)}...'
-                        : item.accountType,
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  // Allow text to wrap or truncate
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayCategoryName.length >
+                                12 // Adjusted length
+                            ? '${displayCategoryName.substring(0, 12)}...'
+                            : displayCategoryName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        displaySubcategoryName.length >
+                                15 // Adjusted length
+                            ? '${displaySubcategoryName.substring(0, 15)}...'
+                            : displaySubcategoryName,
+                        style: const TextStyle(fontSize: 8, color: Colors.grey),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  // Allow text to wrap or truncate
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayAccountTypeName.length > 15
+                            ? '${displayAccountTypeName.substring(0, 15)}...'
+                            : displayAccountTypeName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.description.length >
+                                20 // Adjusted length
+                            ? '${item.description.substring(0, 20)}...'
+                            : item.description,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  // Allow text to wrap or truncate
+                  flex: 2,
+                  child: Text(
+                    formatToRupiah(item.amount),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
+                    textAlign: TextAlign.right,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.description.length > 10
-                        ? '${item.description.substring(0, 10)}...'
-                        : item.description,
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
-                  ),
-                ],
-              ),
-              Text(
-                formatToRupiah(item.amount),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

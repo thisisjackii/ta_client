@@ -18,7 +18,7 @@ class ViewTransactionPage extends StatelessWidget {
     return BlocBuilder<TransactionBloc, TransactionState>(
       builder: (context, state) {
         final currentTransaction =
-            state.createdTransaction ??
+            state.lastProcessedTransaction ??
             transaction; // Use updatedTransaction if available
         return Scaffold(
           appBar: AppBar(

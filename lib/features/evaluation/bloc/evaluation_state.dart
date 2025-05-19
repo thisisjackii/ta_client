@@ -7,32 +7,33 @@ class EvaluationState extends Equatable {
   const EvaluationState({
     required this.dashboardItems,
     required this.history,
-    this.start,
-    this.end,
+    this.startDate,
+    this.endDate,
     this.detailItem,
     this.loading = false,
     this.error,
   });
   factory EvaluationState.initial() =>
       const EvaluationState(dashboardItems: [], history: []);
-  final DateTime? start;
-  final DateTime? end;
+  final DateTime? startDate;
+  final DateTime? endDate;
   final List<Evaluation> dashboardItems;
   final Evaluation? detailItem;
   final List<History> history;
   final bool loading;
   final String? error;
-  EvaluationState copyWith(
-      {DateTime? start,
-      DateTime? end,
-      List<Evaluation>? dashboardItems,
-      Evaluation? detailItem,
-      List<History>? history,
-      bool? loading,
-      String? error,}) {
+  EvaluationState copyWith({
+    DateTime? startDate,
+    DateTime? endDate,
+    List<Evaluation>? dashboardItems,
+    Evaluation? detailItem,
+    List<History>? history,
+    bool? loading,
+    String? error,
+  }) {
     return EvaluationState(
-      start: start ?? this.start,
-      end: end ?? this.end,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
       dashboardItems: dashboardItems ?? this.dashboardItems,
       detailItem: detailItem ?? this.detailItem,
       history: history ?? this.history,
@@ -42,6 +43,13 @@ class EvaluationState extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [start, end, dashboardItems, detailItem, history, loading, error];
+  List<Object?> get props => [
+    startDate,
+    endDate,
+    dashboardItems,
+    detailItem,
+    history,
+    loading,
+    error,
+  ];
 }

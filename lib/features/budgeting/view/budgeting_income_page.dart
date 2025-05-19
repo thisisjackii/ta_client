@@ -8,60 +8,40 @@ import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
+// Import the actual model for income summary
 
-class BudgetingIncomePage extends StatefulWidget {
+class BudgetingIncomePage extends StatelessWidget {
+  // Can be StatelessWidget if not managing local state
   const BudgetingIncomePage({super.key});
-
-  @override
-  _BudgetingIncomePageState createState() => _BudgetingIncomePageState();
-}
-
-class _BudgetingIncomePageState extends State<BudgetingIncomePage>
-    with RouteAware {
-  final _dateFormat = DateFormat('yyyy-MM-dd');
-
-  @override
-  void initState() {
-    super.initState();
-    // wait for user to pick a date range before fetching data
-  }
-
-  Future<void> _pickDateRange() async {
-    final bloc = context.read<BudgetingBloc>();
-    final state = bloc.state;
-
-    final initialStart = state.incomeStartDate ?? DateTime.now();
-    final initialEnd = state.incomeEndDate ?? DateTime.now();
-
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-      initialDateRange: DateTimeRange(start: initialStart, end: initialEnd),
-    );
-
-    if (picked != null) {
-      // dispatch and auto-load data for the chosen range
-      bloc.add(ConfirmIncomeDateRange(start: picked.start, end: picked.end));
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<BudgetingBloc, BudgetingState>(
+      // buildWhen: (prev, curr) => prev.loading != curr.loading || prev.incomeSummary != curr.incomeSummary || prev.error != curr.error,
       builder: (ctx, state) {
+        final dateFormat = DateFormat('dd/MM/yyyy');
         final rangeText =
             (state.incomeStartDate != null && state.incomeEndDate != null)
-                ? '${_dateFormat.format(state.incomeStartDate!)} - ${_dateFormat.format(state.incomeEndDate!)}'
-                : 'Pilih rentang tanggal';
+            ? '${dateFormat.format(state.incomeStartDate!)} - ${dateFormat.format(state.incomeEndDate!)}'
+            : 'Periode pemasukan belum diatur';
 
         return Scaffold(
           appBar: AppBar(
             title: const Text(
-              'Pilih Sumber Dana',
+              'Pilih Sumber Dana Pemasukan',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             backgroundColor: AppColors.greyBackground,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                // Go back to income date selection or intro based on flow
+                Navigator.pushReplacementNamed(
+                  context,
+                  Routes.budgetingIncomeDate,
+                );
+              },
+            ),
           ),
           body: Padding(
             padding: const EdgeInsets.all(16),
@@ -69,64 +49,90 @@ class _BudgetingIncomePageState extends State<BudgetingIncomePage>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Center(
-                  child: InkWell(
-                    onTap: _pickDateRange,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.calendar_today, size: 20),
-                          const SizedBox(width: 8),
-                          Text(rangeText),
-                        ],
-                      ),
+                  child: Text(
+                    'Periode: $rangeText',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                if (state.loading)
-                  const Center(child: CircularProgressIndicator()),
-                if (state.error != null)
-                  Center(child: Text('Error: ${state.error}')),
-
-                // show incomes only after user-selected date range has been confirmed
-                if (!state.loading && state.incomeDateConfirmed)
+                if (state.loading && state.incomeSummary.isEmpty)
+                  const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (state.error != null && state.incomeSummary.isEmpty)
+                  Expanded(child: Center(child: Text('Error: ${state.error}')))
+                else if (!state.incomeDateConfirmed)
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Silakan konfirmasi periode pemasukan terlebih dahulu.',
+                      ),
+                    ),
+                  )
+                else if (state.incomeSummary.isEmpty && !state.loading)
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Tidak ada data pemasukan untuk periode ini.',
+                      ),
+                    ),
+                  )
+                else
                   Expanded(
                     child: ListView(
                       children: [
-                        for (final inc in state.incomes)
-                          CheckboxListTile(
-                            value: state.selectedIncomeIds.contains(inc.id),
-                            title: Text(
-                              '${inc.title} — ${formatToRupiah(inc.value.toDouble())}',
-                            ),
-                            onChanged:
-                                (_) => ctx.read<BudgetingBloc>().add(
-                                  SelectIncomeCategory(inc.id),
+                        // state.incomeSummary is List<BackendIncomeSummaryItem>
+                        ...state.incomeSummary.expand((categorySummary) {
+                          return [
+                            if (categorySummary
+                                .subcategories
+                                .isNotEmpty) // Only show category header if it has subcategories
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 12,
+                                  bottom: 4,
                                 ),
-                          ),
-                        const SizedBox(height: 16),
+                                child: Text(
+                                  categorySummary.categoryName,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ...categorySummary.subcategories.map((
+                              subcatSummary,
+                            ) {
+                              return CheckboxListTile(
+                                value: state.selectedIncomeSubcategoryIds
+                                    .contains(subcatSummary.subcategoryId),
+                                title: Text(subcatSummary.subcategoryName),
+                                subtitle: Text(
+                                  formatToRupiah(subcatSummary.totalAmount),
+                                ),
+                                onChanged: (_) => ctx.read<BudgetingBloc>().add(
+                                  BudgetingSelectIncomeSubcategory(
+                                    subcategoryId: subcatSummary.subcategoryId,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ];
+                        }),
+                        const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed:
-                              state.selectedIncomeIds.isEmpty
-                                  ? null
-                                  : () => Navigator.pushNamed(
-                                    context,
-                                    Routes.budgetingAllocationDate,
-                                  ),
-                          child: const Text('Lanjut ke Alokasi'),
+                              state.selectedIncomeSubcategoryIds.isEmpty &&
+                                  state.incomeSummary.isNotEmpty
+                              ? null // Disable if incomes available but none selected
+                              : () => Navigator.pushNamed(
+                                  context,
+                                  Routes.budgetingAllocationDate,
+                                ),
+                          child: const Text('Lanjut ke Alokasi Pengeluaran'),
                         ),
                       ],
                     ),

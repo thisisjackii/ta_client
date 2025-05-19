@@ -9,16 +9,19 @@ import 'package:ta_client/core/state/auth_state.dart';
 import 'package:ta_client/core/widgets/custom_route_observer.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
+import 'package:ta_client/features/budgeting/repositories/period_repository.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/login/bloc/login_bloc.dart';
 import 'package:ta_client/features/login/services/login_service.dart';
+import 'package:ta_client/features/otp/bloc/otp_bloc.dart';
 import 'package:ta_client/features/profile/bloc/profile_bloc.dart';
 import 'package:ta_client/features/profile/repositories/profile_repository.dart';
 import 'package:ta_client/features/register/bloc/register_bloc.dart';
 import 'package:ta_client/features/register/services/register_service.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
+import 'package:ta_client/features/transaction/repositories/transaction_hierarchy_repository.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart';
 
@@ -36,22 +39,23 @@ class App extends StatelessWidget {
         BlocProvider<LoginBloc>(
           create: (context) => LoginBloc(loginService: sl<LoginService>()),
         ),
+        BlocProvider<OtpBloc>(create: (context) => OtpBloc()),
         BlocProvider<DashboardBloc>(
           create: (context) => DashboardBloc(
             repository: sl<TransactionRepository>(),
             connectivityService: sl<ConnectivityService>(),
-            transactionService: sl<TransactionService>(),
-          )..add(DashboardReloadRequested()),
+          )..add(DashboardLoadRequested()),
         ),
         BlocProvider<TransactionBloc>(
           create: (context) => TransactionBloc(
             repository: sl<TransactionRepository>(),
-            connectivityService: sl<ConnectivityService>(),
             transactionService: sl<TransactionService>(),
+            hierarchyRepository: sl<TransactionHierarchyRepository>(),
           ),
         ),
         BlocProvider<BudgetingBloc>(
-          create: (context) => BudgetingBloc(sl<BudgetingRepository>()),
+          create: (context) =>
+              BudgetingBloc(sl<BudgetingRepository>(), sl<PeriodRepository>()),
         ),
         BlocProvider<EvaluationBloc>(
           create: (context) => EvaluationBloc(sl<EvaluationRepository>()),

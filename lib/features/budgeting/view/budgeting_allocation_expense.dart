@@ -1,12 +1,11 @@
 // lib/features/budgeting/view/budgeting_allocation_expense.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
-import 'package:ta_client/core/constants/category_mapping.dart';
+// No longer need category_mapping.dart, suggestions provide subcategories
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
@@ -16,15 +15,69 @@ class BudgetingAllocationExpense extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<BudgetingBloc, BudgetingState>(
+    return BlocConsumer<BudgetingBloc, BudgetingState>(
+      listenWhen: (prev, curr) =>
+          curr.saveSuccess || curr.error != null || curr.infoMessage != null,
+      listener: (context, state) {
+        if (state.saveSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                state.infoMessage ?? 'Rencana anggaran berhasil disimpan!',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Navigate to dashboard after successful save
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            Routes.budgetingDashboard,
+            (route) => false,
+          ); // Clears stack
+        } else if (state.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.error!), backgroundColor: Colors.red),
+          );
+          context.read<BudgetingBloc>().add(BudgetingClearError());
+        } else if (state.infoMessage != null) {
+          // For "queued for sync" messages
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.infoMessage!)));
+          context.read<BudgetingBloc>().add(BudgetingClearError());
+          // Still navigate to dashboard, UI can show pending state there
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            Routes.budgetingDashboard,
+            (route) => false,
+          );
+        }
+      },
       builder: (context, state) {
-        // Filter to only allocations whose category title was selected
-        final selectedAllocations =
-            state.allocations
-                .where(
-                  (alloc) => state.selectedCategories.contains(alloc.title),
-                )
-                .toList();
+        // Get the full suggestion objects for selected categories
+        final selectedCategorySuggestions = state.expenseCategorySuggestions
+            .where(
+              (suggestion) =>
+                  state.selectedExpenseCategoryIds.contains(suggestion.id),
+            )
+            .toList();
+
+        if (state.loading &&
+            selectedCategorySuggestions.isEmpty &&
+            !state.saveSuccess) {
+          return Scaffold(
+            appBar: AppBar(title: const Text(AppStrings.budgetingTitle)),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (!state.expenseDateConfirmed) {
+          return Scaffold(
+            appBar: AppBar(title: const Text(AppStrings.budgetingTitle)),
+            body: const Center(
+              child: Text('Periode pengeluaran belum diatur.'),
+            ),
+          );
+        }
 
         return Scaffold(
           appBar: AppBar(
@@ -33,57 +86,70 @@ class BudgetingAllocationExpense extends StatelessWidget {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             backgroundColor: AppColors.greyBackground,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
           body: ListView(
             padding: const EdgeInsets.all(AppDimensions.padding),
             children: [
               const Text(
-                AppStrings.total,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: AppDimensions.smallPadding),
-              const Text(
                 AppStrings.allocationExpenseDescription,
                 style: TextStyle(fontSize: 12),
               ),
-              const SizedBox(height: AppDimensions.smallPadding),
+              const SizedBox(height: AppDimensions.padding),
 
-              // Only show ExpansionTiles for the categories the user selected
-              ...selectedAllocations.map((alloc) {
-                final title = alloc.title;
-                final subItems = categoryMapping[title] ?? <String>[];
+              if (selectedCategorySuggestions.isEmpty)
+                const Center(
+                  child: Text(
+                    'Tidak ada kategori pengeluaran yang dipilih untuk alokasi.',
+                  ),
+                ),
+
+              ...selectedCategorySuggestions.map((suggestion) {
+                final categoryId = suggestion.id;
+                final categoryName = suggestion.name;
+                final subItems =
+                    suggestion.subcategories; // List<SimpleSubcategory>
+                final allocatedPercentage =
+                    state.expenseAllocationPercentages[categoryId] ?? 0.0;
+
+                if (allocatedPercentage == 0) {
+                  return const SizedBox.shrink(); // Don't show categories with 0% allocation
+                }
+
                 return ExpansionTile(
-                  key: PageStorageKey<String>(
-                    title,
-                  ), // preserves expansion state across scroll
-                  maintainState:
-                      true, // retains child widget state when collapsed
-                  title: Text(title),
-                  children:
-                      subItems.map((sub) {
-                        final isChecked =
-                            state.selectedSubExpenses[title]?.contains(sub) ??
-                            false;
-                        return CheckboxListTile(
-                          key: ValueKey('${title}_$sub}'),
-                          // unique key per checkbox
-                          controlAffinity: ListTileControlAffinity.leading,
-                          // checkbox on the left
-                          contentPadding: EdgeInsets.zero,
-                          // consistent tap area
-                          value: isChecked,
-                          title: Text(sub),
-                          onChanged: (val) {
-                            context.read<BudgetingBloc>().add(
-                              ToggleExpenseSubItem(
-                                allocationId: alloc.id,
-                                subItem: sub,
-                                isSelected: val ?? false,
-                              ),
-                            );
-                          },
+                  key: PageStorageKey<String>(categoryId),
+                  maintainState: true,
+                  title: Text(
+                    '$categoryName (${allocatedPercentage.toStringAsFixed(0)}%)',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  initiallyExpanded: true,
+                  children: subItems.map((sub) {
+                    // sub is SimpleSubcategory
+                    final isChecked =
+                        state.selectedExpenseSubItems[categoryId]?.contains(
+                          sub['id'],
+                        ) ??
+                        false;
+                    return CheckboxListTile(
+                      key: ValueKey('${categoryId}_${sub['id']}'),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: isChecked,
+                      title: Text(sub['name'] as String),
+                      onChanged: (val) {
+                        context.read<BudgetingBloc>().add(
+                          BudgetingToggleExpenseSubItem(
+                            parentCategoryId: categoryId,
+                            subcategoryId: sub['id'] as String,
+                            isSelected: val ?? false,
+                          ),
                         );
-                      }).toList(),
+                      },
+                    );
+                  }).toList(),
                 );
               }),
 
@@ -94,15 +160,48 @@ class BudgetingAllocationExpense extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                   ),
-                  onPressed:
-                      () => Navigator.pushNamed(
-                        context,
-                        Routes.budgetingDashboard,
-                      ),
-                  child: const Text(
-                    AppStrings.save,
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  onPressed: state.loading
+                      ? null
+                      : () {
+                          // Add validation: at least one subcategory must be selected for each category that has >0% allocation
+                          var allAllocatedCategoriesHaveSubcategories = true;
+                          for (final catId in state.selectedExpenseCategoryIds) {
+                            final percentage =
+                                state.expenseAllocationPercentages[catId] ??
+                                0.0;
+                            final selectedSubs =
+                                state.selectedExpenseSubItems[catId] ?? [];
+                            if (percentage > 0 && selectedSubs.isEmpty) {
+                              allAllocatedCategoriesHaveSubcategories = false;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Pilih minimal satu subkategori untuk "$catId" yang dialokasikan.',
+                                  ),
+                                ),
+                              );
+                              break;
+                            }
+                          }
+                          if (allAllocatedCategoriesHaveSubcategories) {
+                            context.read<BudgetingBloc>().add(
+                              const BudgetingSaveExpensePlan(),
+                            );
+                          }
+                        },
+                  child: state.loading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          AppStrings.save,
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
               ),
             ],

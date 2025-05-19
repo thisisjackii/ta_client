@@ -138,7 +138,7 @@ class _TxSums {
 _TxSums _computeSums(List<Transaction> txs) {
   double sumBy(List<String> cats) => txs
       .where((t) => cats.contains(t.subcategoryName))
-      .fold(0.0, (sum, t) => sum + t.amount);
+      .fold(0, (sum, t) => sum + t.amount);
 
   return _TxSums(
     liquid: sumBy(_liquidCats),

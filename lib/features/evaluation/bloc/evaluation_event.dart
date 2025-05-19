@@ -7,23 +7,46 @@ abstract class EvaluationEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class LoadIntro extends EvaluationEvent {}
-
-class SelectDateRange extends EvaluationEvent {
-  const SelectDateRange(this.start, this.end);
+class EvaluationDateRangeSelected extends EvaluationEvent {
+  const EvaluationDateRangeSelected(this.start, this.end, {this.periodId});
   final DateTime start;
   final DateTime end;
+  final String? periodId; // Optional: if a specific Period was created/selected
   @override
-  List<Object?> get props => [start, end];
+  List<Object?> get props => [start, end, periodId];
 }
 
-class LoadDashboard extends EvaluationEvent {}
-
-class LoadDetail extends EvaluationEvent {
-  const LoadDetail(this.id);
-  final String id;
+// Unified event for loading the dashboard; repository will decide online/offline
+class EvaluationLoadDashboardRequested extends EvaluationEvent {
+  // Optional: if backend uses periodId for /calculate
+  const EvaluationLoadDashboardRequested({this.periodId});
+  final String? periodId;
   @override
-  List<Object?> get props => [id];
+  List<Object?> get props => [periodId];
 }
 
-class LoadHistory extends EvaluationEvent {}
+class EvaluationLoadDetailRequested extends EvaluationEvent {
+  // For offline detail (client-side ratio ID '0', '1', etc.)
+
+  const EvaluationLoadDetailRequested({
+    this.evaluationResultDbId,
+    this.clientRatioId,
+  }) : assert(
+         evaluationResultDbId != null || clientRatioId != null,
+         'Either evaluationResultDbId or clientRatioId must be provided',
+       );
+  final String?
+  evaluationResultDbId; // For online detail (ID of EvaluationResult record)
+  final String? clientRatioId;
+
+  @override
+  List<Object?> get props => [evaluationResultDbId, clientRatioId];
+}
+
+class EvaluationLoadHistoryRequested extends EvaluationEvent {
+  const EvaluationLoadHistoryRequested({this.startDate, this.endDate});
+  final DateTime? startDate;
+  final DateTime? endDate;
+  @override
+  List<Object?> get props => [startDate, endDate];
+}

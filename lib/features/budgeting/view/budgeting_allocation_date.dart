@@ -1,3 +1,4 @@
+// lib/features/budgeting/view/budgeting_allocation_date.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,143 +10,145 @@ import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
 import 'package:ta_client/features/budgeting/view/widgets/budgeting_date_selection.dart';
 
-class BudgetingAllocationDate extends StatefulWidget {
-  const BudgetingAllocationDate({super.key});
+class BudgetingAllocationDatePage extends StatefulWidget {
+  // Renamed
+  const BudgetingAllocationDatePage({super.key});
   @override
-  _BudgetingAllocationDateState createState() =>
-      _BudgetingAllocationDateState();
+  _BudgetingAllocationDatePageState createState() =>
+      _BudgetingAllocationDatePageState();
 }
 
-class _BudgetingAllocationDateState extends State<BudgetingAllocationDate> {
-  bool isAtMostOneMonthApart(DateTime start, DateTime end) {
-    final oneMonthLater = DateTime(start.year, start.month + 1, start.day);
-    return end.isBefore(oneMonthLater) || end.isAtSameMomentAs(oneMonthLater);
-  }
+class _BudgetingAllocationDatePageState
+    extends State<BudgetingAllocationDatePage> {
+  DateTime? _tempStartDate;
+  DateTime? _tempEndDate;
 
   @override
   void initState() {
     super.initState();
+    final initialState = context.read<BudgetingBloc>().state;
+    _tempStartDate = initialState.expenseStartDate;
+    _tempEndDate = initialState.expenseEndDate;
+    // context.read<BudgetingBloc>().add(BudgetingResetExpensePeriodConfirmation());
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // reset the expense‐date flag before showing the dialog
-      context.read<BudgetingBloc>().add(ResetExpenseDateConfirmation());
-      _showDatePickerModal();
+      _showDateSelectionDialog();
     });
   }
 
-  Future<void> _showDatePickerModal() async {
-    final parentCtx = context;
+  Future<void> _showDateSelectionDialog() async {
+    final budgetingBloc = context.read<BudgetingBloc>();
+
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogCtx) {
-        return BlocConsumer<BudgetingBloc, BudgetingState>(
-          listenWhen: (prev, cur) =>
-              prev.expenseDateConfirmed != cur.expenseDateConfirmed ||
-              prev.dateError != cur.dateError,
-          listener: (blocCtx, state) {
-            if (state.dateError != null) {
-              // show error alert
-              showDialog<void>(
-                context: dialogCtx,
-                builder: (_) => AlertDialog(
-                  title: const Text('Gagal'),
-                  content: Text(state.dateError!),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(dialogCtx),
-                      child: const Text('OK'),
-                    ),
-                  ],
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return BlocListener<BudgetingBloc, BudgetingState>(
+              bloc: budgetingBloc,
+              listenWhen: (prev, curr) =>
+                  prev.loading != curr.loading ||
+                  curr.expenseDateConfirmed ||
+                  curr.dateError != null ||
+                  curr.error != null,
+              listener: (listenerContext, state) {
+                if (state.dateError != null && !state.loading) {
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(content: Text('Date Error: ${state.dateError}')),
+                  );
+                  budgetingBloc.add(BudgetingClearError());
+                  _showDateSelectionDialog();
+                } else if (state.error != null &&
+                    !state.loading &&
+                    !state.expenseDateConfirmed) {
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(content: Text('Period Error: ${state.error}')),
+                  );
+                  budgetingBloc.add(BudgetingClearError());
+                  _showDateSelectionDialog();
+                } else if (state.expenseDateConfirmed && !state.loading) {
+                  Navigator.pop(dialogContext);
+                  Navigator.pushReplacementNamed(
+                    context,
+                    Routes.budgetingAllocationPage,
+                  );
+                }
+              },
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
                 ),
-              );
-            } else if (state.expenseDateConfirmed) {
-              // close the date picker
-              Navigator.pop(dialogCtx);
-              // 👉 route to the **allocation** page first (not straight to expense)
-              Navigator.pushReplacementNamed(
-                parentCtx,
-                Routes.budgetingAllocationPage,
-              );
-            }
-          },
-          builder: (_, state) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-              ),
-              contentPadding: const EdgeInsets.all(24),
-              content: BudgetingDateSelection(
-                // wire up the EXPENSE fields & events:
-                startDate: state.expenseStartDate,
-                endDate: state.expenseEndDate,
-                onStartDateChanged: (d) => dialogCtx.read<BudgetingBloc>().add(
-                  ExpenseStartDateChanged(d),
+                title: const Text('Pilih Periode Alokasi Pengeluaran'),
+                contentPadding: const EdgeInsets.all(24),
+                content: BudgetingDateSelection(
+                  startDate:
+                      _tempStartDate ?? budgetingBloc.state.expenseStartDate,
+                  endDate: _tempEndDate ?? budgetingBloc.state.expenseEndDate,
+                  onStartDateChanged: (date) =>
+                      setDialogState(() => _tempStartDate = date),
+                  onEndDateChanged: (date) =>
+                      setDialogState(() => _tempEndDate = date),
                 ),
-                onEndDateChanged: (d) => dialogCtx.read<BudgetingBloc>().add(
-                  ExpenseEndDateChanged(d),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogCtx),
-                  child: const Text(AppStrings.cancel),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    final s = state.expenseStartDate;
-                    final e = state.expenseEndDate;
-                    if (s == null || e == null) {
-                      showDialog<void>(
-                        context: dialogCtx,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Gagal'),
-                          content: const Text(
-                            'Kamu harus memilih tanggal mulai dan akhir.',
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text(AppStrings.cancel),
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      Navigator.pop(
+                        context,
+                      ); // Back from BudgetingAllocationDatePage
+                    },
+                  ),
+                  ElevatedButton(
+                    child:
+                        budgetingBloc.state.loading &&
+                            !budgetingBloc.state.expenseDateConfirmed
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text(AppStrings.ok),
+                    onPressed: () {
+                      if (_tempStartDate != null && _tempEndDate != null) {
+                        budgetingBloc.add(
+                          BudgetingExpenseDateRangeSelected(
+                            start: _tempStartDate!,
+                            end: _tempEndDate!,
+                            // periodId: budgetingBloc.state.expensePeriodId, // If editing
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dialogCtx),
-                              child: const Text('OK'),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Silakan pilih tanggal mulai dan akhir.',
                             ),
-                          ],
-                        ),
-                      );
-                      return;
-                    }
-
-                    if (!isAtMostOneMonthApart(s, e)) {
-                      showDialog<void>(
-                        context: dialogCtx,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Gagal'),
-                          content: const Text(
-                            'Rentang tanggal tidak boleh lebih dari satu bulan.',
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dialogCtx),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                      return;
-                    }
-
-                    dialogCtx.read<BudgetingBloc>().add(
-                      ConfirmExpenseDateRange(start: s, end: e),
-                    );
-                  },
-                  child: const Text(AppStrings.ok),
-                ),
-              ],
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
             );
           },
         );
       },
-    );
+    ).then((_) {
+      if (!budgetingBloc.state.expenseDateConfirmed && mounted) {
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+      }
+    });
   }
 
   @override
-  Widget build(BuildContext context) => const Scaffold();
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
 }

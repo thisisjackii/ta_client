@@ -25,9 +25,9 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
     super.initState();
     // if we already have dates, automatically load
     final bloc = context.read<EvaluationBloc>();
-    if (bloc.state.start != null && bloc.state.end != null) {
+    if (bloc.state.startDate != null && bloc.state.endDate != null) {
       debugPrint('▶️ initState: dispatching LoadDashboard');
-      bloc.add(LoadDashboard());
+      bloc.add(const EvaluationLoadDashboardRequested());
     }
   }
 
@@ -62,7 +62,9 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                 icon: const Icon(Icons.history),
                 onPressed: () {
                   debugPrint('🔄 tapping history button, dispatch LoadHistory');
-                  context.read<EvaluationBloc>().add(LoadHistory());
+                  context.read<EvaluationBloc>().add(
+                    const EvaluationLoadHistoryRequested(),
+                  );
                   Navigator.pushNamed(context, Routes.evaluationHistory);
                 },
               ),
@@ -93,8 +95,8 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                       ),
                       const SizedBox(width: AppDimensions.smallPadding),
                       Text(
-                        '${s.start != null ? '${s.start!.day}/${s.start!.month}/${s.start!.year}' : '--'} - '
-                        '${s.end != null ? '${s.end!.day}/${s.end!.month}/${s.end!.year}' : '--'}',
+                        '${s.startDate != null ? '${s.startDate!.day}/${s.startDate!.month}/${s.startDate!.year}' : '--'} - '
+                        '${s.endDate != null ? '${s.endDate!.day}/${s.endDate!.month}/${s.endDate!.year}' : '--'}',
                       ),
                     ],
                   ),
@@ -110,7 +112,9 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                       '➡️ tapped item [${item.id}] ${item.title}, '
                       'dispatching LoadDetail',
                     );
-                    context.read<EvaluationBloc>().add(LoadDetail(item.id));
+                    context.read<EvaluationBloc>().add(
+                      EvaluationLoadDetailRequested(),
+                    );
                     Navigator.pushNamed(
                       context,
                       Routes.evaluationDetail,

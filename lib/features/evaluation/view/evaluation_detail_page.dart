@@ -31,10 +31,10 @@ class EvaluationDetailPage extends StatelessWidget {
 
         // helper to pull breakdown entries by key
         List<Map<String, String>> entries(String key) {
-          return item.breakdown?.entries
-                  .where((e) => e.key == key)
+          return item.breakdown
+                  ?.where((e) => e.name == key)
                   .map(
-                    (e) => {'label': e.key, 'value': formatToRupiah(e.value)},
+                    (e) => {'label': e.name, 'value': formatToRupiah(e.value)},
                   )
                   .toList() ??
               [];
@@ -55,7 +55,8 @@ class EvaluationDetailPage extends StatelessWidget {
                       onPressed: () {
                         final keys = _ratioInputs[item.id] ?? [];
 
-                        final breakdownMap = item.breakdown ?? {};
+                        final breakdownMap =
+                            (item.breakdown ?? {}) as Map<String, double>;
 
                         final numerator = breakdownMap[keys[0]] ?? 0.0;
                         final denominator = breakdownMap[keys[1]] ?? 1.0;

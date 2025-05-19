@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:ta_client/core/services/connectivity_service.dart';
 import 'package:ta_client/core/state/auth_state.dart';
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
+import 'package:ta_client/features/budgeting/repositories/period_repository.dart';
 import 'package:ta_client/features/budgeting/services/budgeting_service.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/evaluation/services/evaluation_service.dart';
@@ -35,19 +36,36 @@ void setupServiceLocator() {
       () => TransactionRepository(transactionService: sl<TransactionService>()),
     )
     ..registerLazySingleton<TransactionSyncService>(
-      () => TransactionSyncService(repository: sl<TransactionRepository>()),
+      () => TransactionSyncService(
+        transactionRepository: sl<TransactionRepository>(),
+        budgetingRepository: sl<BudgetingRepository>(),
+        periodRepository: sl<PeriodRepository>(),
+      ),
     )
     ..registerLazySingleton<BudgetingService>(
-      () => BudgetingService(baseUrl: baseUrl),
+      () => BudgetingService(
+        baseUrl: baseUrl,
+      ), // No longer needs TransactionService directly
     )
     ..registerLazySingleton<BudgetingRepository>(
-      () => BudgetingRepository(sl<BudgetingService>()),
+      () => BudgetingRepository(
+        sl<BudgetingService>(),
+        sl<TransactionRepository>(), // Inject TransactionRepository
+        sl<PeriodRepository>(),
+      ),
     )
     ..registerLazySingleton<EvaluationService>(
-      () => EvaluationService(transactionService: sl<TransactionService>()),
+      () => EvaluationService(
+        baseUrl: baseUrl, // Pass TransactionService
+      ),
     )
     ..registerLazySingleton<EvaluationRepository>(
-      () => EvaluationRepository(sl<EvaluationService>()),
+      () => EvaluationRepository(
+        sl<EvaluationService>(),
+        sl<
+          TransactionRepository
+        >(), // EvaluationRepository now needs TransactionRepository
+      ),
     )
     ..registerLazySingleton<ProfileService>(
       () => ProfileService(baseUrl: baseUrl),

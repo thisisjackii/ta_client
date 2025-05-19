@@ -58,3 +58,7 @@ class LoadSubcategoriesRequested extends TransactionEvent {
   @override
   List<Object> get props => [categoryId];
 }
+
+// ... (existing events)
+class TransactionClearStatus
+    extends TransactionEvent {} // To reset flags like isSuccess, errorMessage
