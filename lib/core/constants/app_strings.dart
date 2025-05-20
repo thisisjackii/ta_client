@@ -10,6 +10,8 @@ class AppStrings {
       'Perhitungan anggaran dalam penelitian ini merujuk pada standar yang ditetapkan oleh Kapoor et al. (2015), yang didasarkan pada data dari lembaga statistik Amerika.';
   static const String cancel = 'Cancel';
   static const String dateRangePrompt = 'Pilih Rentang Tanggal';
+  static const String oneMonthWarning =
+      'Periode evaluasi minimal 1 bulan. Silakan pilih rentang tanggal yang sesuai.';
   static const String evaluationDashboardSubtitle =
       'Berdasarkan data yang telah dimasukkan, kamu dapat melihat kemampuan dan keadaan keuanganmu secara menyeluruh.';
   static const String evaluationDashboardTitle = 'Evaluasi Keuangan';

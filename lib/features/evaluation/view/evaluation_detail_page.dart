@@ -8,6 +8,7 @@ import 'package:ta_client/core/constants/app_strings.dart';
 import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
+import 'package:ta_client/features/evaluation/models/evaluation.dart';
 import 'package:ta_client/features/evaluation/view/widgets/custom_slider_double_range.dart';
 import 'package:ta_client/features/evaluation/view/widgets/custom_slider_single_range.dart';
 import 'package:ta_client/features/evaluation/view/widgets/evaluation_detail_card.dart';
@@ -108,11 +109,13 @@ class EvaluationDetailPage extends StatelessWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: item.isIdeal
+                          color: item.status == EvaluationStatusModel.ideal
                               ? Colors.green[50]
                               : Colors.red[50],
                           border: Border.all(
-                            color: item.isIdeal ? Colors.green : Colors.red,
+                            color: item.status == EvaluationStatusModel.ideal
+                                ? Colors.green
+                                : Colors.red,
                           ),
                           borderRadius: BorderRadius.circular(
                             AppDimensions.cardRadius,
@@ -126,11 +129,13 @@ class EvaluationDetailPage extends StatelessWidget {
                           ],
                         ),
                         child: Text(
-                          item.isIdeal ? 'Ideal' : 'Tidak Ideal',
+                          item.status == EvaluationStatusModel.ideal
+                              ? 'Ideal'
+                              : 'Tidak Ideal',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: item.isIdeal
+                            color: item.status == EvaluationStatusModel.ideal
                                 ? Colors.green[800]
                                 : Colors.red[800],
                           ),

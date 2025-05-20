@@ -1,255 +1,313 @@
 // lib/features/budgeting/repositories/period_repository.dart
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+// No Hive import needed here directly
 import 'package:ta_client/core/services/connectivity_service.dart';
+import 'package:ta_client/core/services/hive_service.dart'; // Import HiveService
 import 'package:ta_client/core/services/service_locator.dart';
-import 'package:ta_client/core/state/auth_state.dart';
+import 'package:ta_client/core/state/auth_state.dart'; // To get current user ID
 import 'package:ta_client/features/budgeting/models/period.dart';
 import 'package:ta_client/features/budgeting/services/period_service.dart';
-import 'package:uuid/uuid.dart'; // For generating local IDs
+import 'package:uuid/uuid.dart';
 
 class PeriodRepository {
-  PeriodRepository(this._service) {
-    _connectivityService = sl<ConnectivityService>();
-    _initHiveBox();
+  PeriodRepository(this._service)
+    : _connectivityService = sl<ConnectivityService>(),
+      _hiveService = sl<HiveService>(),
+      _authState = sl<AuthState>() {
+    // Get AuthState from service locator
+    // No _initHiveBox needed, bootstrap.dart handles global opening
   }
-
   final PeriodService _service;
-  late ConnectivityService _connectivityService;
-  static const String _periodCacheBoxName =
-      'budgetingPeriodsCache'; // Specific to budgeting feature if desired
-  static const String _pendingPeriodsBoxName = 'budgetingPendingPeriodsCache';
-
+  final ConnectivityService _connectivityService;
+  final HiveService _hiveService; // Injected
+  final AuthState _authState; // Injected
   static const Uuid _uuid = Uuid();
 
-  Future<void> _initHiveBox() async {
-    if (!Hive.isBoxOpen(_periodCacheBoxName)) {
-      await Hive.openBox<String>(_periodCacheBoxName);
-    }
-    if (!Hive.isBoxOpen(_pendingPeriodsBoxName)) {
-      await Hive.openBox<String>(_pendingPeriodsBoxName);
-    }
-  }
+  // Public static const for box names
+  static const String periodCacheBoxName = 'budgetingPeriodsCache_v1';
+  static const String pendingPeriodsBoxName = 'budgetingPendingPeriodsCache_v1';
 
-  Future<FrontendPeriod> ensureAndGetPeriod({
-    required DateTime startDate,
-    required DateTime endDate,
-    required String periodType,
-    String? existingPeriodId, // Can be a backend ID or a local temporary ID
-    String? description,
-    String?
-    userIdForLocal, // Needed if creating a local period before user is fully auth'd or for temp objects
+  Future<FrontendPeriod> _cachePeriod(
+    FrontendPeriod period, {
+    bool isPending = false,
   }) async {
-    final isOnline = await _connectivityService.isOnline;
-    final cacheBox = Hive.box<String>(_periodCacheBoxName);
-    final pendingBox = Hive.box<String>(_pendingPeriodsBoxName);
-
-    // Try to find by existingPeriodId (could be backend or local)
-    if (existingPeriodId != null) {
-      final cachedJson =
-          cacheBox.get(existingPeriodId) ?? pendingBox.get(existingPeriodId);
-      if (cachedJson != null) {
-        final cachedPeriod = FrontendPeriod.fromJson(
-          json.decode(cachedJson) as Map<String, dynamic>,
-        );
-        // If details match, return cached. Useful if navigating back and forth.
-        if (cachedPeriod.startDate.isAtSameMomentAs(startDate) &&
-            cachedPeriod.endDate.isAtSameMomentAs(endDate) &&
-            cachedPeriod.periodType == periodType) {
-          debugPrint(
-            '[PeriodRepository] Found matching cached period: $existingPeriodId',
-          );
-          return cachedPeriod;
-        }
-      }
-    }
-
-    // If online, try to create/fetch from backend.
-    // Backend should handle finding existing period for user/type/dates or creating new.
-    if (isOnline) {
-      try {
-        debugPrint(
-          '[PeriodRepository] Online: Calling service to create/ensure period.',
-        );
-        final backendPeriod = await _service.createPeriod(
-          startDate: startDate,
-          endDate: endDate,
-          periodType: periodType,
-          description: description,
-        );
-        await cacheBox.put(
-          backendPeriod.id,
-          json.encode(backendPeriod.toJson()),
-        );
-        // If this was a pending local period, remove it from pending queue
-        if (existingPeriodId != null &&
-            pendingBox.containsKey(existingPeriodId)) {
-          await pendingBox.delete(existingPeriodId);
-        }
-        return backendPeriod;
-      } catch (e) {
-        debugPrint(
-          '[PeriodRepository] Online period creation/fetch failed: $e. Will attempt local creation if applicable.',
-        );
-        // Fall through to local creation if API fails but we still need a period object client-side
-      }
-    }
-
-    // Offline or if online failed: create/use a local period object
-    // If an existingPeriodId was provided and it was a local one, reuse it, otherwise generate new.
-    final localId =
-        (existingPeriodId != null &&
-            (pendingBox.containsKey(existingPeriodId) ||
-                cacheBox.get(existingPeriodId) != null &&
-                    FrontendPeriod.fromJson(
-                      json.decode(cacheBox.get(existingPeriodId)!)
-                          as Map<String, dynamic>,
-                    ).isLocal))
-        ? existingPeriodId
-        : 'local_${_uuid.v4()}';
-
-    final localPeriod = FrontendPeriod(
-      id: localId,
-      userId:
-          userIdForLocal ??
-          '', // Requires userId context for proper local object
-      startDate: startDate,
-      endDate: endDate,
-      periodType: periodType,
-      description: description,
-      isLocal: true, // Mark as local and needing sync
+    final boxName = isPending ? pendingPeriodsBoxName : periodCacheBoxName;
+    // For pending, key is local ID. For synced, key is backend ID.
+    await _hiveService.putJsonString(
+      boxName,
+      period.id,
+      json.encode(period.toJson()),
     );
-
-    await pendingBox.put(localPeriod.id, json.encode(localPeriod.toJson()));
-    // Also put in main cache for immediate retrieval by getCachedPeriodById
-    await cacheBox.put(localPeriod.id, json.encode(localPeriod.toJson()));
-    debugPrint(
-      '[PeriodRepository] Using/Created local period (offline or API fail): ${localPeriod.id}',
-    );
-    return localPeriod;
+    return period;
   }
 
   Future<FrontendPeriod?> getCachedPeriodById(String periodId) async {
-    final box = Hive.box<String>(_periodCacheBoxName);
-    final periodJson = box.get(periodId);
+    var periodJson = await _hiveService.getJsonString(
+      periodCacheBoxName,
+      periodId,
+    );
     if (periodJson != null) {
       return FrontendPeriod.fromJson(
         json.decode(periodJson) as Map<String, dynamic>,
-        local: periodJson.contains('"isLocal":true'),
       );
     }
-    final pendingBox = Hive.box<String>(_pendingPeriodsBoxName);
-    final pendingJson = pendingBox.get(periodId);
-    if (pendingJson != null) {
+    periodJson = await _hiveService.getJsonString(
+      pendingPeriodsBoxName,
+      periodId,
+    );
+    if (periodJson != null) {
       return FrontendPeriod.fromJson(
-        json.decode(pendingJson) as Map<String, dynamic>,
+        json.decode(periodJson) as Map<String, dynamic>,
         local: true,
       );
     }
     return null;
   }
 
-  Future<List<FrontendPeriod>> getAllCachedPeriods(
+  Future<FrontendPeriod> ensureAndGetPeriod({
+    required DateTime startDate,
+    required DateTime endDate,
+    required String periodType,
+    String? existingPeriodId,
+    String? description,
+    // String? userIdForLocal, // Replaced by fetching from AuthState
+  }) async {
+    final isOnline = await _connectivityService.isOnline;
+    final currentUserId = _authState.currentUser?.id;
+
+    if (currentUserId == null && !isOnline) {
+      // Cannot create a meaningful local period without a userId if offline new
+      // This case needs careful handling based on app flow. Maybe store anonymously then associate?
+      // For now, let's assume if offline and no user, period creation might be deferred or error.
+      debugPrint(
+        '[PeriodRepository] Offline and no current user ID, cannot ensure period robustly.',
+      );
+      // Fallback to creating a very temporary object if absolutely necessary, but it won't sync well.
+      // Or throw:
+      throw PeriodApiException(
+        'User not available for offline period creation.',
+      );
+    }
+
+    if (existingPeriodId != null) {
+      final cachedPeriod = await getCachedPeriodById(existingPeriodId);
+      if (cachedPeriod != null &&
+          cachedPeriod.startDate.isAtSameMomentAs(startDate) &&
+          cachedPeriod.endDate.isAtSameMomentAs(endDate) &&
+          cachedPeriod.periodType == periodType) {
+        return cachedPeriod;
+      }
+      if (isOnline && cachedPeriod == null) {
+        // ID provided, but not in cache, try fetching
+        try {
+          final backendPeriod = await _service.fetchPeriodById(
+            existingPeriodId,
+          );
+          return await _cachePeriod(backendPeriod.copyWith(isLocal: false));
+        } catch (e) {
+          /* Fall through to create new */
+        }
+      }
+    }
+
+    if (isOnline) {
+      try {
+        final backendPeriod = await _service.createPeriod(
+          startDate: startDate,
+          endDate: endDate,
+          periodType: periodType,
+          description: description,
+        );
+        // The backend associates it with the authenticated user via token
+        return await _cachePeriod(backendPeriod.copyWith(isLocal: false));
+      } catch (e) {
+        debugPrint(
+          '[PeriodRepository] Online period creation/fetch failed: $e. Will create locally for offline.',
+        );
+      }
+    }
+
+    // Offline or online creation failed: create/use a local period object
+    final localId = 'local_${_uuid.v4()}';
+    final localPeriod = FrontendPeriod(
+      id: localId,
+      userId:
+          currentUserId ??
+          'offline_user', // Use current user's ID or a placeholder
+      startDate: startDate,
+      endDate: endDate,
+      periodType: periodType,
+      description: description,
+      isLocal: true,
+    );
+    return _cachePeriod(localPeriod, isPending: true);
+  }
+
+  Future<List<FrontendPeriod>> getPeriodsForUser(
     String userId, {
     String? periodType,
   }) async {
-    final box = Hive.box<String>(_periodCacheBoxName);
-    final periods = <FrontendPeriod>[];
-    for (final key in box.keys) {
-      final periodJson = box.get(key);
-      if (periodJson != null) {
-        final period = FrontendPeriod.fromJson(
-          json.decode(periodJson) as Map<String, dynamic>,
-        );
-        if (period.userId == userId &&
-            (periodType == null || period.periodType == periodType)) {
-          periods.add(period);
-        }
+    final isOnline = await _connectivityService.isOnline;
+    final allUserPeriods = <FrontendPeriod>[];
+
+    // 1. Add pending (local) periods for this user
+    _hiveService.getBoxEntries<String>(pendingPeriodsBoxName).forEach((
+      key,
+      periodJson,
+    ) {
+      final period = FrontendPeriod.fromJson(
+        json.decode(periodJson) as Map<String, dynamic>,
+        local: true,
+      );
+      if (period.userId == userId &&
+          (periodType == null || period.periodType == periodType)) {
+        allUserPeriods.add(period);
       }
-    }
-    // Also check pending periods
-    final pendingBox = Hive.box<String>(_pendingPeriodsBoxName);
-    for (final key in pendingBox.keys) {
-      final periodJson = pendingBox.get(key);
-      if (periodJson != null) {
+    });
+
+    // 2. If online, fetch from server, cache, and merge/deduplicate
+    if (isOnline) {
+      try {
+        final backendPeriods = await _service.fetchPeriods(
+          periodType: periodType,
+        ); // Service returns for authenticated user
+        for (final bp in backendPeriods) {
+          await _cachePeriod(bp.copyWith(isLocal: false)); // Cache as synced
+          // Remove any local/pending version that this backend period replaces
+          final localVersionIndex = allUserPeriods.indexWhere(
+            (lp) =>
+                lp.isLocal &&
+                lp.startDate.isAtSameMomentAs(bp.startDate) &&
+                lp.endDate.isAtSameMomentAs(bp.endDate) &&
+                lp.periodType == bp.periodType &&
+                lp.userId == bp.userId,
+          );
+          if (localVersionIndex != -1) {
+            await _hiveService.delete(
+              pendingPeriodsBoxName,
+              allUserPeriods[localVersionIndex].id,
+            );
+            allUserPeriods.removeAt(localVersionIndex);
+          }
+          // Add backend version if not already present by ID (or replace if different)
+          allUserPeriods
+            ..removeWhere((p) => p.id == bp.id)
+            ..add(bp);
+        }
+      } catch (e) {
+        debugPrint(
+          '[PeriodRepository] Error fetching periods online, will rely on cache: $e',
+        );
+        // Fallback to only cached synced periods if online fetch fails
+        _hiveService.getBoxEntries<String>(periodCacheBoxName).forEach((
+          key,
+          periodJson,
+        ) {
+          final period = FrontendPeriod.fromJson(
+            json.decode(periodJson) as Map<String, dynamic>,
+          );
+          if (period.userId == userId &&
+              (periodType == null || period.periodType == periodType) &&
+              !allUserPeriods.any((p) => p.id == period.id)) {
+            // Avoid duplicates if already added from pending
+            allUserPeriods.add(period);
+          }
+        });
+      }
+    } else {
+      // Offline: Add already synced periods from cache
+      _hiveService.getBoxEntries<String>(periodCacheBoxName).forEach((
+        key,
+        periodJson,
+      ) {
         final period = FrontendPeriod.fromJson(
           json.decode(periodJson) as Map<String, dynamic>,
-          local: true,
         );
         if (period.userId == userId &&
             (periodType == null || period.periodType == periodType) &&
-            !periods.any((p) => p.id == period.id)) {
-          periods.add(period);
+            !allUserPeriods.any((p) => p.id == period.id)) {
+          allUserPeriods.add(period);
         }
-      }
+      });
     }
-    periods.sort((a, b) => b.startDate.compareTo(a.startDate));
-    return periods;
+
+    allUserPeriods.sort((a, b) => b.startDate.compareTo(a.startDate));
+    return allUserPeriods;
   }
 
   Future<void> syncPendingPeriods() async {
-    // Removed userId param here
-    final pendingBox = Hive.box<String>(_pendingPeriodsBoxName);
-    // ... (initial checks for pendingBox.isEmpty, isOnline) ...
+    // Removed userId param, get from AuthState
+    final isOnline = await _connectivityService.isOnline;
+    if (!isOnline) return;
 
-    final authState = sl<AuthState>(); // Get AuthState from GetIt
+    final pendingBox = await _hiveService.getOpenBox<String>(
+      pendingPeriodsBoxName,
+    );
+    final pendingMap = _hiveService.getBoxEntries<String>(
+      pendingPeriodsBoxName,
+    );
+    if (pendingMap.isEmpty) return;
+
+    final authState = sl<AuthState>();
     if (!authState.isAuthenticated || authState.currentUser == null) {
       debugPrint(
-        '[PeriodRepository] Cannot sync pending periods: User not authenticated or user ID unavailable.',
+        '[PeriodRepository] Cannot sync pending periods: User not authenticated.',
       );
       return;
     }
     final currentUserId = authState.currentUser!.id;
 
     debugPrint(
-      '[PeriodRepository] Syncing ${pendingBox.length} pending periods for user $currentUserId.',
+      '[PeriodRepository] Syncing ${pendingMap.length} pending periods for user $currentUserId.',
     );
-    final syncedKeys = <String>[];
+    final syncedLocalIds = <String>[];
 
-    for (final localId in pendingBox.keys.toList()) {
-      final periodJson = pendingBox.get(localId);
+    for (final localId in pendingMap.keys.toList().cast<String>()) {
+      final periodJson = pendingMap[localId];
       if (periodJson != null) {
-        final localPeriodData = FrontendPeriod.fromJson(
+        final localPeriod = FrontendPeriod.fromJson(
           json.decode(periodJson) as Map<String, dynamic>,
           local: true,
         );
-        try {
-          final backendPeriod = await _service.createPeriod(
-            // Backend needs to associate with user via token
-            startDate: localPeriodData.startDate,
-            endDate: localPeriodData.endDate,
-            periodType: localPeriodData.periodType,
-            description: localPeriodData.description,
-            // existingPeriodId: localPeriodData.id, // Send local ID if backend can use it for idempotency check
-          );
-          // Update cache with backend data
-          final cacheBox = Hive.box<String>(_periodCacheBoxName);
-          await cacheBox.put(
-            backendPeriod.id,
-            json.encode(backendPeriod.copyWith(userId: currentUserId).toJson()),
-          ); // Ensure userId is in cached object
-          if (localId != backendPeriod.id) await cacheBox.delete(localId);
 
-          syncedKeys.add(localId as String);
-          debugPrint(
-            '[PeriodRepository] Synced local period $localId to backend period ${backendPeriod.id} for user $currentUserId',
-          );
+        // Only sync if it belongs to the current user or was an "offline_user" period now being claimed
+        if (localPeriod.userId == currentUserId ||
+            localPeriod.userId == 'offline_user') {
+          try {
+            final backendPeriod = await _service.createPeriod(
+              startDate: localPeriod.startDate,
+              endDate: localPeriod.endDate,
+              periodType: localPeriod.periodType,
+              description: localPeriod.description,
+            );
 
-          // TODO: Update dependent records (BudgetAllocations, etc.) that used the localPeriod.id
-          // This is a complex step. After syncing a period and getting its backend ID,
-          // you need to find any BudgetAllocations, etc., that were created offline
-          // using the local_period_id and update their periodId to the new backend_period_id
-          // before attempting to sync those allocations.
-          // This might involve another queue or marking them for "periodId update".
-        } catch (e) {
-          debugPrint(
-            '[PeriodRepository] Failed to sync pending period $localId for user $currentUserId: $e',
-          );
+            // Update main cache with synced version (backend ID)
+            await _cachePeriod(
+              backendPeriod.copyWith(isLocal: false, userId: currentUserId),
+            );
+            // If localId was different, remove old localId from main cache if it was put there
+            if (localId != backendPeriod.id) {
+              await (await _hiveService.getOpenBox<String>(
+                periodCacheBoxName,
+              )).delete(localId);
+            }
+            syncedLocalIds.add(localId);
+            debugPrint(
+              '[PeriodRepository] Synced local period $localId to backend period ${backendPeriod.id}',
+            );
+            // TODO: CRITICAL - Update periodId in related offline BudgetAllocations/Evaluations
+            // from localId to backendPeriod.id before those are synced.
+          } catch (e) {
+            debugPrint(
+              '[PeriodRepository] Failed to sync pending period $localId: $e',
+            );
+          }
         }
       }
     }
-    for (final key in syncedKeys) {
+    for (final key in syncedLocalIds) {
       await pendingBox.delete(key);
     }
   }

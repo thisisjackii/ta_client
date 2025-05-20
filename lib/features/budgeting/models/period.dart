@@ -44,12 +44,34 @@ class FrontendPeriod extends Equatable {
     'id': id,
     'userId':
         userId, // May not be sent for creation if backend infers from auth
-    'startDate': startDate.toIso8601String(),
-    'endDate': endDate.toIso8601String(),
+    'startDate': startDate.toUtc().toIso8601String(),
+    'endDate': endDate.toUtc().toIso8601String(),
     'periodType': periodType,
     if (description != null) 'description': description,
     // 'isLocal' is a client-side flag, not typically sent to backend
   };
+
+  Map<String, dynamic> toCreateApiJson() {
+    // For POST /periods
+    return {
+      'startDate': startDate
+          .toUtc()
+          .toIso8601String(), // Local to UTC ISO for API
+      'endDate': endDate.toUtc().toIso8601String(), // Local to UTC ISO for API
+      'periodType': periodType,
+      if (description != null) 'description': description,
+    };
+  }
+
+  Map<String, dynamic> toUpdateApiJson() {
+    // For PUT /periods/:id
+    return {
+      'startDate': startDate.toUtc().toIso8601String(),
+      'endDate': endDate.toUtc().toIso8601String(),
+      'periodType': periodType,
+      if (description != null) 'description': description,
+    };
+  }
 
   // copyWith method
   FrontendPeriod copyWith({

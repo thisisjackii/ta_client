@@ -8,21 +8,19 @@ abstract class EvaluationEvent extends Equatable {
 }
 
 class EvaluationDateRangeSelected extends EvaluationEvent {
-  const EvaluationDateRangeSelected(this.start, this.end, {this.periodId});
+  const EvaluationDateRangeSelected(this.start, this.end); // periodId removed
   final DateTime start;
   final DateTime end;
-  final String? periodId; // Optional: if a specific Period was created/selected
   @override
-  List<Object?> get props => [start, end, periodId];
+  List<Object?> get props => [start, end];
 }
 
-// Unified event for loading the dashboard; repository will decide online/offline
 class EvaluationLoadDashboardRequested extends EvaluationEvent {
-  // Optional: if backend uses periodId for /calculate
-  const EvaluationLoadDashboardRequested({this.periodId});
-  final String? periodId;
+  // Make this required, or ensure it's always set from previous step
+  const EvaluationLoadDashboardRequested({required this.periodId});
+  final String periodId;
   @override
-  List<Object?> get props => [periodId];
+  List<Object> get props => [periodId];
 }
 
 class EvaluationLoadDetailRequested extends EvaluationEvent {

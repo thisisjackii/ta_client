@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' as foundation;
 // Assuming these models are also defined for hierarchy if not already
 // These are simplified representations of what might be nested in a full Transaction object from backend
 class TransactionAccountType extends Equatable {
-
   const TransactionAccountType({required this.id, required this.name});
 
   factory TransactionAccountType.fromJson(Map<String, dynamic> json) {
@@ -21,8 +20,8 @@ class TransactionAccountType extends Equatable {
   List<Object?> get props => [id, name];
 }
 
-class TransactionCategory extends Equatable { // Nested
-
+class TransactionCategory extends Equatable {
+  // Nested
   const TransactionCategory({
     required this.id,
     required this.name,
@@ -52,8 +51,8 @@ class TransactionCategory extends Equatable { // Nested
   List<Object?> get props => [id, name, accountType];
 }
 
-class TransactionSubcategory extends Equatable { // Nested
-
+class TransactionSubcategory extends Equatable {
+  // Nested
   const TransactionSubcategory({
     required this.id,
     required this.name,
@@ -83,8 +82,7 @@ class TransactionSubcategory extends Equatable { // Nested
   List<Object?> get props => [id, name, category];
 }
 
-class Transaction extends Equatable { // Client-side flag for offline/pending sync status
-
+class Transaction extends Equatable {
   const Transaction({
     required this.id,
     required this.description,
@@ -93,110 +91,160 @@ class Transaction extends Equatable { // Client-side flag for offline/pending sy
     required this.subcategoryId,
     this.isBookmarked = false,
     this.userId,
-    this.subcategoryName,
-    this.categoryId,
-    this.categoryName,
-    this.accountTypeName,
-    this.isLocal = false, // Default for newly created objects
+    this.subcategoryName, // Denormalized for display
+    this.categoryId, // Denormalized for display
+    this.categoryName, // Denormalized for display
+    this.accountTypeId, // << Add this
+    this.accountTypeName, // Denormalized for display
+    this.isLocal = false,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Transaction.fromJson(
     Map<String, dynamic> json, {
-    bool markLocal = false,
+    bool markLocal = false, // Used when deserializing from pending queue
   }) {
     try {
-      final subcategoryData = json['subcategory'] as Map<String, dynamic>?;
-      final categoryData =
-          subcategoryData?['category'] as Map<String, dynamic>?;
-      final accountTypeData =
-          categoryData?['accountType'] as Map<String, dynamic>?;
+      // Prioritize top-level fields if they exist (more common from direct API list response)
+      // Fallback to nested 'subcategory' for cached items or detailed API responses
+      final subcategoryDataFromTop = json['subcategory'] is Map<String, dynamic>
+          ? json['subcategory'] as Map<String, dynamic>
+          : null;
+      final categoryDataFromTop =
+          subcategoryDataFromTop?['category'] is Map<String, dynamic>
+          ? subcategoryDataFromTop!['category'] as Map<String, dynamic>
+          : null;
+      final accountTypeDataFromTop =
+          categoryDataFromTop?['accountType'] is Map<String, dynamic>
+          ? categoryDataFromTop!['accountType'] as Map<String, dynamic>
+          : null;
 
       return Transaction(
-        id: json['id'] as String? ?? '', // Backend should always provide ID
-        description: json['description'] as String? ?? '',
-        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+        id:
+            json['id'] as String? ??
+            (throw ArgumentError('Transaction ID is required')),
+        description:
+            json['description'] as String? ??
+            (throw ArgumentError('Transaction description is required')),
+        amount:
+            (json['amount'] as num?)?.toDouble() ??
+            (throw ArgumentError('Transaction amount is required')),
         date: DateTime.parse(
-          json['date'] as String? ?? DateTime.now().toIso8601String(),
+          json['date'] as String? ??
+              (throw ArgumentError('Transaction date is required')),
         ).toLocal(),
         subcategoryId:
             json['subcategoryId'] as String? ??
-            subcategoryData?['id'] as String? ??
-            '',
+            subcategoryDataFromTop?['id'] as String? ??
+            (throw ArgumentError('Transaction subcategoryId is required')),
         isBookmarked: json['isBookmarked'] as bool? ?? false,
         userId: json['userId'] as String?,
-        subcategoryName: subcategoryData?['name'] as String?,
-        categoryId: categoryData?['id'] as String?,
-        categoryName: categoryData?['name'] as String?,
-        accountTypeName: accountTypeData?['name'] as String?,
+        subcategoryName:
+            json['subcategoryName'] as String? ??
+            subcategoryDataFromTop?['name'] as String?,
+        categoryId:
+            json['categoryId'] as String? ??
+            categoryDataFromTop?['id'] as String?,
+        categoryName:
+            json['categoryName'] as String? ??
+            categoryDataFromTop?['name'] as String?,
+        accountTypeId:
+            json['accountTypeId'] as String? ??
+            accountTypeDataFromTop?['id'] as String?,
+        accountTypeName:
+            json['accountTypeName'] as String? ??
+            accountTypeDataFromTop?['name'] as String?,
         isLocal: markLocal || (json['isLocal'] as bool? ?? false),
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'] as String).toLocal()
+            : null,
+        updatedAt: json['updatedAt'] != null
+            ? DateTime.parse(json['updatedAt'] as String).toLocal()
+            : null,
       );
-    } catch (e) {
+    } catch (e, s) {
       foundation.debugPrint(
-        'Error parsing Transaction from JSON: $json. Error: $e',
+        'Error parsing Transaction from JSON: $json. Error: $e\nStack: $s',
       );
-      // Fallback or rethrow
-      throw ArgumentError('Invalid Transaction JSON structure: $e');
+      rethrow; // Rethrow to signal parsing failure
     }
   }
-  final String id; // Backend UUID or local temporary ID for offline
+
+  final String id;
   final String description;
   final double amount;
   final DateTime date;
-  final String subcategoryId; // Foreign key
+  final String subcategoryId;
   final bool isBookmarked;
-  final String? userId; // Optional, backend infers from token
+  final String? userId;
 
-  // Denormalized/derived fields for easy display, populated from nested subcategory object
   final String? subcategoryName;
   final String? categoryId;
   final String? categoryName;
-  final String? accountTypeName; // e.g., "Pemasukan", "Pengeluaran"
+  final String? accountTypeId; // << Add this
+  final String? accountTypeName;
 
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final bool isLocal;
 
+  // For sending to backend (create/update)
   Map<String, dynamic> toJson() {
-    // For sending to backend (create/update)
     final data = <String, dynamic>{
       'description': description,
       'amount': amount,
-      'date': date.toUtc().toIso8601String(),
-      'subcategoryId': subcategoryId, // Backend expects this ID
+      'date': date.toUtc().toIso8601String(), // Send UTC to backend
+      'subcategoryId': subcategoryId,
       'isBookmarked': isBookmarked,
-      // userId is usually not sent, inferred from token by backend
     };
+    // Only include backend ID for updates (if it's not a local_ ID)
     if (id.isNotEmpty && !id.startsWith('local_')) {
-      // Only include backend ID for updates
       data['id'] = id;
     }
     return data;
   }
 
+  // For storing in Hive, includes all fields, including denormalized ones and isLocal
   Map<String, dynamic> toJsonForCache() {
-    // For storing in Hive, includes all fields
     return {
       'id': id,
       'description': description,
       'amount': amount,
-      'date': date.toUtc().toIso8601String(),
+      'date': date
+          .toUtc()
+          .toIso8601String(), // Store UTC in cache for consistency
       'subcategoryId': subcategoryId,
       'isBookmarked': isBookmarked,
       'userId': userId,
-      // Store denormalized fields in cache for faster offline display
-      'subcategory': subcategoryName != null
-          ? {
-              'id': subcategoryId,
-              'name': subcategoryName,
-              'category': categoryName != null
-                  ? {
-                      'id': categoryId,
-                      'name': categoryName,
-                      'accountType': accountTypeName != null
-                          ? {'name': accountTypeName}
-                          : null,
-                    }
-                  : null,
-            }
-          : null,
+      // Store denormalized fields derived from the full subcategory object if available
+      // This structure helps in offline display without needing to join hierarchy data
+      // 'subcategoryName': subcategoryName,
+      // 'categoryId': categoryId,
+      // 'categoryName': categoryName,
+      // 'accountTypeId': accountTypeId, // << Add this
+      // 'accountTypeName': accountTypeName,
+      // Explicitly save the nested structure if you have it fully populated
+      // and want to reconstruct it perfectly from cache.
+      // Otherwise, relying on the flat denormalized fields above is simpler for cache.
+      'subcategory': {
+        'id': subcategoryId,
+        'name': subcategoryName,
+        'category': categoryId != null
+            ? {
+                'id': categoryId,
+                'name': categoryName,
+                'accountType': accountTypeName != null
+                    ? {
+                        // 'id': accountTypeId, // if you have accountTypeId
+                        'name': accountTypeName,
+                      }
+                    : null,
+              }
+            : null,
+      },
+      'createdAt': createdAt?.toUtc().toIso8601String(),
+      'updatedAt': updatedAt?.toUtc().toIso8601String(),
       'isLocal': isLocal,
     };
   }
@@ -212,8 +260,11 @@ class Transaction extends Equatable { // Client-side flag for offline/pending sy
     String? subcategoryName,
     String? categoryId,
     String? categoryName,
+    String? accountTypeId,
     String? accountTypeName,
     bool? isLocal,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -226,8 +277,11 @@ class Transaction extends Equatable { // Client-side flag for offline/pending sy
       subcategoryName: subcategoryName ?? this.subcategoryName,
       categoryId: categoryId ?? this.categoryId,
       categoryName: categoryName ?? this.categoryName,
+      accountTypeId: accountTypeId ?? this.accountTypeId,
       accountTypeName: accountTypeName ?? this.accountTypeName,
       isLocal: isLocal ?? this.isLocal,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -243,7 +297,10 @@ class Transaction extends Equatable { // Client-side flag for offline/pending sy
     subcategoryName,
     categoryId,
     categoryName,
+    accountTypeId,
     accountTypeName,
     isLocal,
+    createdAt,
+    updatedAt,
   ];
 }

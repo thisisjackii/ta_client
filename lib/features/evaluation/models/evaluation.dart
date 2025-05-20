@@ -1,5 +1,7 @@
 // lib/features/evaluation/models/evaluation.dart
 
+enum EvaluationStatusModel { ideal, notIdeal, incomplete }
+
 // Define the ConceptualComponentValue model if not already defined elsewhere
 class ConceptualComponentValue {
   ConceptualComponentValue({required this.name, required this.value});
@@ -20,7 +22,11 @@ class Evaluation {
     required this.id, // This will now be the backend Ratio.id (UUID) when online
     required this.title,
     required this.yourValue,
-    required this.isIdeal,
+
+    required this.status,
+    required this.calculatedAt,
+    this.periodId,
+    this.ratioId, // Optional: Store the client-side ratio ID ('0', '1'...)
     this.idealText,
     this.breakdown, // This will be List<ConceptualComponentValue>?
     this.backendRatioCode, // Optional: Store the backend's code for the ratio
@@ -35,7 +41,11 @@ class Evaluation {
       id: json['id'] as String, // Or ratioId
       title: json['title'] as String,
       yourValue: (json['yourValue'] as num).toDouble(),
-      isIdeal: json['isIdeal'] as bool,
+
+      status: EvaluationStatusModel.values.firstWhere(
+        (e) => e.toString() == 'EvaluationStatusModel.${json['status']}',
+      ),
+      calculatedAt: DateTime.parse(json['calculatedAt'] as String).toLocal(),
       idealText: json['idealText'] as String?,
       backendRatioCode: json['backendRatioCode'] as String?,
       backendEvaluationResultId: json['backendEvaluationResultId'] as String?,
@@ -50,17 +60,21 @@ class Evaluation {
   id; // Represents Ratio ID (from backend) or client-side def.id ('0', '1'...)
   final String? backendRatioCode;
   final String? backendEvaluationResultId;
+  final String? ratioId;
+  final String? periodId;
   final String title;
+  final EvaluationStatusModel status;
   final double yourValue;
-  final bool isIdeal;
+
   final String? idealText;
   final List<ConceptualComponentValue>? breakdown; // Updated type
+  final DateTime calculatedAt;
 
   Map<String, dynamic> toJson() => {
     'id': id, // or backendRatioId if that's what you need to send
     'title': title,
     'yourValue': yourValue,
-    'isIdeal': isIdeal,
+
     if (idealText != null) 'idealText': idealText,
     if (backendRatioCode != null) 'backendRatioCode': backendRatioCode,
     if (backendEvaluationResultId != null)

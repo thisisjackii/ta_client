@@ -21,11 +21,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> with RouteAware {
   int _currentTab = 0;
   final ValueNotifier<bool> isSelectionMode = ValueNotifier(false);
-
-  // Track the selected month-year.
   DateTime selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
-
-  // Store filter criteria from the filter form.
   Map<String, dynamic>? filterCriteria;
 
   @override
@@ -37,14 +33,14 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
         selectedMonth: selectedMonth,
         filterCriteria: filterCriteria,
         onMonthChanged: updateSelectedMonth,
-        onFilterChanged: updateFilterCriteria, // Pass filter criteria upward.
+        onFilterChanged: updateFilterCriteria,
         onShowDoubleEntryRecap: () {
-          final allItems = context.read<DashboardBloc>().state;
-          if (allItems is DashboardLoaded) {
+          final dashboardState = context.read<DashboardBloc>().state;
+          if (dashboardState is DashboardLoaded) {
             Navigator.pushNamed(
               context,
               Routes.doubleEntryRecapPage,
-              arguments: allItems.items,
+              arguments: dashboardState.items,
             );
           }
         },
@@ -52,16 +48,38 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
       body: BlocConsumer<DashboardBloc, DashboardState>(
         listener: (context, state) {
           if (state is DashboardUnauthenticated) {
-            Navigator.pushReplacementNamed(context, Routes.login);
+            // The Dio interceptor + AuthState should handle actual logout and token clearing.
+            // This listener just reacts to navigate.
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              Routes.login,
+              (route) => false,
+            );
+          }
+          // Potentially show snackbar for state.isSyncing if DashboardLoading contains it
+          if (state is DashboardLoading && state.isSyncing) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sinkronisasi data...'),
+                duration: Duration(seconds: 2),
+              ),
+            );
           }
         },
         builder: (context, state) {
-          if (state is DashboardLoading) {
+          if (state is DashboardLoading &&
+              state.items.isEmpty &&
+              !state.isSyncing) {
+            // Only show full loading if no items and not just syncing
             return const Center(child: CircularProgressIndicator());
-          } else if (state is DashboardLoaded) {
-            final filteredItems = _filterAndSortTransactions(state.items);
+          } else if (state is DashboardLoaded ||
+              (state is DashboardLoading && state.items.isNotEmpty)) {
+            // Show content if loaded OR if loading but we have previous items
+            final itemsToDisplay = state is DashboardLoaded
+                ? state.items
+                : (state as DashboardLoading).items;
+            final filteredItems = _filterAndSortTransactions(itemsToDisplay);
 
-            // 2) Compute totals off that
             final totalPemasukan = filteredItems
                 .where((t) => t.accountTypeName?.toLowerCase() == 'pemasukan')
                 .fold<double>(0, (sum, t) => sum + t.amount);
@@ -74,20 +92,53 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
               totalPemasukan - totalPengeluaran,
             );
 
-            return Column(
-              children: [
-                TransactionTotalsSummary(
-                  pemasukan: formattedPemasukan,
-                  pengeluaran: formattedPengeluaran,
-                  total: formattedAkhir,
-                ),
-                Expanded(
-                  child: TransactionGroupedItemsWidget(
-                    items: filteredItems,
-                    isSelectionMode: isSelectionMode,
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<DashboardBloc>().add(
+                  DashboardForceRefreshRequested(),
+                );
+              },
+              child: Column(
+                children: [
+                  TransactionTotalsSummary(
+                    pemasukan: formattedPemasukan,
+                    pengeluaran: formattedPengeluaran,
+                    total: formattedAkhir,
                   ),
-                ),
-              ],
+                  if (state is DashboardLoading && state.isSyncing)
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Sinkronisasi...',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Expanded(
+                    child: filteredItems.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Tidak ada transaksi untuk periode ini.',
+                              style: TextStyle(color: Colors.grey[700]),
+                            ),
+                          )
+                        : TransactionGroupedItemsWidget(
+                            items: filteredItems,
+                            isSelectionMode: isSelectionMode,
+                          ),
+                  ),
+                ],
+              ),
             );
           } else if (state is DashboardError) {
             return Center(
@@ -103,29 +154,40 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                     onPressed: () => context.read<DashboardBloc>().add(
                       DashboardLoadRequested(),
                     ),
-                    child: const Text('Retry'),
+                    child: const Text('Coba Lagi'),
                   ),
                 ],
               ),
             );
-          } else {
-            return const Center(child: Text('Unexpected state'));
           }
+          return const Center(
+            child: Text('Mohon tunggu...'),
+          ); // Fallback for other initial states
         },
       ),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'Add',
+        tooltip: 'Tambah Transaksi',
         onPressed: () async {
           final result = await Navigator.pushNamed(
             context,
             Routes.createTransaction,
           );
-          if (context.mounted) {
+          if (mounted) {
+            // Check if widget is still in the tree
             if (result is Transaction) {
-              context.read<DashboardBloc>().add(DashboardItemAdded(result));
-            } else {
-              context.read<DashboardBloc>().add(DashboardLoadRequested());
+              // If TransactionBloc successfully created a transaction, it emits new state.
+              // DashboardBloc should listen to TransactionBloc or be updated by a shared service/event.
+              // For direct update:
+              context.read<DashboardBloc>().add(
+                DashboardTransactionCreated(result),
+              );
+            } else if (result == true) {
+              // Or some other signal that a change happened
+              context.read<DashboardBloc>().add(
+                DashboardForceRefreshRequested(),
+              ); // General refresh
             }
+            // No 'else' needed if no specific action for other results
           }
         },
         shape: const CircleBorder(),
@@ -140,85 +202,117 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     );
   }
 
-  // Callback to update filter criteria (received from CustomAppBar).
   void updateFilterCriteria(Map<String, dynamic>? criteria) {
     setState(() {
       filterCriteria = criteria;
-
       final startDate = criteria?['startDate'] as DateTime?;
-      final endDate = criteria?['endDate'] as DateTime?;
-
+      // final endDate = criteria?['endDate'] as DateTime?; // Not directly used for selectedMonth here
       if (startDate != null) {
-        // prefer startDate’s month
         selectedMonth = DateTime(startDate.year, startDate.month);
-      } else if (endDate != null) {
-        // fallback to endDate’s month
-        selectedMonth = DateTime(endDate.year, endDate.month);
+      }
+      // No explicit reload here, filtering happens in _filterAndSortTransactions
+    });
+  }
+
+  void updateSelectedMonth(DateTime newMonth) {
+    setState(() {
+      selectedMonth = DateTime(newMonth.year, newMonth.month);
+      // Clear date range from filterCriteria if month is changed via arrows/picker
+      // to avoid conflicting filters, unless you want to keep them.
+      if (filterCriteria != null) {
+        filterCriteria!.remove('startDate');
+        filterCriteria!.remove('endDate');
       }
     });
   }
 
-  // Callback to update the selected month.
-  void updateSelectedMonth(DateTime newMonth) {
-    setState(() {
-      selectedMonth = DateTime(newMonth.year, newMonth.month);
-    });
-  }
-
-  // Filter and sort transactions using the selected month and filter criteria.
   List<Transaction> _filterAndSortTransactions(List<Transaction> transactions) {
-    final filtered =
-        transactions.where((t) {
-            // Apply the month filter.
-            final monthMatch =
-                t.date.year == selectedMonth.year &&
-                t.date.month == selectedMonth.month;
+    return transactions.where((t) {
+      var matches = true;
 
-            // Apply parent category filter.
-            final parentMatch =
-                (filterCriteria == null || filterCriteria!['parent'] == null) ||
-                t.accountTypeName?.toLowerCase() ==
-                    filterCriteria?['parent'].toLowerCase();
+      // Date Range from filterCriteria takes precedence
+      final filterStartDate = filterCriteria?['startDate'] as DateTime?;
+      final filterEndDate = filterCriteria?['endDate'] as DateTime?;
 
-            // Apply child category filter.
-            // (Assuming your Transaction model has a property 'category')
-            final childMatch =
-                (filterCriteria == null || filterCriteria!['child'] == null) ||
-                t.categoryName == filterCriteria!['child'];
+      if (filterStartDate != null && filterEndDate != null) {
+        matches =
+            matches &&
+            !t.date.isBefore(filterStartDate) &&
+            !t.date.isAfter(
+              filterEndDate
+                  .add(const Duration(days: 1))
+                  .subtract(const Duration(microseconds: 1)),
+            );
+      } else if (filterStartDate != null) {
+        matches = matches && !t.date.isBefore(filterStartDate);
+      } else if (filterEndDate != null) {
+        matches =
+            matches &&
+            !t.date.isAfter(
+              filterEndDate
+                  .add(const Duration(days: 1))
+                  .subtract(const Duration(microseconds: 1)),
+            );
+      } else {
+        // Fallback to selectedMonth filter if no date range from filterCriteria
+        matches =
+            matches &&
+            t.date.year == selectedMonth.year &&
+            t.date.month == selectedMonth.month;
+      }
 
-            // Apply date range filter.
-            final startDate = filterCriteria?['startDate'] as DateTime?;
-            final endDate = filterCriteria?['endDate'] as DateTime?;
-            final bookmarkedOnly =
-                filterCriteria?['bookmarked'] as bool? ?? false;
-            final bookmarkMatch = !bookmarkedOnly || t.isBookmarked;
+      if (!matches) return false; // Early exit if date doesn't match
 
-            var dateMatch = true;
-            if (startDate != null && endDate != null) {
-              // both bounds
-              dateMatch =
-                  !t.date.isBefore(startDate) && !t.date.isAfter(endDate);
-            } else if (startDate != null) {
-              // only start bound
-              dateMatch = !t.date.isBefore(startDate);
-            } else if (endDate != null) {
-              // only end bound
-              dateMatch = !t.date.isAfter(endDate);
-            }
-            return monthMatch &&
-                parentMatch &&
-                childMatch &&
-                bookmarkMatch &&
-                dateMatch;
-          }).toList()
-          // Sort descending: newest first.
-          ..sort((a, b) => b.date.compareTo(a.date));
-    return filtered;
+      final parentCategoryFilter = filterCriteria?['parent'] as String?;
+      if (parentCategoryFilter != null && parentCategoryFilter.isNotEmpty) {
+        matches =
+            matches &&
+            t.accountTypeName?.toLowerCase() ==
+                parentCategoryFilter.toLowerCase();
+      }
+      if (!matches) return false;
+
+      final childCategoryFilter = filterCriteria?['child'] as String?;
+      if (childCategoryFilter != null && childCategoryFilter.isNotEmpty) {
+        matches =
+            matches &&
+            t.categoryName?.toLowerCase() == childCategoryFilter.toLowerCase();
+        // Note: DFD shows 'child' as Kategori, but your code implies 'categoryName' is the Kategori,
+        // and 'accountTypeName' is the parent (Tipe Akun). This seems consistent.
+      }
+      if (!matches) return false;
+
+      final bookmarkedOnly = filterCriteria?['bookmarked'] as bool? ?? false;
+      if (bookmarkedOnly) {
+        matches = matches && t.isBookmarked;
+      }
+      return matches;
+    }).toList()..sort((a, b) => b.date.compareTo(a.date));
   }
 
   void _onTabSelected(int index) {
-    setState(() {
-      _currentTab = index;
-    });
+    if (_currentTab == index && index == 0) {
+      // If already on Home and Home is selected
+      context.read<DashboardBloc>().add(
+        DashboardSyncPendingRequested(),
+      ); // Trigger sync
+    } else {
+      setState(() {
+        _currentTab = index;
+      });
+    }
+    // Navigation logic for other tabs
+    if (index != 0) {
+      // Prevent re-navigating to dashboard if already on it
+      switch (index) {
+        // case 0: Navigator.pushReplacementNamed(context, Routes.dashboard); break; // Already handled by setstate/rebuild
+        case 1:
+          Navigator.pushNamed(context, Routes.evaluationIntro);
+        case 2:
+          Navigator.pushNamed(context, Routes.budgetingIntro);
+        case 3:
+          Navigator.pushNamed(context, Routes.profilePage);
+      }
+    }
   }
 }

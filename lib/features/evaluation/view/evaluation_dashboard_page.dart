@@ -9,6 +9,7 @@ import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_event.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
+import 'package:ta_client/features/evaluation/models/evaluation.dart';
 
 class EvaluationDashboardPage extends StatefulWidget {
   const EvaluationDashboardPage({super.key});
@@ -24,11 +25,11 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
   void initState() {
     super.initState();
     // if we already have dates, automatically load
-    final bloc = context.read<EvaluationBloc>();
-    if (bloc.state.startDate != null && bloc.state.endDate != null) {
-      debugPrint('▶️ initState: dispatching LoadDashboard');
-      bloc.add(const EvaluationLoadDashboardRequested());
-    }
+    // final bloc = context.read<EvaluationBloc>();
+    // if (bloc.state.startDate != null && bloc.state.endDate != null) {
+    // debugPrint('▶️ initState: dispatching LoadDashboard');
+    // bloc.add(const EvaluationLoadDashboardRequested(periodId: null));
+    // }
   }
 
   @override
@@ -169,14 +170,17 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                                           Text(
                                             '${item.id == '0' ? formatMonths(item.yourValue) : formatPercent(item.yourValue)}'
                                             ' ${item.id != '6'
-                                                ? item.isIdeal
+                                                ? item.status == EvaluationStatusModel.ideal
                                                       ? '(Ideal)'
                                                       : '(Not Ideal)'
                                                 : ''}',
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: item.isIdeal
+                                              color:
+                                                  item.status ==
+                                                      EvaluationStatusModel
+                                                          .ideal
                                                   ? Colors.green[700]
                                                   : Colors.red[700],
                                             ),

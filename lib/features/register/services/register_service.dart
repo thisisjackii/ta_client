@@ -1,105 +1,124 @@
 // lib/features/register/services/register_service.dart
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-// Import Occupation model if you want to fetch occupations for dropdown
-// import 'package:ta_client/features/register/models/occupation_model.dart';
 
 class RegisterException implements Exception {
-  RegisterException(this.message);
+  RegisterException(this.message, {this.statusCode});
   final String message;
+  final int? statusCode;
   @override
-  String toString() => message;
+  String toString() => 'RegisterException: $message (Status: $statusCode)';
 }
 
 class RegisterService {
-  RegisterService({required String baseUrl}) : _baseUrl = baseUrl;
-  final String _baseUrl;
-  final http.Client _client =
-      http.Client(); // Plain client for public register endpoint
+  RegisterService({required Dio dio}) : _dio = dio;
+  final Dio _dio;
 
-  // Method to fetch occupations for the dropdown
   Future<List<Map<String, String>>> fetchOccupations() async {
-    // Returns List<{id, name}>
-    final uri = Uri.parse(
-      '$_baseUrl/occupations',
-    ); // Assuming a GET /occupations endpoint
-    debugPrint('[RegisterService-API] GET $uri');
+    const endpoint = '/occupations';
+    debugPrint('[RegisterService-DIO] GET $endpoint for occupations');
     try {
-      final response = await _client.get(uri);
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body) as List<dynamic>;
+      final response = await _dio.get<dynamic>(endpoint);
+      // Assuming backend for /occupations returns a direct list of {id, name}
+      // If it's wrapped like { success: true, data: [] }, adjust accordingly.
+      // For now, let's assume it's wrapped as this is common in your backend.
+      if (response.statusCode == 200 &&
+          response.data is Map<String, dynamic> &&
+          response.data['data'] is List) {
+        final data = response.data['data'] as List<dynamic>;
         return data.map((occ) {
           final item = occ as Map<String, dynamic>;
-          return {
-            // Directly return the map
-            'id': item['id'] as String,
-            'name': item['name'] as String,
-          };
+          return {'id': item['id'] as String, 'name': item['name'] as String};
+        }).toList();
+      } else if (response.statusCode == 200 && response.data is List) {
+        // Fallback for direct list
+        final data = response.data as List<dynamic>;
+        return data.map((occ) {
+          final item = occ as Map<String, dynamic>;
+          return {'id': item['id'] as String, 'name': item['name'] as String};
         }).toList();
       } else {
         throw RegisterException(
-          'Failed to load occupations: ${response.statusCode}',
+          response.data?['message']?.toString() ??
+              'Failed to load occupations from server.',
+          statusCode: response.statusCode,
         );
       }
+    } on DioException catch (e) {
+      debugPrint(
+        '[RegisterService-DIO] DioException fetching occupations: ${e.response?.data ?? e.message}',
+      );
+      throw RegisterException(
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error fetching occupations.',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e) {
-      throw RegisterException('Error fetching occupations: $e');
+      debugPrint(
+        '[RegisterService-DIO] Unexpected error fetching occupations: $e',
+      );
+      if (e is RegisterException) rethrow;
+      throw RegisterException(
+        'An unexpected error occurred while fetching occupations: ${e}',
+      );
     }
   }
 
-  Future<void> register({
-    // This is the actual account creation call
+  Future<Map<String, dynamic>> register({
     required String name,
     required String username,
     required String email,
     required String password,
     required String address,
     required DateTime birthdate,
-    required String occupationId, // Expects occupationId
+    required String occupationId,
   }) async {
-    final uri = Uri.parse('$_baseUrl/users/register'); // Backend endpoint
+    const endpoint = '/users/register';
     final requestBody = {
       'name': name,
       'username': username,
       'email': email,
       'password': password,
       'address': address,
-      'birthdate': birthdate.toIso8601String(),
-      'occupationId': occupationId, // Send ID to backend
+      'birthdate': birthdate.toUtc().toIso8601String(),
+      'occupationId': occupationId,
     };
-    debugPrint('[RegisterService-API] POST $uri with body: $requestBody');
-
+    debugPrint('[RegisterService-DIO] POST $endpoint with body: $requestBody');
     try {
-      final response = await _client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(requestBody),
-      );
-
-      if (response.statusCode == 201) {
-        debugPrint('[RegisterService-API] Registration successful for $email');
-        // Optionally parse and return the created user if backend sends it back
-        // final body = jsonDecode(response.body) as Map<String, dynamic>;
-        // return User.fromJson(body['user']); // Assuming User model exists
-        return;
+      final response = await _dio.post<dynamic>(endpoint, data: requestBody);
+      if (response.statusCode == 201 &&
+          response.data is Map<String, dynamic> &&
+          response.data['success'] == true &&
+          response.data['user'] is Map<String, dynamic>) {
+        debugPrint(
+          '[RegisterService-DIO] Registration successful for $email. Response Data: ${response.data}',
+        );
+        return response.data['user'] as Map<String, dynamic>;
       } else {
-        String errorMessage = 'Registration failed.';
-        try {
-          final body = json.decode(response.body) as Map<String, dynamic>;
-          errorMessage =
-              body['message'] as String? ??
-              'Registration failed with status ${response.statusCode}.';
-        } catch (_) {
-          errorMessage =
-              'Registration failed with status ${response.statusCode}. Response: ${response.body}';
-        }
-        throw RegisterException(errorMessage);
+        throw RegisterException(
+          response.data?['message']?.toString() ??
+              'Registration failed on server.',
+          statusCode: response.statusCode,
+        );
       }
+    } on DioException catch (e) {
+      debugPrint(
+        '[RegisterService-DIO] DioException during registration: ${e.response?.data ?? e.message}',
+      );
+      throw RegisterException(
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error during registration.',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e) {
-      debugPrint('[RegisterService-API] Error during registration: $e');
+      debugPrint(
+        '[RegisterService-DIO] Unexpected error during registration: $e',
+      );
       if (e is RegisterException) rethrow;
       throw RegisterException(
-        'Could not connect to register. Please check your network and try again.',
+        'An unexpected error occurred during registration: ${e}',
       );
     }
   }

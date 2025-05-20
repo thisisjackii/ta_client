@@ -7,7 +7,6 @@ import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/view/widgets/transaction_form.dart';
-import 'package:ta_client/features/transaction/view/widgets/transaction_form_mode.dart';
 
 class ViewTransactionPage extends StatelessWidget {
   const ViewTransactionPage({required this.transaction, super.key});
@@ -57,7 +56,6 @@ class ViewTransactionPage extends StatelessWidget {
             ],
           ),
           body: TransactionForm(
-            mode: TransactionFormMode.view,
             transaction: currentTransaction,
             onSubmit: (updatedTransaction) {
               context.read<TransactionBloc>().add(

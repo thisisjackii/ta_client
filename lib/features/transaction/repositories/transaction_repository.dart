@@ -1,94 +1,99 @@
 // lib/features/transaction/repositories/transaction_repository.dart
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ta_client/core/services/connectivity_service.dart';
 import 'package:ta_client/core/services/service_locator.dart';
+import 'package:ta_client/core/services/hive_service.dart'; // Import HiveService
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart';
-import 'package:uuid/uuid.dart'; // For generating local IDs
+import 'package:uuid/uuid.dart';
+
+enum OfflineOperationType { create, update, delete }
 
 class TransactionRepository {
-  TransactionRepository({required this.transactionService}) {
-    _connectivityService = sl<ConnectivityService>();
-    _initHiveBoxes();
-  }
-
+  TransactionRepository({required this.transactionService})
+    : _connectivityService = sl<ConnectivityService>(),
+      _hiveService = sl<HiveService>();
   final TransactionService transactionService;
-  late ConnectivityService _connectivityService;
+  final ConnectivityService _connectivityService;
+  final HiveService _hiveService;
   static const Uuid _uuid = Uuid();
 
-  static const String _transactionListBox =
-      'transactionListCache_v2'; // Key for the list of all transactions
-  static const String _pendingTransactionsBox =
-      'pendingTransactionsQueue_v2'; // For CUD operations
+  static const String transactionListBoxName = 'transactionListCache_v2';
+  static const String transactionListKey = 'all_transactions';
+  static const String pendingTransactionsBoxName =
+      'pendingTransactionsQueue_v2';
 
-  Future<void> _initHiveBoxes() async {
-    if (!Hive.isBoxOpen(_transactionListBox)) {
-      await Hive.openBox<String>(_transactionListBox);
-    }
-    if (!Hive.isBoxOpen(_pendingTransactionsBox)) {
-      await Hive.openBox<Map<dynamic, dynamic>>(
-        _pendingTransactionsBox,
-      ); // Stores Maps
-    }
-  }
-
-  // --- Caching general transaction list ---
-  Future<void> _cacheTransactionList(List<Transaction> transactions) async {
-    final box = Hive.box<String>(_transactionListBox);
-    // Store the entire list as a single JSON string under a known key
-    final jsonList = transactions.map((t) => t.toJsonForCache()).toList();
-    await box.put('all_transactions', json.encode(jsonList));
-    debugPrint(
-      '[TransactionRepository] Cached ${transactions.length} transactions.',
+  Future<List<Transaction>> getCachedTransactionList() async {
+    final listJson = await _hiveService.getJsonString(
+      transactionListBoxName,
+      transactionListKey,
     );
-  }
-
-  List<Transaction>? getCachedTransactionList() {
-    final box = Hive.box<String>(_transactionListBox);
-    final data = box.get('all_transactions');
-    if (data != null) {
+    if (listJson != null && listJson.isNotEmpty) {
       try {
-        final decodedList = json.decode(data) as List<dynamic>;
+        final decodedList = json.decode(listJson) as List<dynamic>;
         return decodedList
             .map(
               (jsonItem) => Transaction.fromJson(
                 jsonItem as Map<String, dynamic>,
-                markLocal: (jsonItem['isLocal'] ?? false) == true,
+                // markLocal is implicit in the 'isLocal' field from toJsonForCache
               ),
             )
             .toList();
       } catch (e) {
         debugPrint(
-          '[TransactionRepository] Error deserializing cached transaction list: $e. Clearing cache.',
+          '[TransactionRepository] Error deserializing cached transaction list: $e. Returning empty and clearing corrupted cache.',
         );
-        box.delete('all_transactions'); // Clear corrupted cache
-        return null;
+        await _hiveService.delete(transactionListBoxName, transactionListKey);
+        return [];
       }
     }
-    return null;
+    return [];
   }
 
-  // --- Pending Operations Queue ---
-  Future<void> _queuePendingOperation(
-    String operationType,
-    Transaction transaction,
+  Future<void> _saveDecodedTransactionListToCache(
+    List<Transaction> transactions,
   ) async {
-    final box = Hive.box<Map<dynamic, dynamic>>(_pendingTransactionsBox);
-    // Use transaction.id (even local_id) as key to allow overwriting if multiple offline edits on same item
-    await box.put(transaction.id, {
-      'operationType': operationType,
-      'transactionData': transaction
-          .toJsonForCache(), // Store full data for reconstruction
-      'timestamp': DateTime.now().toIso8601String(),
-    });
-    debugPrint(
-      '[TransactionRepository] Queued pending $operationType for transaction ${transaction.id}',
+    transactions.sort((a, b) => b.date.compareTo(a.date));
+    await _hiveService.putListAsJsonStringKey<Transaction>(
+      transactionListBoxName,
+      transactionListKey,
+      transactions,
+      (transaction) => transaction.toJsonForCache(),
     );
   }
 
-  // --- Main Data Operations ---
+  Future<void> _queuePendingOperation(
+    OfflineOperationType operationType,
+    Transaction
+    transaction, // This transaction should have its isLocal flag set appropriately
+  ) async {
+    // Use a consistent key for pending ops related to a specific transaction ID,
+    // especially for updates/deletes to avoid multiple pending ops for the same item.
+    // For creates with local_ ID, the local_ ID itself can be part of the key.
+    final operationKeySuffix = transaction.id.startsWith('local_')
+        ? transaction
+              .id // Use local ID for create/update of local
+        : 'backend_${transaction.id}'; // Use backend ID for update/delete of synced
+
+    final operationKey = 'op_${operationType.name}_$operationKeySuffix';
+
+    final operationData = <String, dynamic>{
+      'operationType': operationType.toString(),
+      'transactionData': transaction
+          .toJsonForCache(), // Ensure isLocal is correctly set in transaction before calling this
+      'timestamp': DateTime.now().toIso8601String(),
+      'originalTransactionId': transaction.id, // Store the ID used for queueing
+    };
+    await _hiveService.putJsonString(
+      pendingTransactionsBoxName,
+      operationKey, // This allows overwriting if multiple offline updates happen for the same item
+      json.encode(operationData),
+    );
+    debugPrint(
+      '[TransactionRepository] Queued $operationType for tx id ${transaction.id} with key $operationKey',
+    );
+  }
 
   Future<List<Transaction>> fetchTransactions({
     bool forceRefresh = false,
@@ -100,308 +105,377 @@ class TransactionRepository {
       );
       try {
         final transactions = await transactionService.fetchTransactions();
-        await _cacheTransactionList(transactions);
+        await _saveDecodedTransactionListToCache(
+          transactions.map((t) => t.copyWith(isLocal: false)).toList(),
+        );
         return transactions;
       } catch (e) {
         debugPrint(
           '[TransactionRepository] Online fetch failed during force refresh: $e. Returning cached if available.',
         );
-        return getCachedTransactionList() ?? []; // Fallback to cache on error
+        return getCachedTransactionList();
       }
     } else if (isOnline) {
-      // Online but no force refresh, try cache first for speed
-      final cached = getCachedTransactionList();
-      if (cached != null && cached.isNotEmpty) {
+      final cached = await getCachedTransactionList();
+      if (cached.isNotEmpty) {
         debugPrint(
-          '[TransactionRepository] Online: Returning cached transactions.',
+          '[TransactionRepository] Online: Returning cached transactions, with background refresh.',
         );
-        // Optionally, trigger a background sync/fetch here without blocking UI
-        // transactionService.fetchTransactions().then(_cacheTransactionList).catchError((_){});
+        // Fire and forget background refresh
+        transactionService
+            .fetchTransactions()
+            .then(
+              (freshTransactions) => _saveDecodedTransactionListToCache(
+                freshTransactions
+                    .map((t) => t.copyWith(isLocal: false))
+                    .toList(),
+              ),
+            )
+            .catchError(
+              (Object err) => debugPrint(
+                '[TransactionRepository] Background refresh failed: $err',
+              ),
+            );
         return cached;
       }
       debugPrint(
-        '[TransactionRepository] Online: Cache empty/invalid, fetching from service.',
+        '[TransactionRepository] Online: Cache empty, fetching from service.',
       );
       try {
         final transactions = await transactionService.fetchTransactions();
-        await _cacheTransactionList(transactions);
+        await _saveDecodedTransactionListToCache(
+          transactions.map((t) => t.copyWith(isLocal: false)).toList(),
+        );
         return transactions;
       } catch (e) {
         debugPrint('[TransactionRepository] Online fetch failed: $e.');
-        if (e is TransactionApiException && e.statusCode == 401) {
-          rethrow; // Propagate auth error
-        }
-        return []; // Return empty on other errors if no cache
+        if (e is TransactionApiException && e.statusCode == 401) rethrow;
+        return []; // Return empty list on other errors
       }
     } else {
-      // Offline
       debugPrint(
         '[TransactionRepository] Offline: Returning cached transactions.',
       );
-      return getCachedTransactionList() ?? [];
+      return getCachedTransactionList();
     }
   }
 
   Future<Transaction> createTransaction(Transaction transactionInput) async {
     final isOnline = await _connectivityService.isOnline;
-    // Assign a temporary local ID for offline tracking and optimistic UI updates
+    // Ensure it has a local ID if it's a new creation
     final localTransaction =
-        transactionInput.id.isEmpty || !transactionInput.id.startsWith('local_')
+        (transactionInput.id.isEmpty ||
+            !transactionInput.id.startsWith('local_'))
         ? transactionInput.copyWith(id: 'local_${_uuid.v4()}', isLocal: true)
-        : transactionInput.copyWith(isLocal: true);
+        : transactionInput.copyWith(isLocal: true); // Ensure isLocal is true
+
+    final currentCachedList = await getCachedTransactionList();
+    currentCachedList
+      ..removeWhere((t) => t.id == localTransaction.id)
+      ..add(localTransaction);
+    await _saveDecodedTransactionListToCache(currentCachedList);
 
     if (isOnline) {
       try {
         debugPrint(
-          '[TransactionRepository] Online: Creating transaction via service.',
+          '[TransactionRepository] Online: Creating transaction via service for local ID ${localTransaction.id}.',
         );
-        final createdTransaction = await transactionService.createTransaction(
-          localTransaction,
-        ); // Send local with subcategoryId
-        // Update cache after successful online creation
-        final currentCached = getCachedTransactionList() ?? [];
-        await _cacheTransactionList([...currentCached, createdTransaction]);
-        return createdTransaction;
+        final transactionDataForApi = localTransaction.copyWith(id: '');
+        final createdTransactionFromApi = await transactionService
+            .createTransaction(transactionDataForApi);
+
+        final updatedList =
+            await getCachedTransactionList(); // Re-fetch for atomicity
+        updatedList
+          ..removeWhere((t) => t.id == localTransaction.id)
+          ..add(createdTransactionFromApi.copyWith(isLocal: false));
+        await _saveDecodedTransactionListToCache(updatedList);
+
+        // If this local ID was somehow in the pending queue, attempt to remove its operation key
+        final pendingOpKey =
+            'op_${OfflineOperationType.create.name}_${localTransaction.id}';
+        await _hiveService.delete(pendingTransactionsBoxName, pendingOpKey);
+
+        return createdTransactionFromApi;
       } catch (e) {
-        debugPrint('[TransactionRepository] Online create failed, queuing: $e');
-        await _queuePendingOperation('create', localTransaction);
+        debugPrint(
+          '[TransactionRepository] Online create failed for local ID ${localTransaction.id}, queuing: $e',
+        );
+        await _queuePendingOperation(
+          OfflineOperationType.create,
+          localTransaction, // Queue the version with local_ ID and isLocal:true
+        );
         if (e is TransactionApiException && e.statusCode == 401) rethrow;
-        // For other errors, return the local optimistic version
-        return localTransaction; // Optimistic update for UI
+        return localTransaction;
       }
     } else {
-      // Offline
       debugPrint(
-        '[TransactionRepository] Offline: Queuing create transaction.',
+        '[TransactionRepository] Offline: Queuing create transaction for local ID ${localTransaction.id}.',
       );
-      await _queuePendingOperation('create', localTransaction);
-      // Optimistically update local cache for immediate UI feedback
-      final currentCached = getCachedTransactionList() ?? [];
-      await _cacheTransactionList([...currentCached, localTransaction]);
+      await _queuePendingOperation(
+        OfflineOperationType.create,
+        localTransaction,
+      );
       return localTransaction;
     }
   }
 
   Future<Transaction> updateTransaction(Transaction transaction) async {
     final isOnline = await _connectivityService.isOnline;
-    final transactionToUpdate = transaction.copyWith(
-      isLocal: true,
-    ); // Mark as local until synced
+    // Ensure isLocal is true for optimistic update / offline queueing
+    final transactionToProcess = transaction.copyWith(isLocal: true);
+
+    final currentCachedList = await getCachedTransactionList();
+    final index = currentCachedList.indexWhere(
+      (t) => t.id == transactionToProcess.id,
+    );
+    if (index != -1) {
+      currentCachedList[index] = transactionToProcess;
+    } else {
+      // This case (updating a non-existent item) should be rare if UI flows correctly
+      currentCachedList.add(transactionToProcess);
+    }
+    await _saveDecodedTransactionListToCache(currentCachedList);
 
     if (isOnline) {
       try {
-        // If the transaction.id is a 'local_' ID, it means it was created offline and not yet synced.
-        // We can't "update" it on the backend yet. It should be part of the create queue.
-        // If it's a real backend ID, then proceed with API update.
-        if (transaction.id.startsWith('local_')) {
+        // If it's an update to an offline-created, unsynced transaction
+        if (transactionToProcess.id.startsWith('local_')) {
           debugPrint(
-            '[TransactionRepository] Online: Queuing update for locally created (unsynced) transaction ${transaction.id}.',
+            '[TransactionRepository] Online: Queuing update for unsynced local transaction ${transactionToProcess.id}.',
           );
+          // The pending queue key for a local_ ID update should be distinct from its create op, or handled by sync logic
           await _queuePendingOperation(
-            'update',
-            transactionToUpdate,
-          ); // This effectively overwrites any pending 'create'
-          // Update cache optimistically
-          final currentCached = getCachedTransactionList() ?? [];
-          final index = currentCached.indexWhere((t) => t.id == transaction.id);
-          if (index != -1) {
-            currentCached[index] = transactionToUpdate;
-          } else {
-            currentCached.add(
-              transactionToUpdate,
-            ); // Should not happen if it was local
-          }
-          await _cacheTransactionList(currentCached);
-          return transactionToUpdate;
+            OfflineOperationType.update,
+            transactionToProcess,
+          );
+          return transactionToProcess;
         }
-
+        // It's an update to an already synced transaction
         debugPrint(
-          '[TransactionRepository] Online: Updating transaction ${transaction.id} via service.',
+          '[TransactionRepository] Online: Updating transaction ${transactionToProcess.id} via service.',
         );
-        final updatedTransaction = await transactionService.updateTransaction(
-          transaction,
+        final updatedTransactionFromApi = await transactionService
+            .updateTransaction(
+              transactionToProcess.copyWith(isLocal: false),
+            ); // Send isLocal:false version
+
+        final updatedList = await getCachedTransactionList();
+        final apiIndex = updatedList.indexWhere(
+          (t) => t.id == updatedTransactionFromApi.id,
         );
-        // Update cache
-        final currentCached = getCachedTransactionList() ?? [];
-        final index = currentCached.indexWhere(
-          (t) => t.id == updatedTransaction.id,
-        );
-        if (index != -1) {
-          currentCached[index] = updatedTransaction;
+        if (apiIndex != -1) {
+          updatedList[apiIndex] = updatedTransactionFromApi.copyWith(
+            isLocal: false,
+          );
         } else {
-          currentCached.add(updatedTransaction); // Should replace if ID matched
+          updatedList.add(updatedTransactionFromApi.copyWith(isLocal: false));
         }
-        await _cacheTransactionList(currentCached);
-        // Clear from pending queue if it was there for an update that failed previously
-        await Hive.box<Map<dynamic, dynamic>>(
-          _pendingTransactionsBox,
-        ).delete(updatedTransaction.id);
-        return updatedTransaction;
+        await _saveDecodedTransactionListToCache(updatedList);
+
+        // Remove pending operation for this backend ID if it existed
+        final pendingOpKey =
+            'op_${OfflineOperationType.update.name}_backend_${transactionToProcess.id}';
+        await _hiveService.delete(pendingTransactionsBoxName, pendingOpKey);
+        return updatedTransactionFromApi;
       } catch (e) {
         debugPrint(
-          '[TransactionRepository] Online update for ${transaction.id} failed, queuing: $e',
+          '[TransactionRepository] Online update for ${transactionToProcess.id} failed, queuing: $e',
         );
-        await _queuePendingOperation('update', transactionToUpdate);
+        await _queuePendingOperation(
+          OfflineOperationType.update,
+          transactionToProcess,
+        );
         if (e is TransactionApiException && e.statusCode == 401) rethrow;
-        return transactionToUpdate; // Optimistic UI
+        return transactionToProcess;
       }
     } else {
-      // Offline
       debugPrint(
-        '[TransactionRepository] Offline: Queuing update for transaction ${transaction.id}.',
+        '[TransactionRepository] Offline: Queuing update for transaction ${transactionToProcess.id}.',
       );
-      await _queuePendingOperation('update', transactionToUpdate);
-      // Optimistic cache update
-      final currentCached = getCachedTransactionList() ?? [];
-      final index = currentCached.indexWhere((t) => t.id == transaction.id);
-      if (index != -1) {
-        currentCached[index] = transactionToUpdate;
-      } else {
-        currentCached.add(
-          transactionToUpdate,
-        ); // If somehow not in cache but being updated offline
-      }
-      await _cacheTransactionList(currentCached);
-      return transactionToUpdate;
+      await _queuePendingOperation(
+        OfflineOperationType.update,
+        transactionToProcess,
+      );
+      return transactionToProcess;
     }
   }
 
   Future<void> deleteTransaction(String transactionId) async {
     final isOnline = await _connectivityService.isOnline;
+    final currentCachedList = await getCachedTransactionList();
+    Transaction? transactionToDeleteData;
+
+    final originalLength = currentCachedList.length;
+    currentCachedList.removeWhere((t) {
+      if (t.id == transactionId) {
+        transactionToDeleteData = t;
+        return true;
+      }
+      return false;
+    });
+
+    if (currentCachedList.length < originalLength) {
+      // Item was found and removed
+      await _saveDecodedTransactionListToCache(currentCachedList);
+    }
 
     if (isOnline) {
       try {
-        // If it's a local_id, it was never synced, so just remove from pending and cache.
+        final pendingOpKeyCreate =
+            'op_${OfflineOperationType.create.name}_$transactionId'; // For local_ IDs
+        final pendingOpKeyUpdate =
+            'op_${OfflineOperationType.update.name}_${transactionId.startsWith("local_") ? transactionId : "backend_$transactionId"}';
+
         if (transactionId.startsWith('local_')) {
           debugPrint(
-            '[TransactionRepository] Online: Deleting unsynced local transaction $transactionId from queue and cache.',
+            '[TransactionRepository] Online: Removing unsynced local transaction $transactionId from pending queue.',
           );
-          await Hive.box<Map<dynamic, dynamic>>(
-            _pendingTransactionsBox,
-          ).delete(transactionId);
+          // If it was a pending create, remove that. If it was a pending update to a local, remove that too.
+          await _hiveService.delete(
+            pendingTransactionsBoxName,
+            pendingOpKeyCreate,
+          );
+          await _hiveService.delete(
+            pendingTransactionsBoxName,
+            pendingOpKeyUpdate,
+          );
         } else {
           debugPrint(
             '[TransactionRepository] Online: Deleting transaction $transactionId via service.',
           );
           await transactionService.deleteTransaction(transactionId);
-          // Also remove from pending queue if it was an update that failed and then deleted
-          await Hive.box<Map<dynamic, dynamic>>(
-            _pendingTransactionsBox,
-          ).delete(transactionId);
+          // Also remove from pending queue if it was an update/delete that failed and then user decided to delete
+          await _hiveService.delete(
+            pendingTransactionsBoxName,
+            pendingOpKeyUpdate,
+          );
+          final pendingOpKeyDelete =
+              'op_${OfflineOperationType.delete.name}_backend_$transactionId';
+          await _hiveService.delete(
+            pendingTransactionsBoxName,
+            pendingOpKeyDelete,
+          );
         }
       } catch (e) {
         debugPrint(
           '[TransactionRepository] Online delete for $transactionId failed, queuing delete operation: $e',
         );
-        // If online delete fails, queue a 'delete' operation.
-        // Need a placeholder Transaction object if only ID is known for queueing.
-        // This is tricky. Simplest is to assume it was deleted locally and will be hard deleted on sync.
-        if (!transactionId.startsWith('local_')) {
-          // Only queue if it was a backend ID
-          final placeholderForDelete = Transaction(
+        // Only queue delete for backend IDs if the online delete failed and we have the data
+        if (!transactionId.startsWith('local_') &&
+            transactionToDeleteData != null) {
+          await _queuePendingOperation(
+            OfflineOperationType.delete,
+            transactionToDeleteData!.copyWith(isLocal: true),
+          );
+        }
+        if (e is TransactionApiException && e.statusCode == 401) rethrow;
+      }
+    } else {
+      debugPrint(
+        '[TransactionRepository] Offline: Queuing delete for transaction $transactionId.',
+      );
+      final dataToQueue =
+          transactionToDeleteData ??
+          Transaction(
             id: transactionId,
             description: 'PENDING_DELETE',
             amount: 0,
             date: DateTime.now(),
             subcategoryId: '',
+            isLocal: true,
           );
-          await _queuePendingOperation('delete', placeholderForDelete);
-        }
-        if (e is TransactionApiException && e.statusCode == 401) rethrow;
-        // Don't throw for other errors if we queued it; local removal is the optimistic step.
-      }
-    } else {
-      // Offline
-      debugPrint(
-        '[TransactionRepository] Offline: Queuing delete for transaction $transactionId.',
+      await _queuePendingOperation(
+        OfflineOperationType.delete,
+        dataToQueue.copyWith(isLocal: true),
       );
-      final placeholderForDelete = Transaction(
-        id: transactionId,
-        description: 'PENDING_DELETE',
-        amount: 0,
-        date: DateTime.now(),
-        subcategoryId: '',
-      );
-      await _queuePendingOperation('delete', placeholderForDelete);
     }
-
-    // Optimistic local cache removal for both online (after success or queue on fail) and offline
-    final currentCached = getCachedTransactionList() ?? [];
-    currentCached.removeWhere((t) => t.id == transactionId);
-    await _cacheTransactionList(currentCached);
   }
 
   Future<Transaction> toggleBookmark(String transactionId) async {
-    final isOnline = await _connectivityService.isOnline;
-    Transaction? locallyModifiedTx;
+    final currentCachedList = await getCachedTransactionList();
+    final index = currentCachedList.indexWhere((t) => t.id == transactionId);
 
-    // Optimistically update local cache first
-    final currentCached = getCachedTransactionList() ?? [];
-    final index = currentCached.indexWhere((t) => t.id == transactionId);
-    if (index != -1) {
-      locallyModifiedTx = currentCached[index].copyWith(
-        isBookmarked: !currentCached[index].isBookmarked,
-        isLocal: true,
-      );
-      currentCached[index] = locallyModifiedTx;
-      await _cacheTransactionList(currentCached);
-    } else {
+    if (index == -1) {
       throw Exception(
         'Transaction $transactionId not found in cache for bookmarking.',
       );
     }
 
+    final transactionToToggle = currentCachedList[index];
+    final optimisticallyUpdatedTx = transactionToToggle.copyWith(
+      isBookmarked: !transactionToToggle.isBookmarked,
+      isLocal: true, // Mark as needing sync because bookmark status changed
+    );
+    currentCachedList[index] = optimisticallyUpdatedTx;
+    await _saveDecodedTransactionListToCache(currentCachedList);
+
+    final isOnline = await _connectivityService.isOnline;
     if (isOnline) {
       try {
+        // If it's a local (unsynced) transaction, just update its pending operation (or create one)
         if (transactionId.startsWith('local_')) {
-          // Unsynced transaction
           debugPrint(
-            '[TransactionRepository] Online: Queuing bookmark toggle for locally created (unsynced) transaction $transactionId.',
+            '[TransactionRepository] Online: Queuing bookmark toggle (as update) for local tx $transactionId.',
           );
           await _queuePendingOperation(
-            'update',
-            locallyModifiedTx,
-          ); // Treat as an update
-          return locallyModifiedTx;
+            OfflineOperationType.update,
+            optimisticallyUpdatedTx,
+          );
+          return optimisticallyUpdatedTx;
         }
         debugPrint(
           '[TransactionRepository] Online: Toggling bookmark for $transactionId via service.',
         );
-        final updatedOnlineTx = await transactionService.toggleBookmark(
+        final serverUpdatedTx = await transactionService.toggleBookmark(
           transactionId,
         );
-        // Sync back the server's version to the cache
-        currentCached[index] = updatedOnlineTx; // Server is source of truth
-        await _cacheTransactionList(currentCached);
-        // If this was pending, ensure it's updated or handled correctly.
-        // For simplicity, successful online op means we can remove a specific 'bookmark_pending' if such existed.
-        // Or ensure the general 'update' queue reflects this latest state.
-        return updatedOnlineTx;
+
+        final updatedList =
+            await getCachedTransactionList(); // Re-fetch for atomicity
+        final serverIndex = updatedList.indexWhere(
+          (t) => t.id == serverUpdatedTx.id,
+        );
+        if (serverIndex != -1) {
+          updatedList[serverIndex] = serverUpdatedTx.copyWith(isLocal: false);
+        } else {
+          updatedList.add(serverUpdatedTx.copyWith(isLocal: false));
+        }
+        await _saveDecodedTransactionListToCache(updatedList);
+
+        final pendingOpKey =
+            'op_${OfflineOperationType.update.name}_backend_$transactionId';
+        await _hiveService.delete(pendingTransactionsBoxName, pendingOpKey);
+
+        return serverUpdatedTx;
       } catch (e) {
         debugPrint(
-          '[TransactionRepository] Online bookmark toggle for $transactionId failed, change is cached and will be queued as update: $e',
+          '[TransactionRepository] Online bookmark toggle for $transactionId failed, change cached and queued: $e',
         );
         await _queuePendingOperation(
-          'update',
-          locallyModifiedTx,
-        ); // Queue the optimistic local change
+          OfflineOperationType.update,
+          optimisticallyUpdatedTx,
+        );
         if (e is TransactionApiException && e.statusCode == 401) rethrow;
-        return locallyModifiedTx; // Return optimistic change
+        return optimisticallyUpdatedTx;
       }
     } else {
-      // Offline
       debugPrint(
-        '[TransactionRepository] Offline: Queuing bookmark toggle as update for transaction $transactionId.',
+        '[TransactionRepository] Offline: Queuing bookmark toggle (as update) for transaction $transactionId.',
       );
-      await _queuePendingOperation('update', locallyModifiedTx);
-      return locallyModifiedTx;
+      await _queuePendingOperation(
+        OfflineOperationType.update,
+        optimisticallyUpdatedTx,
+      );
+      return optimisticallyUpdatedTx;
     }
   }
 
-  // --- Syncing Logic ---
   Future<void> syncPendingTransactions() async {
-    final pendingBox = Hive.box<Map<dynamic, dynamic>>(_pendingTransactionsBox);
-    if (pendingBox.isEmpty) {
+    final pendingBoxMap = _hiveService.getBoxEntries<String>(
+      pendingTransactionsBoxName,
+    );
+    if (pendingBoxMap.isEmpty) {
       debugPrint('[TransactionRepository] No pending transactions to sync.');
       return;
     }
@@ -414,104 +488,153 @@ class TransactionRepository {
     }
 
     debugPrint(
-      '[TransactionRepository] Syncing ${pendingBox.length} pending transactions.',
+      '[TransactionRepository] Syncing ${pendingBoxMap.length} pending transaction operations.',
     );
-    final successfullySyncedKeys = <String>[];
+    final successfulKeys = <String>[];
+    final mainCache = await getCachedTransactionList(); // Load once
 
-    // It's safer to iterate over a copy of keys if modifying the box during iteration
-    final pendingKeys = List<dynamic>.from(pendingBox.keys);
+    // Sort operations by timestamp to process them in order
+    final sortedOpEntries = pendingBoxMap.entries.toList()
+      ..sort((a, b) {
+        try {
+          final dataA = json.decode(a.value) as Map<String, dynamic>;
+          final dataB = json.decode(b.value) as Map<String, dynamic>;
+          final timeA = DateTime.tryParse(dataA['timestamp'] as String? ?? '');
+          final timeB = DateTime.tryParse(dataB['timestamp'] as String? ?? '');
+          if (timeA != null && timeB != null) return timeA.compareTo(timeB);
+          return 0;
+        } catch (_) {
+          return 0;
+        }
+      });
 
-    for (final key in pendingKeys) {
-      final pendingOpData = pendingBox.get(key);
-      if (pendingOpData == null) continue;
-
-      final operationType = pendingOpData['operationType'] as String;
-      final transactionDataMap =
-          pendingOpData['transactionData'] as Map<String, dynamic>;
-      // Use markLocal: true because this data was from cache, which should denote its local status
-      final transaction = Transaction.fromJson(
-        transactionDataMap,
-        markLocal: true,
-      );
+    for (final entry in sortedOpEntries) {
+      final opKey = entry.key as String;
+      final operationJson = entry.value;
 
       try {
-        debugPrint(
-          '[TransactionRepository] Attempting to sync $operationType for tx id ${transaction.id}',
+        final operationData =
+            json.decode(operationJson) as Map<String, dynamic>;
+        final typeString = operationData['operationType'] as String;
+        final payloadJson =
+            operationData['transactionData'] as Map<String, dynamic>;
+        // The 'originalTransactionId' is the ID used when this op was queued (local_ or backend)
+        final originalTransactionId =
+            operationData['originalTransactionId'] as String? ??
+            (payloadJson['id'] as String);
+
+        // Deserialize with markLocal: true as it's from the pending queue
+        final pendingTransaction = Transaction.fromJson(
+          payloadJson,
+          markLocal: true,
         );
-        if (operationType == 'create') {
-          // For create, the original transaction.id was 'local_...'
-          // The backend will assign a new UUID. We need to update our local cache.
-          final createdTx = await transactionService.createTransaction(
-            transaction.copyWith(id: ''),
-          ); // Send without local_ id
-          // Update local cache: remove local_id version, add backend version
-          final currentCached = getCachedTransactionList() ?? [];
-          currentCached.removeWhere(
-            (t) => t.id == transaction.id,
-          ); // Remove local_
-          currentCached.add(createdTx);
-          await _cacheTransactionList(currentCached);
-          // TODO: If other parts of app hold reference to 'local_id', they need to be updated to new backend ID.
-          // This is a common challenge in offline-first sync.
-          debugPrint(
-            '[TransactionRepository] Synced CREATE for local ${transaction.id} to backend ${createdTx.id}',
+
+        debugPrint(
+          '[TransactionRepository] Attempting to sync $typeString for original tx id $originalTransactionId (current payload id: ${pendingTransaction.id})',
+        );
+
+        if (typeString == OfflineOperationType.create.toString()) {
+          // For create, always send without ID as backend assigns it.
+          final createdTxFromApi = await transactionService.createTransaction(
+            pendingTransaction.copyWith(id: ''), // Send blank ID for create
           );
-        } else if (operationType == 'update') {
-          if (transaction.id.startsWith('local_')) {
-            // This was an offline create, then an offline update. Sync as create with latest data.
-            final createdTx = await transactionService.createTransaction(
-              transaction.copyWith(id: ''),
+          // Update cache: remove original local_, add backend version
+          mainCache.removeWhere(
+            (t) => t.id == originalTransactionId,
+          ); // Use original ID for removal
+          mainCache.add(createdTxFromApi.copyWith(isLocal: false));
+          debugPrint(
+            '[TransactionRepository] Synced CREATE for local $originalTransactionId to backend ${createdTxFromApi.id}',
+          );
+        } else if (typeString == OfflineOperationType.update.toString()) {
+          if (originalTransactionId.startsWith('local_')) {
+            // This was an item created offline and then potentially updated offline.
+            // It should be synced as a 'create' operation with its latest data.
+            final createdTxFromApi = await transactionService.createTransaction(
+              pendingTransaction.copyWith(
+                id: '',
+              ), // Send latest data, backend assigns ID
             );
-            final currentCached = getCachedTransactionList() ?? [];
-            currentCached.removeWhere((t) => t.id == transaction.id);
-            currentCached.add(createdTx);
-            await _cacheTransactionList(currentCached);
+            mainCache.removeWhere((t) => t.id == originalTransactionId);
+            mainCache.add(createdTxFromApi.copyWith(isLocal: false));
             debugPrint(
-              '[TransactionRepository] Synced offline UPDATE (originally offline CREATE) for local ${transaction.id} to backend ${createdTx.id}',
+              '[TransactionRepository] Synced offline UPDATE (orig. offline CREATE) for local $originalTransactionId to backend ${createdTxFromApi.id}',
             );
           } else {
-            await transactionService.updateTransaction(transaction);
+            // This was an update to an already synced (backend) ID.
+            final updatedTxFromApi = await transactionService.updateTransaction(
+              pendingTransaction.copyWith(
+                id: originalTransactionId,
+                isLocal: false,
+              ), // Ensure using backend ID
+            );
+            final idx = mainCache.indexWhere(
+              (t) => t.id == updatedTxFromApi.id,
+            );
+            if (idx != -1) {
+              mainCache[idx] = updatedTxFromApi.copyWith(isLocal: false);
+            } else {
+              mainCache.add(
+                updatedTxFromApi.copyWith(isLocal: false),
+              ); // Should replace
+            }
             debugPrint(
-              '[TransactionRepository] Synced UPDATE for ${transaction.id}',
+              '[TransactionRepository] Synced UPDATE for backend ID $originalTransactionId',
             );
           }
-        } else if (operationType == 'delete') {
-          if (!transaction.id.startsWith('local_')) {
-            // Only delete from backend if it was a synced ID
-            await transactionService.deleteTransaction(transaction.id);
+        } else if (typeString == OfflineOperationType.delete.toString()) {
+          if (!originalTransactionId.startsWith('local_')) {
+            // Only send delete to backend if it's a backend ID
+            await transactionService.deleteTransaction(originalTransactionId);
             debugPrint(
-              '[TransactionRepository] Synced DELETE for ${transaction.id}',
+              '[TransactionRepository] Synced DELETE for backend ID $originalTransactionId',
             );
           } else {
             debugPrint(
-              '[TransactionRepository] Local transaction ${transaction.id} marked for delete was never synced. Removed from queue.',
+              '[TransactionRepository] Local transaction $originalTransactionId marked for delete was never synced to backend. Removed from queue.',
             );
           }
+          // Remove from local cache regardless
+          mainCache.removeWhere((t) => t.id == originalTransactionId);
         }
-        successfullySyncedKeys.add(key as String);
+        successfulKeys.add(opKey);
+        debugPrint(
+          '[TransactionRepository] Successfully synced operation $opKey.',
+        );
       } catch (e) {
         debugPrint(
-          '[TransactionRepository] Failed to sync $operationType for tx ${transaction.id}: $e',
+          '[TransactionRepository] Failed to sync operation $opKey: $e',
         );
         if (e is TransactionApiException && e.statusCode == 401) {
-          debugPrint('Auth error during sync, stopping sync.');
-          break; // Stop sync on auth error
+          debugPrint('Auth error during sync, stopping sync for transactions.');
+          break; // Stop further sync attempts on auth error
         }
-        // For other errors (e.g., 400 bad request due to stale data, 404 not found),
-        // the item remains in queue. More sophisticated error handling could mark it as "sync_failed".
+        // For other errors, continue to next pending item
       }
     }
 
-    for (final key in successfullySyncedKeys) {
-      await pendingBox.delete(key);
-    }
-    if (successfullySyncedKeys.isNotEmpty) {
-      debugPrint(
-        '[TransactionRepository] Cleaned ${successfullySyncedKeys.length} synced transactions from queue.',
+    // Batch delete successful operations from Hive
+    if (successfulKeys.isNotEmpty) {
+      final box = await _hiveService.getOpenBox<String>(
+        pendingTransactionsBoxName,
       );
-      // After a successful sync, it's a good idea to fetch fresh list from server to resolve any conflicts
-      // or get latest state if server made changes (e.g. last write wins on server).
-      // This can be done by the BLoC that triggers the sync.
+      await box.deleteAll(successfulKeys);
+      debugPrint(
+        '[TransactionRepository] Cleaned ${successfulKeys.length} synced transaction operations from queue.',
+      );
+    }
+    // Save the potentially modified main cache after all operations
+    await _saveDecodedTransactionListToCache(mainCache);
+
+    if (successfulKeys.isNotEmpty &&
+        successfulKeys.length < sortedOpEntries.length) {
+      debugPrint(
+        '[TransactionRepository] Some operations failed to sync and remain in queue.',
+      );
+    } else if (successfulKeys.isEmpty && sortedOpEntries.isNotEmpty) {
+      debugPrint(
+        '[TransactionRepository] No operations were successfully synced.',
+      );
     }
   }
 }

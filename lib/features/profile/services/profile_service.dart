@@ -1,36 +1,90 @@
 // lib/features/profile/services/profile_service.dart
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:ta_client/core/utils/authenticated_client.dart';
-import 'package:ta_client/features/profile/models/user_model.dart';
+// No dart:convert needed
+import 'package:dio/dio.dart'; // Import Dio
+import 'package:flutter/foundation.dart';
+import 'package:ta_client/features/profile/models/user_model.dart'; // Your existing User model for profile
+
+class ProfileApiException implements Exception {
+  ProfileApiException(this.message, {this.statusCode});
+  final String message;
+  final int? statusCode;
+  @override
+  String toString() => 'ProfileApiException: $message (Status: $statusCode)';
+}
 
 class ProfileService {
-  ProfileService({required String baseUrl})
-    : _baseUrl = baseUrl,
-      _client = AuthenticatedClient(http.Client());
-
-  final String _baseUrl;
-  final http.Client _client;
+  ProfileService({required Dio dio}) : _dio = dio; // Inject Dio
+  final Dio _dio;
 
   Future<User> fetchProfile() async {
-    final resp = await _client.get(Uri.parse('$_baseUrl/users/profile'));
-    if (resp.statusCode == 200) {
-      final data = json.decode(resp.body);
-      return User.fromJson((data['user'] ?? data) as Map<String, dynamic>);
+    const endpoint = '/users/profile'; // Relative to Dio's baseUrl
+    debugPrint('[ProfileService-DIO] GET $endpoint');
+
+    try {
+      final response = await _dio.get<dynamic>(endpoint);
+      if (response.statusCode == 200 && response.data?['user'] is Map) {
+        // Backend sends { success: true, user: {...} }
+        return User.fromJson(response.data['user'] as Map<String, dynamic>);
+      } else {
+        throw ProfileApiException(
+          response.data?['message']?.toString() ??
+              'Failed to load profile from server.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint(
+        '[ProfileService-DIO] DioException fetching profile: ${e.response?.data ?? e.message}',
+      );
+      throw ProfileApiException(
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error fetching profile.',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      debugPrint('[ProfileService-DIO] Unexpected error fetching profile: $e');
+      throw ProfileApiException(
+        'An unexpected error occurred while fetching profile.',
+      );
     }
-    throw Exception('Failed to load profile');
   }
 
   Future<User> updateProfile(User user) async {
-    final resp = await _client.put(
-      Uri.parse('$_baseUrl/users/profile'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(user.toJson()),
-    );
-    if (resp.statusCode == 200) {
-      final data = json.decode(resp.body);
-      return User.fromJson((data['user'] ?? data) as Map<String, dynamic>);
+    const endpoint = '/users/profile'; // Relative to Dio's baseUrl
+    // User.toJson() should produce the DTO backend expects (UpdateUserProfileDto)
+    final requestBody = user.toJson(); // Assuming a method for API update DTO
+    debugPrint(
+      '[ProfileService-DIO] PUT $endpoint',
+    ); // Body logged by interceptor
+
+    try {
+      final response = await _dio.put<dynamic>(endpoint, data: requestBody);
+      if (response.statusCode == 200 && response.data?['user'] is Map) {
+        // Backend sends { success: true, user: {...} }
+        return User.fromJson(response.data['user'] as Map<String, dynamic>);
+      } else {
+        throw ProfileApiException(
+          response.data?['message']?.toString() ??
+              'Failed to update profile on server.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint(
+        '[ProfileService-DIO] DioException updating profile: ${e.response?.data ?? e.message}',
+      );
+      throw ProfileApiException(
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error updating profile.',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      debugPrint('[ProfileService-DIO] Unexpected error updating profile: $e');
+      throw ProfileApiException(
+        'An unexpected error occurred while updating profile.',
+      );
     }
-    throw Exception('Failed to update profile');
   }
 }

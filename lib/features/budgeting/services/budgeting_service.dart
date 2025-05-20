@@ -1,8 +1,7 @@
 // lib/features/budgeting/services/budgeting_service.dart
-import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:ta_client/core/utils/authenticated_client.dart';
 // Import your DTO for saving expense allocations and model for expense category suggestions
 // These will map to what the backend expects/returns.
 
@@ -76,7 +75,8 @@ class BackendExpenseCategorySuggestion {
   BackendExpenseCategorySuggestion({
     required this.id,
     required this.name,
-    required this.subcategories, this.lowerBound,
+    required this.subcategories,
+    this.lowerBound,
     this.upperBound,
   });
 
@@ -136,6 +136,19 @@ class SaveExpenseAllocationsRequestDto {
     'totalBudgetableIncome': totalBudgetableIncome,
     'allocations': allocations.map((a) => a.toJson()).toList(),
   };
+
+  SaveExpenseAllocationsRequestDto copyWith({
+    String? budgetPeriodId,
+    double? totalBudgetableIncome,
+    List<FrontendAllocationDetailDto>? allocations,
+  }) {
+    return SaveExpenseAllocationsRequestDto(
+      budgetPeriodId: budgetPeriodId ?? this.budgetPeriodId,
+      totalBudgetableIncome:
+          totalBudgetableIncome ?? this.totalBudgetableIncome,
+      allocations: allocations ?? this.allocations,
+    );
+  }
 }
 
 class FrontendAllocationDetailDto {
@@ -228,138 +241,173 @@ class BudgetingApiException implements Exception {
 }
 
 class BudgetingService {
-  BudgetingService({required String baseUrl})
-    : _baseUrl = baseUrl,
-      _client = AuthenticatedClient(http.Client());
+  BudgetingService({required Dio dio}) : _dio = dio;
+  final Dio _dio;
 
-  final String _baseUrl;
-  final http.Client _client;
-
-  // Fetches pre-summarized income data from the backend
   Future<List<BackendIncomeSummaryItem>> fetchSummarizedIncomeForPeriod(
     String periodId,
   ) async {
-    final url = Uri.parse(
-      '$_baseUrl/budgeting/income-summary/$periodId',
-    ); // Example endpoint
-    debugPrint('[BudgetingService-API] GET $url');
-    final response = await _client.get(
-      url,
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as List<dynamic>;
-      return data
-          .map(
-            (item) =>
-                BackendIncomeSummaryItem.fromJson(item as Map<String, dynamic>),
-          )
-          .toList();
-    } else {
-      final errorBody = json.decode(response.body);
+    final endpoint = '/budgeting/income-summary/$periodId';
+    debugPrint('[BudgetingService-DIO] GET $endpoint');
+    try {
+      final response = await _dio.get<dynamic>(endpoint);
+      if (response.statusCode == 200 && response.data?['data'] is List) {
+        // Assuming backend wraps in {data: [...]}
+        final dataList = response.data['data'] as List<dynamic>;
+        return dataList
+            .map(
+              (item) => BackendIncomeSummaryItem.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList();
+      } else if (response.statusCode == 200 && response.data is List) {
+        // If backend returns list directly
+        final dataList = response.data as List<dynamic>;
+        return dataList
+            .map(
+              (item) => BackendIncomeSummaryItem.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList();
+      } else {
+        throw BudgetingApiException(
+          response.data?['message']?.toString() ??
+              'Failed to fetch income summary.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
       throw BudgetingApiException(
-        (errorBody['message'] as String?) ?? 'Failed to fetch income summary',
-        statusCode: response.statusCode,
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error fetching income summary.',
+        statusCode: e.response?.statusCode,
       );
     }
   }
 
-  // Fetches expense category suggestions (with bounds) from the backend
   Future<List<BackendExpenseCategorySuggestion>>
   fetchExpenseCategorySuggestions() async {
-    final url = Uri.parse(
-      '$_baseUrl/budgeting/expense-category-suggestions',
-    ); // Example endpoint
-    debugPrint('[BudgetingService-API] GET $url');
-    final response = await _client.get(
-      url,
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as List<dynamic>;
-      return data
-          .map(
-            (item) => BackendExpenseCategorySuggestion.fromJson(
-              item as Map<String, dynamic>,
-            ),
-          )
-          .toList();
-    } else {
-      final errorBody = json.decode(response.body);
+    const endpoint = '/budgeting/expense-category-suggestions';
+    debugPrint('[BudgetingService-DIO] GET $endpoint');
+    try {
+      final response = await _dio.get<dynamic>(endpoint);
+      if (response.statusCode == 200 && response.data?['data'] is List) {
+        final dataList = response.data['data'] as List<dynamic>;
+        return dataList
+            .map(
+              (item) => BackendExpenseCategorySuggestion.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList();
+      } else if (response.statusCode == 200 && response.data is List) {
+        final dataList = response.data as List<dynamic>;
+        return dataList
+            .map(
+              (item) => BackendExpenseCategorySuggestion.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList();
+      } else {
+        throw BudgetingApiException(
+          response.data?['message']?.toString() ??
+              'Failed to fetch expense suggestions.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
       throw BudgetingApiException(
-        (errorBody['message'] as String?) ??
-            'Failed to fetch expense category suggestions',
-        statusCode: response.statusCode,
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error fetching expense suggestions.',
+        statusCode: e.response?.statusCode,
       );
     }
   }
 
-  // Saves the entire expense budget plan to the backend
   Future<List<FrontendBudgetAllocation>> saveExpenseAllocations(
     SaveExpenseAllocationsRequestDto dto,
   ) async {
-    final url = Uri.parse(
-      '$_baseUrl/budgeting/expense-allocations',
-    ); // Example endpoint
-    debugPrint('[BudgetingService-API] POST $url with body: ${dto.toJson()}');
-    final response = await _client.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(dto.toJson()),
-    );
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      // 201 for created, 200 for updated
-      final data = json.decode(response.body) as List<dynamic>;
-      return data
-          .map(
-            (item) =>
-                FrontendBudgetAllocation.fromJson(item as Map<String, dynamic>),
-          )
-          .toList();
-    } else {
-      final errorBody = json.decode(response.body);
+    const endpoint = '/budgeting/expense-allocations';
+    debugPrint(
+      '[BudgetingService-DIO] POST $endpoint',
+    ); // Body logged by interceptor
+    try {
+      final response = await _dio.post<dynamic>(endpoint, data: dto.toJson());
+      if ((response.statusCode == 201 || response.statusCode == 200) &&
+          response.data?['data'] is List) {
+        final dataList = response.data['data'] as List<dynamic>;
+        return dataList
+            .map(
+              (item) => FrontendBudgetAllocation.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList();
+      } else {
+        throw BudgetingApiException(
+          response.data?['message']?.toString() ??
+              'Failed to save expense allocations.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
       throw BudgetingApiException(
-        (errorBody['message'] as String?) ??
-            'Failed to save expense allocations',
-        statusCode: response.statusCode,
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error saving expense allocations.',
+        statusCode: e.response?.statusCode,
       );
     }
   }
 
-  // Fetches existing budget allocations for a given expense period
   Future<List<FrontendBudgetAllocation>> fetchBudgetAllocationsForPeriod(
     String periodId,
   ) async {
-    final url = Uri.parse(
-      '$_baseUrl/budgeting/allocations?periodId=$periodId',
-    ); // Example endpoint
-    debugPrint('[BudgetingService-API] GET $url');
-    final response = await _client.get(
-      url,
-      headers: {'Content-Type': 'application/json'},
-    );
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as List<dynamic>;
-      return data
-          .map(
-            (item) =>
-                FrontendBudgetAllocation.fromJson(item as Map<String, dynamic>),
-          )
-          .toList();
-    } else {
-      final errorBody = json.decode(response.body);
+    const endpoint = '/budgeting/allocations';
+    final queryParams = {'periodId': periodId};
+    debugPrint('[BudgetingService-DIO] GET $endpoint with params $queryParams');
+    try {
+      final response = await _dio.get<dynamic>(
+        endpoint,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200 && response.data?['data'] is List) {
+        final dataList = response.data['data'] as List<dynamic>;
+        return dataList
+            .map(
+              (item) => FrontendBudgetAllocation.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList();
+      } else if (response.statusCode == 200 && response.data is List) {
+        final dataList = response.data as List<dynamic>;
+        return dataList
+            .map(
+              (item) => FrontendBudgetAllocation.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList();
+      } else {
+        throw BudgetingApiException(
+          response.data?['message']?.toString() ??
+              'Failed to fetch budget allocations.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
       throw BudgetingApiException(
-        (errorBody['message'] as String?) ??
-            'Failed to fetch budget allocations',
-        statusCode: response.statusCode,
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error fetching budget allocations.',
+        statusCode: e.response?.statusCode,
       );
     }
   }
-
-  // The old ensureDates logic is primarily client-side validation before making an API call,
-  // or handled by backend if client sends dates for period creation.
-  // It doesn't need to be an API call itself unless backend validates period creation extensively.
 }

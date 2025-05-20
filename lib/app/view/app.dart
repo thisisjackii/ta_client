@@ -63,7 +63,10 @@ class App extends StatelessWidget {
               BudgetingBloc(sl<BudgetingRepository>(), sl<PeriodRepository>()),
         ),
         BlocProvider<EvaluationBloc>(
-          create: (context) => EvaluationBloc(sl<EvaluationRepository>()),
+          create: (context) => EvaluationBloc(
+            sl<EvaluationRepository>(),
+            sl<PeriodRepository>(),
+          ),
         ),
         BlocProvider<ProfileBloc>(
           create: (context) => ProfileBloc(repository: sl<ProfileRepository>()),

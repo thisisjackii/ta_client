@@ -36,9 +36,7 @@ class OtpBloc extends Bloc<OtpEvent, OtpState> {
       emit(OtpFailure(e.message));
     } catch (e) {
       emit(
-        OtpFailure(
-          'An unexpected error occurred while requesting OTP: ${e.toString()}',
-        ),
+        OtpFailure('An unexpected error occurred while requesting OTP: $e'),
       );
     }
   }
@@ -80,7 +78,7 @@ class OtpBloc extends Bloc<OtpEvent, OtpState> {
     } catch (e) {
       emit(
         OtpFailure(
-          'An unexpected error occurred during OTP verification: ${e.toString()}',
+          'An unexpected error occurred during OTP verification: $e',
         ),
       );
     }

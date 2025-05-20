@@ -39,10 +39,11 @@ class LoginLoading extends LoginState {
 }
 
 class LoginSuccess extends LoginState {
-  const LoginSuccess({required this.user});
+  const LoginSuccess({required this.user, required this.token});
   final Map<String, dynamic> user;
+  final String token;
   @override
-  List<Object?> get props => [user];
+  List<Object?> get props => [user, token];
 }
 
 class LoginFailure extends LoginState {

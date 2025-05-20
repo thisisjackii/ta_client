@@ -7,26 +7,49 @@ import 'package:ta_client/features/otp/bloc/otp_bloc.dart';
 import 'package:ta_client/features/otp/bloc/otp_event.dart';
 import 'package:ta_client/features/otp/bloc/otp_state.dart';
 
-class OtpVerificationPage extends StatefulWidget {
-  // Changed to StatefulWidget
-  const OtpVerificationPage({required this.email, super.key});
+// Add this enum (e.g., in a shared types file or here)
+enum OtpFlow { registration, passwordReset, general }
 
-  final String email; // Email passed via navigation arguments
+class OtpVerificationPageArguments {
+  // Add any other data needed for different flows
+
+  OtpVerificationPageArguments({required this.email, required this.flow});
+  final String email;
+  final OtpFlow flow;
+}
+
+class OtpVerificationPage extends StatefulWidget {
+  const OtpVerificationPage({
+    required this.args,
+    super.key,
+  }); // Modified constructor
+
+  final OtpVerificationPageArguments args; // Use arguments object
 
   static Widget create(BuildContext context) {
-    // create method to retrieve arguments
-    final email = ModalRoute.of(context)?.settings.arguments as String?;
-    if (email == null) {
-      // Handle error: email argument is required.
-      // For simplicity, returning a placeholder. In a real app, navigate back or show error.
-      return const Scaffold(
-        body: Center(child: Text('Error: Email for OTP not provided.')),
+    final routeArgs = ModalRoute.of(context)?.settings.arguments;
+    if (routeArgs is OtpVerificationPageArguments) {
+      // Check type
+      return OtpVerificationPage(args: routeArgs);
+    } else if (routeArgs is Map<String, dynamic>) {
+      // Fallback for older Map way
+      final email = routeArgs['email'] as String?;
+      final flow =
+          routeArgs['flow'] as OtpFlow? ??
+          OtpFlow.general; // Default if not passed
+      if (email == null) {
+        return const Scaffold(
+          body: Center(child: Text('Error: Email for OTP not provided.')),
+        );
+      }
+      return OtpVerificationPage(
+        args: OtpVerificationPageArguments(email: email, flow: flow),
       );
     }
-    // OtpBloc is already provided by MultiBlocProvider in app.dart
-    // No need to BlocProvider here if it's global.
-    // If OtpBloc is specific to this flow and not global, then provide it here.
-    return OtpVerificationPage(email: email);
+    // Handle error: arguments are required and of the correct type.
+    return const Scaffold(
+      body: Center(child: Text('Error: Invalid arguments for OTP page.')),
+    );
   }
 
   @override
@@ -55,19 +78,21 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('OTP berhasil diverifikasi!')),
             );
-            // Navigate to the next step, e.g., reset password screen, or dashboard
-            // For a password reset flow:
-            // Navigator.pushReplacementNamed(
-            //   context,
-            //   Routes.resetPasswordPage,
-            //   arguments: widget.email,
-            // );
-            // For registration flow, maybe navigate to login or dashboard:
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              Routes.dashboard,
-              (route) => false,
-            );
+            if (widget.args.flow == OtpFlow.registration) {
+              Navigator.pop(context, true); // Pop true for registration flow
+              // } else if (widget.args.flow == OtpFlow.passwordReset) {
+              //   Navigator.pushReplacementNamed(
+              //     context,
+              //     Routes.actualNewPasswordPage,
+              //     arguments: widget.args.email,
+              //   );
+            } else {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                Routes.dashboard,
+                (route) => false,
+              );
+            }
           } else if (state is OtpFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -83,7 +108,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Masukkan kode OTP yang dikirim ke ${widget.email}',
+                'Masukkan kode OTP yang dikirim ke ${widget.args.email}',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
@@ -112,7 +137,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                       // Dispatch event to OtpBloc for verification
                       // The BLoC already has the email from OtpRequestSuccess state or passed to it
                       context.read<OtpBloc>().add(
-                        OtpVerificationSubmitted(widget.email),
+                        OtpVerificationSubmitted(widget.args.email),
                       );
                     },
                     child: const Text('Verifikasi'),
@@ -123,7 +148,10 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                 onPressed: () {
                   // Resend OTP logic
                   context.read<OtpBloc>().add(
-                    OtpRequestSubmitted(widget.email),
+                    OtpRequestSubmitted(
+                      widget.args.email,
+                      // userId: null /* or pass if available for this flow */,
+                    ),
                   );
                 },
                 child: const Text('Kirim ulang OTP'),

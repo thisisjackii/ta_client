@@ -34,7 +34,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       _emailController = TextEditingController(text: user.email);
       _usernameController = TextEditingController(text: user.username);
       _addressController = TextEditingController(text: user.address);
-      _occupationController = TextEditingController(text: user.occupation);
+      _occupationController = TextEditingController(text: user.occupationName);
       _birthdate = user.birthdate;
     } else {
       _nameController = TextEditingController();
@@ -67,7 +67,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       email: _emailController.text.trim(),
       username: _usernameController.text.trim(),
       address: _addressController.text.trim(),
-      occupation: _occupationController.text.trim(),
+      occupationName: _occupationController.text.trim(),
       birthdate: _birthdate,
     );
 

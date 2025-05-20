@@ -60,7 +60,7 @@ class _BudgetingAllocationPageState extends State<BudgetingAllocationPage> {
     final profileState = context.watch<ProfileBloc>().state;
     var occupationGroup = OccupationGroup.pekerja; // Default
     if (profileState is ProfileBlocState.ProfileLoadSuccess) {
-      occupationGroup = getOccupationGroup(profileState.user.occupation);
+      occupationGroup = getOccupationGroup(profileState.user.occupationName);
     }
 
     return BlocConsumer<BudgetingBloc, BudgetingState>(
