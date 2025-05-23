@@ -1,6 +1,7 @@
 // lib/features/register/view/register_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart'; // For DateFormat
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/services/service_locator.dart';
@@ -25,23 +26,27 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   List<Map<String, String>> _occupations = [];
   bool _isLoadingOccupations = true;
-  bool _birthdateTouched = false;
   String? _selectedOccupationId;
+  DateTime? _selectedBirthdate; // Store as DateTime
+  bool _birthdateFieldTouched = false;
 
   final _nameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _addressController = TextEditingController();
-  String _birthdateString = '';
 
-  final _formKey = GlobalKey<FormState>(); // For manual validation if needed
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
-    _fetchOccupations();
-    _syncControllersWithBloc(context.read<RegisterBloc>().state, isInit: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _syncFieldsFromBloc(context.read<RegisterBloc>().state, isInit: true);
+        _fetchOccupations();
+      }
+    });
   }
 
   @override
@@ -54,40 +59,43 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void _syncControllersWithBloc(RegisterState state, {bool isInit = false}) {
-    // Only update if text is different or it's init, to avoid cursor jumps
-    if (isInit || _nameController.text != state.name) {
-      _nameController.text = state.name;
-    }
-    if (isInit || _usernameController.text != state.username) {
+  void _syncFieldsFromBloc(RegisterState state, {bool isInit = false}) {
+    var needsUiUpdate = false;
+
+    if (_nameController.text != state.name) _nameController.text = state.name;
+    if (_usernameController.text != state.username) {
       _usernameController.text = state.username;
     }
-    if (isInit || _emailController.text != state.email) {
+    if (_emailController.text != state.email) {
       _emailController.text = state.email;
     }
-    if (isInit || _passwordController.text != state.password) {
+    if (_passwordController.text != state.password) {
       _passwordController.text = state.password;
     }
-    if (isInit || _addressController.text != state.address) {
+    if (_addressController.text != state.address) {
       _addressController.text = state.address;
     }
 
-    final blocBirthdateString =
-        state.birthdate?.toIso8601String().substring(0, 10) ?? '';
-    if (isInit || _birthdateString != blocBirthdateString) {
-      _birthdateString = blocBirthdateString;
+    if (_selectedBirthdate != state.birthdate) {
+      _selectedBirthdate = state.birthdate;
+      if (!isInit) needsUiUpdate = true;
     }
 
     final blocOccupationId = state.occupationId.isNotEmpty
         ? state.occupationId
         : null;
-    if (isInit || _selectedOccupationId != blocOccupationId) {
-      // No setState here, dropdown rebuilds via BlocBuilder
+    if (_selectedOccupationId != blocOccupationId) {
       _selectedOccupationId = blocOccupationId;
+      if (!isInit) needsUiUpdate = true;
+    }
+
+    if (needsUiUpdate && mounted) {
+      setState(() {});
     }
   }
 
   Future<void> _fetchOccupations() async {
+    if (!mounted) return;
     setState(() => _isLoadingOccupations = true);
     try {
       final registerService = sl<RegisterService>();
@@ -96,7 +104,6 @@ class _RegisterPageState extends State<RegisterPage> {
         setState(() {
           _occupations = occsData;
           _isLoadingOccupations = false;
-          // If an occupationId was set in BLoC before occupations loaded, ensure dropdown reflects it
           final currentBlocOccupationId = context
               .read<RegisterBloc>()
               .state
@@ -104,43 +111,80 @@ class _RegisterPageState extends State<RegisterPage> {
           if (currentBlocOccupationId.isNotEmpty &&
               _occupations.any((o) => o['id'] == currentBlocOccupationId)) {
             _selectedOccupationId = currentBlocOccupationId;
+          } else if (_selectedOccupationId != null &&
+              !_occupations.any((o) => o['id'] == _selectedOccupationId)) {
+            _selectedOccupationId = null;
+            context.read<RegisterBloc>().add(
+              const RegisterOccupationIdChanged('', ''),
+            );
           }
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingOccupations = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memuat daftar profesi: $e')),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gagal memuat daftar profesi: ${e}')),
+            );
+          }
+        });
       }
     }
   }
 
-  void _dispatchAllFieldsToBloc() {
+  void _updateBlocWithCurrentFieldValues() {
+    // Renamed for clarity
     final bloc = context.read<RegisterBloc>();
-    bloc.add(RegisterNameChanged(_nameController.text.trim()));
-    bloc.add(RegisterUsernameChanged(_usernameController.text.trim()));
-    bloc.add(RegisterEmailChanged(_emailController.text.trim()));
-    bloc.add(
-      RegisterPasswordChanged(_passwordController.text),
-    ); // No trim for password
-    bloc.add(RegisterAddressChanged(_addressController.text.trim()));
-    bloc.add(RegisterBirthdateChanged(_birthdateString)); // Already string
-    // Occupation ID is dispatched by dropdown's onChanged directly
-    if (_selectedOccupationId != null && _occupations.isNotEmpty) {
-      final selectedOccData = _occupations.firstWhere(
-        (occ) => occ['id'] == _selectedOccupationId,
-        orElse: () => {'id': '', 'name': ''},
-      );
-      if (selectedOccData['id']!.isNotEmpty) {
+    // Dispatch events only if local UI state differs from BLoC state
+    // This helps if BLoC is the source of truth and UI might get out of sync
+    // or if an intermediate action didn't update BLoC for some reason.
+    if (bloc.state.name != _nameController.text.trim()) {
+      bloc.add(RegisterNameChanged(_nameController.text.trim()));
+    }
+    if (bloc.state.username != _usernameController.text.trim()) {
+      bloc.add(RegisterUsernameChanged(_usernameController.text.trim()));
+    }
+    if (bloc.state.email != _emailController.text.trim()) {
+      bloc.add(RegisterEmailChanged(_emailController.text.trim()));
+    }
+    if (bloc.state.password != _passwordController.text) {
+      bloc.add(RegisterPasswordChanged(_passwordController.text));
+    }
+    if (bloc.state.address != _addressController.text.trim()) {
+      bloc.add(RegisterAddressChanged(_addressController.text.trim()));
+    }
+    if (bloc.state.birthdate != _selectedBirthdate) {
+      bloc.add(RegisterBirthdateChanged(_selectedBirthdate));
+    }
+
+    var currentSelectedOccName =
+        bloc.state.occupationName; // Default to current BLoC name
+    if (_selectedOccupationId != null && _selectedOccupationId!.isNotEmpty) {
+      if (_occupations.isNotEmpty) {
+        try {
+          final selectedOccData = _occupations.firstWhere(
+            (occ) => occ['id'] == _selectedOccupationId,
+          );
+          currentSelectedOccName = selectedOccData['name']!;
+        } catch (e) {
+          /* Keep BLoC name */
+        }
+      }
+      // Only dispatch if ID or derived name is different from BLoC
+      if (bloc.state.occupationId != _selectedOccupationId ||
+          bloc.state.occupationName != currentSelectedOccName) {
         bloc.add(
           RegisterOccupationIdChanged(
-            selectedOccData['id']!,
-            selectedOccData['name']!,
+            _selectedOccupationId!,
+            currentSelectedOccName,
           ),
         );
       }
+    } else if (bloc.state.occupationId.isNotEmpty) {
+      // If local is null but BLoC has one
+      bloc.add(const RegisterOccupationIdChanged('', ''));
     }
   }
 
@@ -152,7 +196,7 @@ class _RegisterPageState extends State<RegisterPage> {
         backgroundColor: AppColors.greyBackground,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Daftar Akun Baru',
@@ -167,11 +211,20 @@ class _RegisterPageState extends State<RegisterPage> {
         listeners: [
           BlocListener<RegisterBloc, RegisterState>(
             listenWhen: (prev, curr) =>
-                prev.status != curr.status || curr.errorMessage != null,
+                prev.status != curr.status ||
+                curr.errorMessage != null ||
+                // Also listen to individual field changes if BLoC state might change them
+                prev.name != curr.name ||
+                prev.username != curr.username ||
+                prev.email != curr.email ||
+                prev.password != curr.password ||
+                prev.address != curr.address ||
+                prev.birthdate != curr.birthdate ||
+                prev.occupationId != curr.occupationId,
             listener: (context, state) {
-              _syncControllersWithBloc(
+              _syncFieldsFromBloc(
                 state,
-              ); // Keep UI in sync with BLoC potentially
+              ); // Sync local UI elements with BLoC state
 
               if (state.status == RegisterStatus.success) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -191,59 +244,59 @@ class _RegisterPageState extends State<RegisterPage> {
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
-                context.read<RegisterBloc>().add(
-                  RegisterClearError(),
-                ); // Reset error for next attempt
-              } else if (state.status ==
-                  RegisterStatus.awaitingOtpVerification) {
-                // This status means OTP request was successful from RegisterBloc's perspective
-                // Now waiting for OtpBloc to handle UI and then signal back via RegisterOtpVerified event
-                // The navigation to OTP page will be triggered by OtpBlocListener below
+                context.read<RegisterBloc>().add(const RegisterClearError());
               }
             },
           ),
           BlocListener<OtpBloc, OtpStateClass.OtpState>(
+            listenWhen: (prev, currOtpState) {
+              final currentRegisterStatus = context
+                  .read<RegisterBloc>()
+                  .state
+                  .status;
+              return currentRegisterStatus ==
+                      RegisterStatus.awaitingOtpVerification ||
+                  (currentRegisterStatus == RegisterStatus.submitting &&
+                      currOtpState is! OtpStateClass.OtpInitial &&
+                      prev is OtpStateClass.OtpInitial);
+            },
             listener: (context, otpState) {
               final registerBloc = context.read<RegisterBloc>();
               final currentRegisterStatus = registerBloc.state.status;
 
-              if (currentRegisterStatus == RegisterStatus.submitting &&
-                  otpState is OtpStateClass.OtpSuccess) {
-                // This means OTP was requested by RegisterFormSubmitted and was successful.
-                // Navigate to OTP verification page.
-                Navigator.pushNamed(
-                  context,
-                  Routes.otpVerification,
-                  arguments: OtpVerificationPageArguments(
-                    email: otpState.email,
-                    flow: OtpFlow.registration,
-                  ), // Pass email and flow type
-                ).then((otpVerifiedSuccessfully) {
-                  if (otpVerifiedSuccessfully == true) {
-                    registerBloc.add(RegisterOtpVerified());
-                  } else {
-                    // OTP verification failed or was cancelled, reset RegisterBloc state
-                    registerBloc.add(RegisterClearError());
+              if (currentRegisterStatus ==
+                  RegisterStatus.awaitingOtpVerification) {
+                if (otpState is OtpStateClass.OtpSuccess) {
+                  Navigator.pushNamed(
+                    context,
+                    Routes.otpVerification,
+                    arguments: OtpVerificationPageArguments(
+                      email: otpState.email,
+                      flow: OtpFlow.registration,
+                    ),
+                  ).then((otpVerifiedSuccessfully) {
                     if (mounted) {
-                      // Check if widget is still in the tree
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Verifikasi OTP dibatalkan atau gagal.',
+                      if (otpVerifiedSuccessfully == true) {
+                        registerBloc.add(const RegisterOtpVerified());
+                      } else {
+                        registerBloc.add(const RegisterClearError());
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Verifikasi OTP dibatalkan atau gagal.',
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
                     }
-                  }
-                });
-              } else if (currentRegisterStatus == RegisterStatus.submitting &&
-                  otpState is OtpStateClass.OtpFailure) {
-                // OTP request itself failed
-                registerBloc.add(
-                  RegisterFailure(
-                    'Gagal meminta OTP: ${otpState.errorMessage}',
-                  ),
-                );
+                  });
+                } else if (otpState is OtpStateClass.OtpFailure) {
+                  registerBloc.add(
+                    RegisterFailure(
+                      'Gagal meminta OTP: ${otpState.errorMessage}',
+                    ),
+                  );
+                }
               }
             },
           ),
@@ -268,6 +321,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   icons: Icons.person,
                   validator: (v) =>
                       (v?.isEmpty ?? true) ? 'Nama tidak boleh kosong' : null,
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterNameChanged(value.trim()),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -284,6 +340,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   validator: (v) => (v?.isEmpty ?? true)
                       ? 'Username tidak boleh kosong'
                       : null,
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterUsernameChanged(value.trim()),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -303,6 +362,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       : (!(v?.contains('@') ?? false)
                             ? 'Format email salah'
                             : null),
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterEmailChanged(value.trim()),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -322,6 +384,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       : ((v?.length ?? 0) < 6
                             ? 'Password minimal 6 karakter'
                             : null),
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterPasswordChanged(value),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -337,8 +402,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   icons: Icons.location_on,
                   validator: (v) =>
                       (v?.isEmpty ?? true) ? 'Alamat tidak boleh kosong' : null,
+                  onChanged: (value) => context.read<RegisterBloc>().add(
+                    RegisterAddressChanged(value.trim()),
+                  ),
                 ),
                 const SizedBox(height: 12),
+
                 const Text(
                   'Tanggal Lahir',
                   style: TextStyle(
@@ -347,34 +416,34 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 CustomDateSelector(
-                  label: _birthdateString.isNotEmpty
-                      ? _birthdateString
-                      : 'Pilih Tanggal Lahir', // Show selected date or label
+                  key: ValueKey(
+                    _selectedBirthdate,
+                  ), // Rebuild if _selectedBirthdate instance changes
+                  label: 'Pilih Tanggal Lahir', // This is just the placeholder
+                  initialDate:
+                      _selectedBirthdate, // This will pre-fill the date
                   icons: Icons.date_range_rounded,
-                  onDateSelected: (dateString) {
+                  onDateSelected: (DateTime? date) {
                     if (mounted) {
-                      // Ensure widget is still mounted
                       setState(() {
-                        _birthdateString = dateString;
-                        _birthdateTouched = true; // Mark as touched
+                        _selectedBirthdate = date;
+                        _birthdateFieldTouched = true;
                       });
+                      context.read<RegisterBloc>().add(
+                        RegisterBirthdateChanged(date),
+                      );
                     }
                   },
+                  validator: (DateTime? value) {
+                    // FormField validator
+                    if (value == null) {
+                      return 'Tanggal lahir harus dipilih';
+                    }
+                    return null;
+                  },
                 ),
-                if (_birthdateString.isEmpty &&
-                    (_formKey.currentState?.validate() ?? false) &&
-                    _birthdateTouched) // Check if touched
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      'Tanggal lahir harus dipilih',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
                 const SizedBox(height: 12),
+
                 const Text(
                   'Profesi',
                   style: TextStyle(
@@ -407,9 +476,11 @@ class _RegisterPageState extends State<RegisterPage> {
                       if (newValue != null) {
                         final selectedOccData = _occupations.firstWhere(
                           (occ) => occ['id'] == newValue,
+                          orElse: () => {'id': '', 'name': 'Error'},
                         );
-                        setState(() => _selectedOccupationId = newValue);
-                        // Dispatch to BLoC immediately if form interacts with BLoC on field change
+                        if (mounted) {
+                          setState(() => _selectedOccupationId = newValue);
+                        }
                         context.read<RegisterBloc>().add(
                           RegisterOccupationIdChanged(
                             newValue,
@@ -423,49 +494,54 @@ class _RegisterPageState extends State<RegisterPage> {
                         : null,
                   ),
                 const SizedBox(height: 24),
+
                 BlocBuilder<RegisterBloc, RegisterState>(
                   builder: (context, state) {
-                    final isLoadingActual =
+                    final isLoadingButton =
                         state.status == RegisterStatus.submitting ||
                         state.status ==
                             RegisterStatus.awaitingOtpVerification ||
                         state.status == RegisterStatus.finalizing;
                     return CustomButton(
-                      label: isLoadingActual ? 'Memproses…' : 'Daftar Akun',
-                      onPressed: isLoadingActual
+                      label: isLoadingButton ? 'Memproses…' : 'Daftar Akun',
+                      onPressed: isLoadingButton
                           ? null
                           : () {
-                              if (_formKey.currentState?.validate() ?? false) {
-                                if (_birthdateString.isEmpty) {
+                              setState(() {
+                                _birthdateFieldTouched = true;
+                              });
+                              _updateBlocWithCurrentFieldValues(); // Ensure BLoC has the latest from text fields
+
+                              // Access BLoC state *after* potential updates from _updateBlocWithCurrentFieldValues
+                              final currentBlocState = context
+                                  .read<RegisterBloc>()
+                                  .state;
+
+                              if ((_formKey.currentState?.validate() ??
+                                      false) &&
+                                  currentBlocState.birthdate != null) {
+                                // Check canRequestOtp from the BLoC state which is now synced
+                                if (currentBlocState.canRequestOtp) {
+                                  context.read<RegisterBloc>().add(
+                                    const RegisterFormSubmitted(),
+                                  );
+                                } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
-                                        'Tanggal lahir harus diisi.',
+                                        'Harap lengkapi semua field yang wajib.',
                                       ),
                                     ),
                                   );
-                                  return;
                                 }
-                                if (_selectedOccupationId == null ||
-                                    _selectedOccupationId!.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Profesi harus dipilih.'),
-                                    ),
-                                  );
-                                  return;
-                                }
-                                _dispatchAllFieldsToBloc(); // Ensure BLoC state is up-to-date
-                                context.read<RegisterBloc>().add(
-                                  RegisterFormSubmitted(),
-                                );
                               } else {
+                                var errorMsg =
+                                    'Harap isi semua field dengan benar.';
+                                if (currentBlocState.birthdate == null) {
+                                  errorMsg = 'Tanggal lahir harus dipilih.';
+                                }
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Harap isi semua field dengan benar.',
-                                    ),
-                                  ),
+                                  SnackBar(content: Text(errorMsg)),
                                 );
                               }
                             },
@@ -480,10 +556,3 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
-
-// In otp_verification_page.dart, you'll need to define OtpFlow
-// enum OtpFlow { registration, passwordReset, general }
-// And pass it during navigation:
-// Navigator.pushNamed(context, Routes.otpVerification, arguments: {'email': email, 'flow': OtpFlow.registration});
-// Then in OtpVerificationPage, use this flow to decide:
-// if (flow == OtpFlow.registration) { Navigator.pop(context, true); } else { /* other navigation */ }

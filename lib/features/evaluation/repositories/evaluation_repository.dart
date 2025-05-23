@@ -1,16 +1,16 @@
 // lib/features/evaluation/repositories/evaluation_repository.dart
 import 'dart:convert';
-import 'package:collection/collection.dart'; // For groupBy
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
-import 'package:ta_client/core/services/connectivity_service.dart'; // Import
+import 'package:ta_client/core/services/connectivity_service.dart';
 import 'package:ta_client/core/services/hive_service.dart';
-import 'package:ta_client/core/services/service_locator.dart'; // Import for sl
-import 'package:ta_client/features/budgeting/repositories/period_repository.dart';
+import 'package:ta_client/core/services/service_locator.dart';
+// No longer need PeriodRepository here if evaluations are purely ad-hoc by date
+// import 'package:ta_client/features/budgeting/repositories/period_repository.dart';
 import 'package:ta_client/features/evaluation/models/evaluation.dart';
 import 'package:ta_client/features/evaluation/models/history.dart';
 import 'package:ta_client/features/evaluation/services/evaluation_service.dart';
-// Import client-side calculator and transaction dependencies for offline mode
 import 'package:ta_client/features/evaluation/utils/evaluation_calculator.dart';
 import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart'; // For offline transactions
@@ -147,61 +147,49 @@ _EvaluationTxSums _computeEvaluationConceptualSums(List<Transaction> txs) {
 }
 
 class EvaluationRepository {
-  // Injected
-  // final PeriodRepository _periodRepository; // Inject if needed for offline period context
-
   EvaluationRepository(
     this._service,
     this._transactionRepository,
-    this._periodRepository,
-  ) : _connectivityService = sl<ConnectivityService>(),
-      _hiveService = sl<HiveService>() {
-    // Hive boxes are opened in bootstrap.dart
-  }
+  ) // Removed PeriodRepository
+  : _connectivityService = sl<ConnectivityService>(),
+      _hiveService = sl<HiveService>();
+
   final EvaluationService _service;
   final TransactionRepository _transactionRepository;
-  final PeriodRepository _periodRepository;
+  // final PeriodRepository _periodRepository; // REMOVED
   final ConnectivityService _connectivityService;
   final HiveService _hiveService;
 
   static const String evaluationDashboardCacheBoxName =
-      'evaluationDashboardCache_v1';
+      'evaluationDashboardCache_v2'; // Version up
   static const String evaluationResultsCacheBoxName =
-      'evaluationResultsCache_v1'; // For individual results for history
+      'evaluationResultsCache_v2';
 
-  // Helper to generate a cache key for a given date range
   String _getDashboardCacheKey(DateTime startDate, DateTime endDate) {
-    // Normalize dates to avoid issues with time components
     final startKey = DateFormat('yyyy-MM-dd').format(startDate);
     final endKey = DateFormat('yyyy-MM-dd').format(endDate);
     return 'eval_dashboard_${startKey}_to_$endKey';
   }
 
   Future<List<Evaluation>> getDashboardItems({
-    required DateTime startDate, // Still needed for offline path
-    required DateTime endDate, // Still needed for offline path
-    required String periodId, // Now required for online path
+    required DateTime startDate,
+    required DateTime endDate,
+    // periodId is no longer directly used here for API call, dates are primary
   }) async {
     final isOnline = await _connectivityService.isOnline;
     final cacheKey = _getDashboardCacheKey(startDate, endDate);
 
     if (isOnline) {
       try {
-        if (periodId.isEmpty) {
-          throw ArgumentError(
-            'Period ID is required for online evaluation dashboard fetch.',
-          );
-        }
         debugPrint(
-          '[EvaluationRepository] Online: Calling service to calculate/fetch evaluations for periodId: $periodId.',
+          '[EvaluationRepository] Online: Calling service to calculate/fetch evaluations for dates: $startDate - $endDate.',
         );
+        // Service method now takes dates
         final evaluations = await _service
-            .calculateAndFetchEvaluationsForPeriod(
-              periodId: periodId,
-              // startDate: startDate,
-              // endDate: endDate,
+            .calculateAndFetchEvaluationsForDateRange(
+              startDate: startDate,
+              endDate: endDate,
             );
-        // Cache the results from online fetch
         await _hiveService.putJsonString(
           evaluationDashboardCacheBoxName,
           cacheKey,
@@ -237,9 +225,9 @@ class EvaluationRepository {
         );
       }
     } else {
-      // OFFLINE
+      // OFFLINE LOGIC (remains largely the same)
       debugPrint(
-        '[EvaluationRepository] Offline: Attempting to read/calculate evaluations.',
+        '[EvaluationRepository] Offline: Attempting to read/calculate evaluations for $startDate - $endDate.',
       );
       final cachedJson = await _hiveService.getJsonString(
         evaluationDashboardCacheBoxName,
@@ -258,10 +246,8 @@ class EvaluationRepository {
           debugPrint(
             '[EvaluationRepository] Error parsing cached evaluations (offline): $parseError. Recalculating.',
           );
-          // Fall through to recalculate if cache is corrupt
         }
       }
-
       debugPrint(
         '[EvaluationRepository] Offline: No valid cache. Calculating evaluations locally.',
       );
@@ -290,23 +276,21 @@ class EvaluationRepository {
       }
 
       final offlineEvaluations = evaluationDefinitions().map((def) {
-        final v = def.compute(
-          inRange,
-        ); // Uses client-side evaluation_calculator
+        final v = def.compute(inRange);
         return Evaluation(
-          id: def.id, // Client-side ID '0', '1', etc.
+          id: def.id,
           title: def.title,
           yourValue: v,
           idealText: def.idealText,
+          isIdeal: def.isIdeal(v),
           status: def.isIdeal(v)
               ? EvaluationStatusModel.ideal
               : EvaluationStatusModel.notIdeal,
           calculatedAt: DateTime.now(),
-          // backendRatioCode and backendEvaluationResultId will be null for offline calculated
+          startDate: startDate, // Store the ad-hoc dates
+          endDate: endDate, // Store the ad-hoc dates
         );
       }).toList();
-
-      // Cache these offline calculated results
       await _hiveService.putJsonString(
         evaluationDashboardCacheBoxName,
         cacheKey,
@@ -320,24 +304,21 @@ class EvaluationRepository {
   }
 
   Future<Evaluation> getDetail({
-    required DateTime startDate,
-    required DateTime endDate, // Context for offline calculation
-    String?
-    evaluationResultDbId, // For online: ID of the EvaluationResult record from DB
-    String?
-    clientRatioId, // For offline: client-side ID '0', '1', etc. from RatioDef
+    required DateTime startDate, // For offline context
+    required DateTime endDate, // For offline context
+    String? evaluationResultDbId, // Backend ID of an EvaluationResult
+    String? clientRatioId, // Client-side '0'-'6' (Ratio.id)
   }) async {
     final isOnline = await _connectivityService.isOnline;
     if (isOnline && evaluationResultDbId != null) {
       debugPrint(
-        '[EvaluationRepository] Online: Calling service for evaluation detail ID: $evaluationResultDbId.',
+        '[EvaluationRepository] Online: Calling service for evaluation detail (DB ID): $evaluationResultDbId.',
       );
-      // No caching for individual detail here, assumes it's always fetched if online.
-      // Could cache if details are frequently accessed and rarely change.
       return _service.fetchEvaluationDetail(evaluationResultDbId);
     } else if (!isOnline && clientRatioId != null) {
+      // OFFLINE LOGIC (remains the same, using startDate, endDate for transaction filtering)
       debugPrint(
-        '[EvaluationRepository] Offline: Calculating evaluation detail locally for ratio $clientRatioId.',
+        '[EvaluationRepository] Offline: Calculating evaluation detail locally for ratio $clientRatioId for period $startDate - $endDate.',
       );
       final cachedTransactions = await _transactionRepository
           .getCachedTransactionList();
@@ -363,169 +344,159 @@ class EvaluationRepository {
       final value = ratioDef.compute(inRange);
       final conceptualSums = _computeEvaluationConceptualSums(inRange);
       final breakdown = <ConceptualComponentValue>[];
-      // Mapping logic for breakdown based on clientRatioId (as detailed in previous response)
+      // ... (breakdown logic based on clientRatioId and conceptualSums - same as before)
       if (clientRatioId == '0') {
-        breakdown
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Aset Likuid (Numerator)',
-              value: conceptualSums.liquid,
-            ),
-          )
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Pengeluaran Bulanan (Denominator)',
-              value: conceptualSums.expense,
-            ),
-          );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Aset Likuid (Numerator)',
+            value: conceptualSums.liquid,
+          ),
+        );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Pengeluaran Bulanan (Denominator)',
+            value: conceptualSums.expense,
+          ),
+        );
       } else if (clientRatioId == '1') {
-        breakdown
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Aset Likuid (Numerator)',
-              value: conceptualSums.liquid,
-            ),
-          )
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Kekayaan Bersih (Denominator)',
-              value: conceptualSums.netWorth,
-            ),
-          );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Aset Likuid (Numerator)',
+            value: conceptualSums.liquid,
+          ),
+        );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Kekayaan Bersih (Denominator)',
+            value: conceptualSums.netWorth,
+          ),
+        );
       } else if (clientRatioId == '2') {
-        breakdown
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Utang (Numerator)',
-              value: conceptualSums.liabilities,
-            ),
-          )
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Aset (Denominator)',
-              value: conceptualSums.totalAssets,
-            ),
-          );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Utang (Numerator)',
+            value: conceptualSums.liabilities,
+          ),
+        );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Aset (Denominator)',
+            value: conceptualSums.totalAssets,
+          ),
+        );
       } else if (clientRatioId == '3') {
-        breakdown
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Tabungan (Numerator)',
-              value: conceptualSums.savings,
-            ),
-          )
-          ..add(
-            ConceptualComponentValue(
-              name: 'Penghasilan Kotor (Denominator)',
-              value: conceptualSums.income,
-            ),
-          );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Tabungan (Numerator)',
+            value: conceptualSums.savings,
+          ),
+        );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Penghasilan Kotor (Denominator)',
+            value: conceptualSums.income,
+          ),
+        );
       } else if (clientRatioId == '4') {
-        breakdown
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Pembayaran Utang Bulanan (Numerator)',
-              value: conceptualSums.debtPayments,
-            ),
-          )
-          ..add(
-            ConceptualComponentValue(
-              name: 'Penghasilan Bersih (Denominator)',
-              value: conceptualSums.netIncome,
-            ),
-          );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Pembayaran Utang Bulanan (Numerator)',
+            value: conceptualSums.debtPayments,
+          ),
+        );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Penghasilan Bersih (Denominator)',
+            value: conceptualSums.netIncome,
+          ),
+        );
       } else if (clientRatioId == '5') {
-        breakdown
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Aset Diinvestasikan (Numerator)',
-              value: conceptualSums.invested,
-            ),
-          )
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Kekayaan Bersih (Denominator)',
-              value: conceptualSums.netWorth,
-            ),
-          );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Aset Diinvestasikan (Numerator)',
+            value: conceptualSums.invested,
+          ),
+        );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Kekayaan Bersih (Denominator)',
+            value: conceptualSums.netWorth,
+          ),
+        );
       } else if (clientRatioId == '6') {
-        breakdown
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Kekayaan Bersih (Numerator)',
-              value: conceptualSums.netWorth,
-            ),
-          )
-          ..add(
-            ConceptualComponentValue(
-              name: 'Total Aset (Denominator)',
-              value: conceptualSums.totalAssets,
-            ),
-          );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Kekayaan Bersih (Numerator)',
+            value: conceptualSums.netWorth,
+          ),
+        );
+        breakdown.add(
+          ConceptualComponentValue(
+            name: 'Total Aset (Denominator)',
+            value: conceptualSums.totalAssets,
+          ),
+        );
       }
+      // ...
 
       return Evaluation(
         id: ratioDef.id,
         title: ratioDef.title,
         yourValue: value,
+        isIdeal: ratioDef.isIdeal(value),
         idealText: ratioDef.idealText,
-        breakdown: breakdown,
+        breakdown: breakdown.isNotEmpty ? breakdown : null,
         status: ratioDef.isIdeal(value)
             ? EvaluationStatusModel.ideal
             : EvaluationStatusModel.notIdeal,
         calculatedAt: DateTime.now(),
+        startDate: startDate,
+        endDate: endDate, // Include the ad-hoc dates
       );
     } else {
-      throw Exception(
-        'Cannot get detail: Insufficient parameters for current online/offline state, or evaluationResultDbId missing for online mode.',
+      throw ArgumentError(
+        'Cannot get detail: Insufficient parameters for current online/offline state.',
       );
     }
   }
 
   Future<List<History>> getEvaluationHistory({
-    DateTime? startDate,
-    DateTime? endDate,
+    DateTime? startDate, // Optional filter for history start date
+    DateTime? endDate, // Optional filter for history end date
   }) async {
     final isOnline = await _connectivityService.isOnline;
-    // Cache key for raw EvaluationResult data (list of EvaluationModel)
-    // A simple key for "all history" or date-range based if feasible. For now, one key.
-    const historyCacheKey = 'all_evaluation_results_for_history_v1';
+    const historyDataCacheKey = 'all_evaluation_results_for_history_v2';
 
-    var allHistoricalResults = <Evaluation>[];
+    var allHistoricalRawResults = <Evaluation>[];
 
     if (isOnline) {
       try {
         debugPrint(
           '[EvaluationRepository] Online: Calling service for raw evaluation history results.',
         );
-        // This service call should ideally fetch ALL EvaluationResult items for the user,
-        // or those within a broad default range if not specified.
-        // The backend endpoint /evaluations/history should return List<PopulatedEvaluationResult>
-        allHistoricalResults = await _service
+        allHistoricalRawResults = await _service
             .fetchRawEvaluationResultsForHistory(
-              // NEW SERVICE METHOD
               startDate: startDate,
               endDate: endDate,
             );
-
-        // Cache these raw results
         await _hiveService.putJsonString(
           evaluationResultsCacheBoxName,
-          historyCacheKey,
-          json.encode(allHistoricalResults.map((e) => e.toJson()).toList()),
+          historyDataCacheKey,
+          json.encode(allHistoricalRawResults.map((e) => e.toJson()).toList()),
         );
       } catch (e) {
+        // ... (try cache logic - same as before) ...
         debugPrint(
           '[EvaluationRepository] Online fetch for history results failed, trying cache: $e',
         );
         final cachedJson = await _hiveService.getJsonString(
           evaluationResultsCacheBoxName,
-          historyCacheKey,
+          historyDataCacheKey,
         );
         if (cachedJson != null) {
           try {
             final decodedList = json.decode(cachedJson) as List<dynamic>;
-            allHistoricalResults = decodedList
+            allHistoricalRawResults = decodedList
                 .map(
                   (item) => Evaluation.fromJson(item as Map<String, dynamic>),
                 )
@@ -534,27 +505,28 @@ class EvaluationRepository {
             debugPrint('Error parsing cached history results: $parseError');
           }
         }
-        if (allHistoricalResults.isEmpty && e is EvaluationApiException) {
+        if (allHistoricalRawResults.isEmpty && e is EvaluationApiException) {
           rethrow;
         }
-        if (allHistoricalResults.isEmpty) {
+        if (allHistoricalRawResults.isEmpty) {
           throw EvaluationApiException(
             'Failed online, no cache for history data.',
           );
         }
       }
     } else {
+      // ... (offline cache reading - same as before) ...
       debugPrint(
         '[EvaluationRepository] Offline: Reading raw evaluation history results from cache.',
       );
       final cachedJson = await _hiveService.getJsonString(
         evaluationResultsCacheBoxName,
-        historyCacheKey,
+        historyDataCacheKey,
       );
       if (cachedJson != null) {
         try {
           final decodedList = json.decode(cachedJson) as List<dynamic>;
-          allHistoricalResults = decodedList
+          allHistoricalRawResults = decodedList
               .map((item) => Evaluation.fromJson(item as Map<String, dynamic>))
               .toList();
         } catch (parseError) {
@@ -563,7 +535,7 @@ class EvaluationRepository {
           );
         }
       }
-      if (allHistoricalResults.isEmpty) {
+      if (allHistoricalRawResults.isEmpty) {
         debugPrint(
           '[EvaluationRepository] Offline: No cached evaluation results for history.',
         );
@@ -571,38 +543,32 @@ class EvaluationRepository {
       }
     }
 
-    // Now, aggregate `allHistoricalResults` (List<EvaluationModel>) into List<HistoryModel>
-    if (allHistoricalResults.isEmpty) return [];
+    if (allHistoricalRawResults.isEmpty) return [];
 
-    // Group by periodId
-    final groupedByPeriod = groupBy<Evaluation, String>(
-      allHistoricalResults,
-      (result) => result.periodId ?? '',
+    // Group by unique startDate-endDate pairs from the EvaluationResults
+    final groupedByDateRange = groupBy<Evaluation, String>(
+      allHistoricalRawResults,
+      (result) {
+        if (result.startDate != null && result.endDate != null) {
+          return '${result.startDate!.toIso8601String()}_${result.endDate!.toIso8601String()}';
+        }
+        return 'unknown_range_${result.calculatedAt.millisecondsSinceEpoch}';
+      },
     );
 
     final historySummaries = <History>[];
-
-    for (final periodIdEntry in groupedByPeriod.entries) {
-      final periodId = periodIdEntry.key;
-      final resultsForPeriod = periodIdEntry.value;
-      if (resultsForPeriod.isEmpty) continue;
-
-      // Fetch period details for start/end dates (must be cached by PeriodRepository)
-      final periodDetails = await _periodRepository.getCachedPeriodById(
-        periodId,
-      );
-      if (periodDetails == null) {
-        debugPrint(
-          '[EvaluationRepository] Warning: Period details for $periodId not found in cache. Skipping history entry.',
-        );
+    for (final dateRangeKey in groupedByDateRange.keys) {
+      final resultsForRange = groupedByDateRange[dateRangeKey]!;
+      if (resultsForRange.isEmpty ||
+          resultsForRange.first.startDate == null ||
+          resultsForRange.first.endDate == null) {
         continue;
       }
 
       var idealCount = 0;
       var notIdealCount = 0;
       var incompleteCount = 0;
-
-      for (final result in resultsForPeriod) {
+      for (final result in resultsForRange) {
         switch (result.status) {
           case EvaluationStatusModel.ideal:
             idealCount++;
@@ -614,18 +580,15 @@ class EvaluationRepository {
       }
       historySummaries.add(
         History(
-          start: periodDetails.startDate,
-          end: periodDetails.endDate,
+          start: resultsForRange.first.startDate!,
+          end: resultsForRange.first.endDate!,
           ideal: idealCount,
           notIdeal: notIdealCount,
           incomplete: incompleteCount,
         ),
       );
     }
-
-    historySummaries.sort(
-      (a, b) => b.start.compareTo(a.start),
-    ); // Sort by period start date, newest first
+    historySummaries.sort((a, b) => b.start.compareTo(a.start));
     return historySummaries;
   }
 }

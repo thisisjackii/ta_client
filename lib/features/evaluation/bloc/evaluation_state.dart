@@ -5,51 +5,61 @@ import 'package:ta_client/features/evaluation/models/history.dart';
 
 class EvaluationState extends Equatable {
   const EvaluationState({
-    required this.dashboardItems,
-    required this.history,
-    this.startDate,
-    this.endDate,
+    this.evaluationStartDate, // Renamed from startDate
+    this.evaluationEndDate, // Renamed from endDate
+    this.dashboardItems = const [],
+    this.history = const [],
     this.detailItem,
     this.loading = false,
     this.error,
+    this.dateError, // For specific date validation errors
   });
-  factory EvaluationState.initial() =>
-      const EvaluationState(dashboardItems: [], history: []);
-  final DateTime? startDate;
-  final DateTime? endDate;
+
+  factory EvaluationState.initial() => const EvaluationState();
+
+  final DateTime? evaluationStartDate;
+  final DateTime? evaluationEndDate;
   final List<Evaluation> dashboardItems;
   final Evaluation? detailItem;
   final List<History> history;
   final bool loading;
   final String? error;
+  final String? dateError;
+
   EvaluationState copyWith({
-    DateTime? startDate,
-    DateTime? endDate,
+    DateTime? evaluationStartDate,
+    DateTime? evaluationEndDate,
     List<Evaluation>? dashboardItems,
     Evaluation? detailItem,
+    bool clearDetailItem = false,
     List<History>? history,
     bool? loading,
     String? error,
+    bool clearError = false,
+    String? dateError,
+    bool clearDateError = false,
   }) {
     return EvaluationState(
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
+      evaluationStartDate: evaluationStartDate ?? this.evaluationStartDate,
+      evaluationEndDate: evaluationEndDate ?? this.evaluationEndDate,
       dashboardItems: dashboardItems ?? this.dashboardItems,
-      detailItem: detailItem ?? this.detailItem,
+      detailItem: clearDetailItem ? null : detailItem ?? this.detailItem,
       history: history ?? this.history,
       loading: loading ?? this.loading,
-      error: error,
+      error: clearError ? null : error ?? this.error,
+      dateError: clearDateError ? null : dateError ?? this.dateError,
     );
   }
 
   @override
   List<Object?> get props => [
-    startDate,
-    endDate,
+    evaluationStartDate,
+    evaluationEndDate,
     dashboardItems,
     detailItem,
     history,
     loading,
     error,
+    dateError,
   ];
 }

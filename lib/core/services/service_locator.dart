@@ -6,15 +6,15 @@ import 'package:ta_client/core/services/hive_service.dart';
 import 'package:ta_client/core/state/auth_state.dart';
 import 'package:ta_client/core/utils/dio_client.dart';
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
-import 'package:ta_client/features/budgeting/repositories/period_repository.dart';
 import 'package:ta_client/features/budgeting/services/budgeting_service.dart';
-import 'package:ta_client/features/budgeting/services/period_service.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/evaluation/services/evaluation_service.dart';
 import 'package:ta_client/features/login/services/login_service.dart';
+import 'package:ta_client/features/otp/bloc/otp_bloc.dart';
 import 'package:ta_client/features/otp/services/otp_service.dart';
 import 'package:ta_client/features/profile/repositories/profile_repository.dart';
 import 'package:ta_client/features/profile/services/profile_service.dart';
+import 'package:ta_client/features/register/bloc/register_bloc.dart';
 import 'package:ta_client/features/register/services/register_service.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_hierarchy_repository.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
@@ -60,11 +60,6 @@ void setupServiceLocator() {
         service: sl<TransactionHierarchyService>(),
       ),
     )
-    // --- Period Feature ---
-    ..registerLazySingleton<PeriodService>(() => PeriodService(dio: sl<Dio>()))
-    ..registerLazySingleton<PeriodRepository>(
-      () => PeriodRepository(sl<PeriodService>()),
-    )
     // --- Budgeting Feature ---
     ..registerLazySingleton<BudgetingService>(
       () => BudgetingService(dio: sl<Dio>()),
@@ -73,7 +68,6 @@ void setupServiceLocator() {
       () => BudgetingRepository(
         sl<BudgetingService>(),
         sl<TransactionRepository>(),
-        sl<PeriodRepository>(),
       ),
     )
     // --- Evaluation Feature ---
@@ -87,7 +81,6 @@ void setupServiceLocator() {
       () => EvaluationRepository(
         sl<EvaluationService>(),
         sl<TransactionRepository>(),
-        sl<PeriodRepository>(),
       ),
     )
     // --- Transaction Sync Service ---
@@ -95,7 +88,15 @@ void setupServiceLocator() {
       () => TransactionSyncService(
         transactionRepository: sl<TransactionRepository>(),
         budgetingRepository: sl<BudgetingRepository>(),
-        periodRepository: sl<PeriodRepository>(),
+      ),
+    )
+    ..registerFactory<OtpBloc>(
+      () => OtpBloc(otpService: sl<OtpService>()),
+    ) // Use registerFactory for BLoCs
+    ..registerFactory<RegisterBloc>(
+      () => RegisterBloc(
+        registerService: sl<RegisterService>(),
+        otpBloc: sl<OtpBloc>(), // Get OtpBloc from GetIt
       ),
     );
 }

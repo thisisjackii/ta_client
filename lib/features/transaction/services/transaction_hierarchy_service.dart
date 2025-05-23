@@ -55,7 +55,7 @@ class TransactionHierarchyService {
       );
       if (e is HierarchyApiException) rethrow;
       throw HierarchyApiException(
-        'An unexpected error occurred while fetching account types: ${e}',
+        'An unexpected error occurred while fetching account types: $e',
       );
     }
   }
@@ -101,7 +101,7 @@ class TransactionHierarchyService {
       );
       if (e is HierarchyApiException) rethrow;
       throw HierarchyApiException(
-        'An unexpected error occurred while fetching categories: ${e}',
+        'An unexpected error occurred while fetching categories: $e',
       );
     }
   }
@@ -147,7 +147,7 @@ class TransactionHierarchyService {
       );
       if (e is HierarchyApiException) rethrow;
       throw HierarchyApiException(
-        'An unexpected error occurred while fetching subcategories: ${e}',
+        'An unexpected error occurred while fetching subcategories: $e',
       );
     }
   }

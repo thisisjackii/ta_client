@@ -1,61 +1,48 @@
 // lib/features/budgeting/bloc/budgeting_event.dart
 import 'package:equatable/equatable.dart';
+// For DTO
 
 abstract class BudgetingEvent extends Equatable {
   const BudgetingEvent();
-
   @override
   List<Object?> get props => [];
 }
 
 // --- Date Selection and Confirmation ---
 class BudgetingIncomeDateRangeSelected extends BudgetingEvent {
-  // Optional: if user is re-selecting for an existing budget period
-
   const BudgetingIncomeDateRangeSelected({
     required this.start,
     required this.end,
-    this.existingPeriodId,
   });
   final DateTime start;
   final DateTime end;
-  final String? existingPeriodId;
-
   @override
-  List<Object?> get props => [start, end, existingPeriodId];
+  List<Object?> get props => [start, end];
 }
 
-class BudgetingExpenseDateRangeSelected extends BudgetingEvent {
-  const BudgetingExpenseDateRangeSelected({
+class BudgetingPlanDateRangeSelected extends BudgetingEvent {
+  // Renamed from ExpenseDateRangeSelected
+  const BudgetingPlanDateRangeSelected({
     required this.start,
     required this.end,
-    this.existingPeriodId,
+    this.planDescription, // Optional description for the plan
   });
   final DateTime start;
   final DateTime end;
-  final String? existingPeriodId;
-
+  final String? planDescription;
   @override
-  List<Object?> get props => [start, end, existingPeriodId];
+  List<Object?> get props => [start, end, planDescription];
 }
 
-// --- Data Loading Triggers (Repository handles online/offline) ---
-class BudgetingLoadIncomeSummary extends BudgetingEvent {
-  const BudgetingLoadIncomeSummary({required this.periodId});
-  final String periodId;
-  @override
-  List<Object?> get props => [periodId];
+// --- Data Loading Triggers ---
+// Triggered after income dates are confirmed
+class BudgetingLoadIncomeSummaryForSelectedDates extends BudgetingEvent {
+  const BudgetingLoadIncomeSummaryForSelectedDates();
 }
 
-class BudgetingLoadExpenseSuggestions extends BudgetingEvent {
-  const BudgetingLoadExpenseSuggestions();
-}
-
-class BudgetingLoadExistingAllocations extends BudgetingEvent {
-  const BudgetingLoadExistingAllocations({required this.periodId});
-  final String periodId;
-  @override
-  List<Object?> get props => [periodId];
+// Triggered after plan dates are confirmed
+class BudgetingLoadExpenseSuggestionsAndExistingPlan extends BudgetingEvent {
+  const BudgetingLoadExpenseSuggestionsAndExistingPlan();
 }
 
 // --- User Interactions for Building the Budget ---
@@ -64,6 +51,14 @@ class BudgetingSelectIncomeSubcategory extends BudgetingEvent {
   final String subcategoryId;
   @override
   List<Object?> get props => [subcategoryId];
+}
+
+// Event to explicitly set the total calculated income after user confirms selections
+class BudgetingTotalIncomeConfirmed extends BudgetingEvent {
+  const BudgetingTotalIncomeConfirmed(this.totalIncome);
+  final double totalIncome;
+  @override
+  List<Object?> get props => [totalIncome];
 }
 
 class BudgetingToggleExpenseCategory extends BudgetingEvent {
@@ -103,16 +98,14 @@ class BudgetingToggleExpenseSubItem extends BudgetingEvent {
 
 // --- Saving the Budget ---
 class BudgetingSaveExpensePlan extends BudgetingEvent {
-  const BudgetingSaveExpensePlan();
+  const BudgetingSaveExpensePlan(); // DTO will be constructed from BLoC state
 }
 
 // --- Utility Events ---
 class BudgetingClearError extends BudgetingEvent {}
 
-class BudgetingResetState
-    extends BudgetingEvent {} // To reset the whole BLoC state
+class BudgetingClearInfoMessage extends BudgetingEvent {}
 
-class BudgetingSyncPendingData extends BudgetingEvent {
-  // For manual sync trigger
-  const BudgetingSyncPendingData();
-}
+class BudgetingResetState extends BudgetingEvent {}
+
+class BudgetingSyncPendingData extends BudgetingEvent {}

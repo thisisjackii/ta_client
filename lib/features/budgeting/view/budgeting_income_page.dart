@@ -21,8 +21,9 @@ class BudgetingIncomePage extends StatelessWidget {
       builder: (ctx, state) {
         final dateFormat = DateFormat('dd/MM/yyyy');
         final rangeText =
-            (state.incomeStartDate != null && state.incomeEndDate != null)
-            ? '${dateFormat.format(state.incomeStartDate!)} - ${dateFormat.format(state.incomeEndDate!)}'
+            (state.incomeCalculationStartDate != null &&
+                state.incomeCalculationEndDate != null)
+            ? '${dateFormat.format(state.incomeCalculationStartDate!)} - ${dateFormat.format(state.incomeCalculationEndDate!)}'
             : 'Periode pemasukan belum diatur';
 
         return Scaffold(

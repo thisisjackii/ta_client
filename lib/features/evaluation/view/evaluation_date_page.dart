@@ -29,9 +29,10 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
     final initialBlocState = context.read<EvaluationBloc>().state;
 
     // Initialize dialog dates from BLoC state if available, otherwise default
-    _start = initialBlocState.startDate ?? DateTime(now.year, now.month);
+    _start =
+        initialBlocState.evaluationStartDate ?? DateTime(now.year, now.month);
     _end =
-        initialBlocState.endDate ??
+        initialBlocState.evaluationEndDate ??
         DateUtils.addDaysToDate(DateTime(now.year, now.month + 1), -1);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {

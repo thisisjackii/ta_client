@@ -28,8 +28,8 @@ class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage> {
     super.initState();
     // Initialize temp dates from BLoC state if available (e.g., if user comes back)
     final initialState = context.read<BudgetingBloc>().state;
-    _tempStartDate = initialState.incomeStartDate;
-    _tempEndDate = initialState.incomeEndDate;
+    _tempStartDate = initialState.incomeCalculationStartDate;
+    _tempEndDate = initialState.incomeCalculationEndDate;
 
     // Clear any previous date confirmation or errors related to income period
     // context.read<BudgetingBloc>().add(BudgetingResetIncomePeriodConfirmation()); // You might need such an event
@@ -94,8 +94,11 @@ class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage> {
                 contentPadding: const EdgeInsets.all(24),
                 content: BudgetingDateSelection(
                   startDate:
-                      _tempStartDate ?? budgetingBloc.state.incomeStartDate,
-                  endDate: _tempEndDate ?? budgetingBloc.state.incomeEndDate,
+                      _tempStartDate ??
+                      budgetingBloc.state.incomeCalculationStartDate,
+                  endDate:
+                      _tempEndDate ??
+                      budgetingBloc.state.incomeCalculationEndDate,
                   onStartDateChanged: (date) =>
                       setDialogState(() => _tempStartDate = date),
                   onEndDateChanged: (date) =>

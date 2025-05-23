@@ -70,7 +70,7 @@ class BudgetingAllocationExpense extends StatelessWidget {
             body: const Center(child: CircularProgressIndicator()),
           );
         }
-        if (!state.expenseDateConfirmed) {
+        if (!state.planDateConfirmed) {
           return Scaffold(
             appBar: AppBar(title: const Text(AppStrings.budgetingTitle)),
             body: const Center(
@@ -165,7 +165,8 @@ class BudgetingAllocationExpense extends StatelessWidget {
                       : () {
                           // Add validation: at least one subcategory must be selected for each category that has >0% allocation
                           var allAllocatedCategoriesHaveSubcategories = true;
-                          for (final catId in state.selectedExpenseCategoryIds) {
+                          for (final catId
+                              in state.selectedExpenseCategoryIds) {
                             final percentage =
                                 state.expenseAllocationPercentages[catId] ??
                                 0.0;

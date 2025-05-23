@@ -2,7 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ta_client/features/evaluation/models/evaluation.dart';
-// History model is for the repository to construct
+// History model is for the repository to construct, service fetches raw Evaluation data
 // import 'package:ta_client/features/evaluation/models/history.dart'; // Not used directly by service response
 
 class EvaluationApiException implements Exception {
@@ -17,36 +17,35 @@ class EvaluationService {
   EvaluationService({required Dio dio}) : _dio = dio;
   final Dio _dio;
 
-  Future<List<Evaluation>> calculateAndFetchEvaluationsForPeriod({
-    required String periodId,
+  // This method now takes startDate and endDate directly
+  Future<List<Evaluation>> calculateAndFetchEvaluationsForDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
   }) async {
-    if (periodId.isEmpty) {
-      throw ArgumentError(
-        'Period ID is strictly required for calculateAndFetchEvaluationsForPeriod.',
-      );
-    }
-    const endpoint = '/transaction-evaluations/calculate';
-    final requestBody = {'periodId': periodId};
+    const endpoint = '/evaluations/calculate'; // Corrected backend path
+    final requestBody = {
+      'startDate': startDate.toUtc().toIso8601String(),
+      'endDate': endDate.toUtc().toIso8601String(),
+    };
 
     debugPrint(
       '[EvaluationService-DIO] REQUEST: POST $endpoint with body: $requestBody',
     );
     try {
       final response = await _dio.post<dynamic>(endpoint, data: requestBody);
+      // Backend: { success: true, message: "...", data: SingleRatioCalculationResultDto[] }
       if (response.statusCode == 200 &&
           response.data is Map<String, dynamic> &&
-          response.data['data'] is List && // Expecting 'data' key for the list
+          response.data['data'] is List &&
           response.data['success'] == true) {
         final resultsData = response.data['data'] as List<dynamic>;
         return resultsData.map((data) {
           final item = data as Map<String, dynamic>;
-          // This mapping should align with SingleRatioCalculationResultDto from backend
           return Evaluation(
-            id:
-                item['ratioId']
-                    as String, // Using ratioId as the primary ID for frontend Evaluation model
+            id: item['ratioId'] as String,
             title: item['ratioTitle'] as String,
             yourValue: (item['value'] as num).toDouble(),
+            isIdeal: item['isIdeal'] as bool,
             status: EvaluationStatusModel.values.firstWhere(
               (e) =>
                   e.name.toLowerCase() ==
@@ -55,15 +54,17 @@ class EvaluationService {
             ),
             idealText: item['idealRangeDisplay'] as String?,
             calculatedAt:
-                DateTime.now(), // Backend currently doesn't send calculatedAt in this specific DTO
+                DateTime.now(), // This specific DTO doesn't send calculatedAt
             backendRatioCode: item['ratioCode'] as String,
-            // backendEvaluationResultId and periodId will be set if this Evaluation obj is from full EvaluationResult
+            // For this response, startDate & endDate of the evaluation are known from the request
+            startDate: startDate,
+            endDate: endDate,
           );
         }).toList();
       } else {
         throw EvaluationApiException(
           response.data?['message']?.toString() ??
-              'Failed to calculate/fetch evaluations.',
+              'Failed to calculate evaluations.',
           statusCode: response.statusCode,
         );
       }
@@ -83,22 +84,20 @@ class EvaluationService {
       );
       if (e is EvaluationApiException) rethrow;
       throw EvaluationApiException(
-        'An unexpected error occurred: ${e}',
+        'An unexpected error occurred during evaluation: $e',
       );
     }
   }
 
   Future<Evaluation> fetchEvaluationDetail(String evaluationResultDbId) async {
-    final endpoint = '/transaction-evaluations/$evaluationResultDbId/detail';
+    final endpoint = '/evaluations/$evaluationResultDbId/detail';
     debugPrint('[EvaluationService-DIO] GET $endpoint');
     try {
       final response = await _dio.get<dynamic>(endpoint);
       if (response.statusCode == 200 &&
           response.data is Map<String, dynamic> &&
-          response.data['data']
-              is Map<String, dynamic> && // Check for nested 'data'
+          response.data['data'] is Map<String, dynamic> &&
           response.data['success'] == true) {
-        // Evaluation.fromJson needs to correctly parse the backend's EvaluationResultDetailDto
         return Evaluation.fromJson(
           response.data['data'] as Map<String, dynamic>,
         );
@@ -125,17 +124,16 @@ class EvaluationService {
       );
       if (e is EvaluationApiException) rethrow;
       throw EvaluationApiException(
-        'An unexpected error occurred: ${e}',
+        'An unexpected error occurred fetching detail: $e',
       );
     }
   }
 
-  // Returns raw Evaluation objects (mapped from PopulatedEvaluationResult on backend)
   Future<List<Evaluation>> fetchRawEvaluationResultsForHistory({
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    const endpoint = '/transaction-evaluations/history';
+    const endpoint = '/evaluations/history';
     final queryParams = <String, String>{};
     if (startDate != null) {
       queryParams['startDate'] = startDate.toUtc().toIso8601String();
@@ -154,7 +152,7 @@ class EvaluationService {
       );
       if (response.statusCode == 200 &&
           response.data is Map<String, dynamic> &&
-          response.data['data'] is List && // Check for nested 'data'
+          response.data['data'] is List &&
           response.data['success'] == true) {
         final dataList = response.data['data'] as List<dynamic>;
         return dataList
@@ -183,7 +181,7 @@ class EvaluationService {
       );
       if (e is EvaluationApiException) rethrow;
       throw EvaluationApiException(
-        'An unexpected error occurred: ${e}',
+        'An unexpected error occurred fetching raw history: $e',
       );
     }
   }

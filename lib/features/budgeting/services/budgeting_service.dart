@@ -1,13 +1,12 @@
 // lib/features/budgeting/services/budgeting_service.dart
-
 import 'package:dio/dio.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
-// Import your DTO for saving expense allocations and model for expense category suggestions
-// These will map to what the backend expects/returns.
 
-// Example DTO for what backend returns for income summary (matches IncomeByCategory in backend service)
-class BackendIncomeSummaryItem {
-  BackendIncomeSummaryItem({
+// --- DTOs for API Communication ---
+
+class BackendIncomeSummaryItem extends Equatable {
+  const BackendIncomeSummaryItem({
     required this.categoryId,
     required this.categoryName,
     required this.subcategories,
@@ -28,21 +27,30 @@ class BackendIncomeSummaryItem {
     );
   }
 
+  final String categoryId;
+  final String categoryName;
+  final List<BackendSubcategoryIncome> subcategories;
+  // Made non-final by removing 'final' to allow modification in repository's offline calculation
+  // However, it's better to construct with final value. See repository fix.
+  final double categoryTotalAmount; // Keep final, construct properly in repo
+
   Map<String, dynamic> toJson() => {
     'categoryId': categoryId,
     'categoryName': categoryName,
     'subcategories': subcategories.map((s) => s.toJson()).toList(),
     'categoryTotalAmount': categoryTotalAmount,
   };
-
-  final String categoryId;
-  final String categoryName;
-  final List<BackendSubcategoryIncome> subcategories;
-  double categoryTotalAmount;
+  @override
+  List<Object?> get props => [
+    categoryId,
+    categoryName,
+    subcategories,
+    categoryTotalAmount,
+  ];
 }
 
-class BackendSubcategoryIncome {
-  BackendSubcategoryIncome({
+class BackendSubcategoryIncome extends Equatable {
+  const BackendSubcategoryIncome({
     required this.subcategoryId,
     required this.subcategoryName,
     required this.totalAmount,
@@ -55,24 +63,21 @@ class BackendSubcategoryIncome {
       totalAmount: (json['totalAmount'] as num).toDouble(),
     );
   }
+  final String subcategoryId;
+  final String subcategoryName;
+  final double totalAmount;
 
   Map<String, dynamic> toJson() => {
     'subcategoryId': subcategoryId,
     'subcategoryName': subcategoryName,
     'totalAmount': totalAmount,
   };
-
-  final String subcategoryId;
-  final String subcategoryName;
-  final double totalAmount;
+  @override
+  List<Object?> get props => [subcategoryId, subcategoryName, totalAmount];
 }
 
-// Example DTO for what backend returns for expense category suggestions
-// Matches ExpenseCategorySuggestion in backend service
-class BackendExpenseCategorySuggestion {
-  // e.g., [{id: "subId", name: "Sub Name"}]
-
-  BackendExpenseCategorySuggestion({
+class BackendExpenseCategorySuggestion extends Equatable {
+  const BackendExpenseCategorySuggestion({
     required this.id,
     required this.name,
     required this.subcategories,
@@ -90,6 +95,11 @@ class BackendExpenseCategorySuggestion {
       subcategories: subList.map((s) => s as Map<String, dynamic>).toList(),
     );
   }
+  final String id; // categoryId
+  final String name; // categoryName
+  final double? lowerBound;
+  final double? upperBound;
+  final List<Map<String, dynamic>> subcategories;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -98,61 +108,105 @@ class BackendExpenseCategorySuggestion {
     'upperBound': upperBound,
     'subcategories': subcategories,
   };
-
-  final String id; // categoryId
-  final String name; // categoryName
-  final double? lowerBound;
-  final double? upperBound;
-  final List<Map<String, dynamic>> subcategories;
+  @override
+  List<Object?> get props => [id, name, subcategories, lowerBound, upperBound];
 }
 
-// DTO for saving expense allocations (matches backend CreateExpenseBudgetAllocationsDto)
-class SaveExpenseAllocationsRequestDto {
-  SaveExpenseAllocationsRequestDto({
-    required this.budgetPeriodId,
-    required this.totalBudgetableIncome,
-    required this.allocations,
+class SaveExpenseAllocationsRequestDto extends Equatable {
+  const SaveExpenseAllocationsRequestDto({
+    required this.planStartDate, required this.planEndDate, required this.incomeCalculationStartDate, required this.incomeCalculationEndDate, required this.totalCalculatedIncome, required this.allocations, this.planDescription,
+    this.budgetPeriodId, // Keep for backward compatibility during DTO parsing if old data exists
   });
 
+  // ***** ADDED fromJson factory *****
   factory SaveExpenseAllocationsRequestDto.fromJson(Map<String, dynamic> json) {
     final allocList = json['allocations'] as List<dynamic>? ?? [];
     return SaveExpenseAllocationsRequestDto(
-      budgetPeriodId: json['budgetPeriodId'] as String,
-      totalBudgetableIncome: (json['totalBudgetableIncome'] as num).toDouble(),
+      planDescription: json['planDescription'] as String?,
+      planStartDate: DateTime.parse(json['planStartDate'] as String).toLocal(),
+      planEndDate: DateTime.parse(json['planEndDate'] as String).toLocal(),
+      incomeCalculationStartDate: DateTime.parse(
+        json['incomeCalculationStartDate'] as String,
+      ).toLocal(),
+      incomeCalculationEndDate: DateTime.parse(
+        json['incomeCalculationEndDate'] as String,
+      ).toLocal(),
+      totalCalculatedIncome: (json['totalCalculatedIncome'] as num).toDouble(),
       allocations: allocList
           .map(
             (a) =>
                 FrontendAllocationDetailDto.fromJson(a as Map<String, dynamic>),
           )
           .toList(),
+      budgetPeriodId:
+          json['budgetPeriodId'] as String?, // For parsing old pending data
     );
   }
-  final String budgetPeriodId;
-  final double totalBudgetableIncome;
+
+  final String? planDescription;
+  final DateTime planStartDate;
+  final DateTime planEndDate;
+  final DateTime incomeCalculationStartDate;
+  final DateTime incomeCalculationEndDate;
+  final double totalCalculatedIncome;
   final List<FrontendAllocationDetailDto> allocations;
+  final String? budgetPeriodId; // For parsing old pending data, not sent to API
 
   Map<String, dynamic> toJson() => {
-    'budgetPeriodId': budgetPeriodId,
-    'totalBudgetableIncome': totalBudgetableIncome,
+    if (planDescription != null && planDescription!.isNotEmpty)
+      'planDescription': planDescription,
+    'planStartDate': planStartDate.toUtc().toIso8601String(),
+    'planEndDate': planEndDate.toUtc().toIso8601String(),
+    'incomeCalculationStartDate': incomeCalculationStartDate
+        .toUtc()
+        .toIso8601String(),
+    'incomeCalculationEndDate': incomeCalculationEndDate
+        .toUtc()
+        .toIso8601String(),
+    'totalCalculatedIncome': totalCalculatedIncome,
     'allocations': allocations.map((a) => a.toJson()).toList(),
   };
 
   SaveExpenseAllocationsRequestDto copyWith({
-    String? budgetPeriodId,
-    double? totalBudgetableIncome,
+    String? planDescription,
+    DateTime? planStartDate,
+    DateTime? planEndDate,
+    DateTime? incomeCalculationStartDate,
+    DateTime? incomeCalculationEndDate,
+    double? totalCalculatedIncome,
     List<FrontendAllocationDetailDto>? allocations,
+    String? budgetPeriodId, // Added for internal DTO state update
   }) {
     return SaveExpenseAllocationsRequestDto(
-      budgetPeriodId: budgetPeriodId ?? this.budgetPeriodId,
-      totalBudgetableIncome:
-          totalBudgetableIncome ?? this.totalBudgetableIncome,
+      planDescription: planDescription ?? this.planDescription,
+      planStartDate: planStartDate ?? this.planStartDate,
+      planEndDate: planEndDate ?? this.planEndDate,
+      incomeCalculationStartDate:
+          incomeCalculationStartDate ?? this.incomeCalculationStartDate,
+      incomeCalculationEndDate:
+          incomeCalculationEndDate ?? this.incomeCalculationEndDate,
+      totalCalculatedIncome:
+          totalCalculatedIncome ?? this.totalCalculatedIncome,
       allocations: allocations ?? this.allocations,
+      budgetPeriodId: budgetPeriodId ?? this.budgetPeriodId,
     );
   }
+
+  @override
+  List<Object?> get props => [
+    planDescription,
+    planStartDate,
+    planEndDate,
+    incomeCalculationStartDate,
+    incomeCalculationEndDate,
+    totalCalculatedIncome,
+    allocations,
+    budgetPeriodId,
+  ];
 }
 
-class FrontendAllocationDetailDto {
-  FrontendAllocationDetailDto({
+class FrontendAllocationDetailDto extends Equatable {
+  const FrontendAllocationDetailDto({
     required this.categoryId,
     required this.percentage,
     required this.selectedSubcategoryIds,
@@ -166,6 +220,7 @@ class FrontendAllocationDetailDto {
       selectedSubcategoryIds: subIds.map((e) => e as String).toList(),
     );
   }
+
   final String categoryId;
   final double percentage;
   final List<String> selectedSubcategoryIds;
@@ -175,61 +230,213 @@ class FrontendAllocationDetailDto {
     'percentage': percentage,
     'selectedSubcategoryIds': selectedSubcategoryIds,
   };
+  @override
+  List<Object?> get props => [categoryId, percentage, selectedSubcategoryIds];
 }
 
-// Frontend model for BudgetAllocation (matches backend's BudgetAllocation)
-class FrontendBudgetAllocation {
-  // Parent Category's total allocated amount
-
-  FrontendBudgetAllocation({
+class FrontendBudgetPlan extends Equatable {
+  const FrontendBudgetPlan({
     required this.id,
-    required this.periodId,
+    required this.userId,
+    required this.planStartDate, required this.planEndDate, required this.incomeCalculationStartDate, required this.incomeCalculationEndDate, required this.totalCalculatedIncome, this.description,
+    this.allocations = const [],
+    this.isLocal = false,
+  });
+
+  factory FrontendBudgetPlan.fromJson(
+    Map<String, dynamic> json, {
+    bool local = false,
+  }) {
+    final allocList = json['allocations'] as List<dynamic>? ?? [];
+    return FrontendBudgetPlan(
+      id: json['id'] as String,
+      userId: json['userId'] as String? ?? '',
+      description: json['description'] as String?,
+      planStartDate: DateTime.parse(json['planStartDate'] as String).toLocal(),
+      planEndDate: DateTime.parse(json['planEndDate'] as String).toLocal(),
+      incomeCalculationStartDate: DateTime.parse(
+        json['incomeCalculationStartDate'] as String,
+      ).toLocal(),
+      incomeCalculationEndDate: DateTime.parse(
+        json['incomeCalculationEndDate'] as String,
+      ).toLocal(),
+      totalCalculatedIncome: (json['totalCalculatedIncome'] as num).toDouble(),
+      allocations: allocList
+          .map(
+            (a) => FrontendBudgetAllocation.fromJson(a as Map<String, dynamic>),
+          )
+          .toList(),
+      isLocal: local || (json['isLocal'] as bool? ?? false),
+    );
+  }
+
+  final String id;
+  final String userId;
+  final String? description;
+  final DateTime planStartDate;
+  final DateTime planEndDate;
+  final DateTime incomeCalculationStartDate;
+  final DateTime incomeCalculationEndDate;
+  final double totalCalculatedIncome;
+  final List<FrontendBudgetAllocation> allocations;
+  final bool isLocal;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    if (description != null && description!.isNotEmpty)
+      'description': description,
+    'planStartDate': planStartDate.toUtc().toIso8601String(),
+    'planEndDate': planEndDate.toUtc().toIso8601String(),
+    'incomeCalculationStartDate': incomeCalculationStartDate
+        .toUtc()
+        .toIso8601String(),
+    'incomeCalculationEndDate': incomeCalculationEndDate
+        .toUtc()
+        .toIso8601String(),
+    'totalCalculatedIncome': totalCalculatedIncome,
+    'allocations': allocations.map((a) => a.toJson()).toList(),
+    'isLocal': isLocal,
+  };
+
+  FrontendBudgetPlan copyWith({
+    String? id,
+    String? userId,
+    ValueGetter<String?>? description, // Allow setting to null
+    DateTime? planStartDate,
+    DateTime? planEndDate,
+    DateTime? incomeCalculationStartDate,
+    DateTime? incomeCalculationEndDate,
+    double? totalCalculatedIncome,
+    List<FrontendBudgetAllocation>? allocations,
+    bool? isLocal,
+  }) {
+    return FrontendBudgetPlan(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      description: description != null ? description() : this.description,
+      planStartDate: planStartDate ?? this.planStartDate,
+      planEndDate: planEndDate ?? this.planEndDate,
+      incomeCalculationStartDate:
+          incomeCalculationStartDate ?? this.incomeCalculationStartDate,
+      incomeCalculationEndDate:
+          incomeCalculationEndDate ?? this.incomeCalculationEndDate,
+      totalCalculatedIncome:
+          totalCalculatedIncome ?? this.totalCalculatedIncome,
+      allocations: allocations ?? this.allocations,
+      isLocal: isLocal ?? this.isLocal,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    id,
+    userId,
+    description,
+    planStartDate,
+    planEndDate,
+    incomeCalculationStartDate,
+    incomeCalculationEndDate,
+    totalCalculatedIncome,
+    allocations,
+    isLocal,
+  ];
+}
+
+class FrontendBudgetAllocation extends Equatable {
+  const FrontendBudgetAllocation({
+    required this.id,
+    required this.budgetPlanId,
     required this.categoryId,
     required this.categoryName,
     required this.subcategoryId,
     required this.subcategoryName,
     required this.percentage,
     required this.amount,
+    this.isLocal = false,
   });
 
-  factory FrontendBudgetAllocation.fromJson(Map<String, dynamic> json) {
+  factory FrontendBudgetAllocation.fromJson(
+    Map<String, dynamic> json, {
+    bool local = false,
+  }) {
     return FrontendBudgetAllocation(
       id: json['id'] as String,
-      periodId: json['periodId'] as String,
+      budgetPlanId: json['budgetPlanId'] as String? ?? '',
       categoryId: json['categoryId'] as String,
       categoryName:
           json['category']?['name'] as String? ??
           json['categoryName'] as String? ??
-          'Unknown',
+          'Unknown Category',
       subcategoryId: json['subcategoryId'] as String,
       subcategoryName:
           json['subcategory']?['name'] as String? ??
           json['subcategoryName'] as String? ??
-          'Unknown',
+          'Unknown Subcategory',
       percentage: (json['percentage'] as num).toDouble(),
       amount: (json['amount'] as num).toDouble(),
+      isLocal: local || (json['isLocal'] as bool? ?? false),
     );
   }
 
+  final String id;
+  final String budgetPlanId;
+  final String categoryId;
+  final String categoryName;
+  final String subcategoryId;
+  final String subcategoryName;
+  final double percentage;
+  final double amount;
+  final bool isLocal;
+
   Map<String, dynamic> toJson() => {
     'id': id,
-    'periodId': periodId,
+    'budgetPlanId': budgetPlanId,
     'categoryId': categoryId,
     'categoryName': categoryName,
     'subcategoryId': subcategoryId,
     'subcategoryName': subcategoryName,
     'percentage': percentage,
     'amount': amount,
+    'isLocal': isLocal,
   };
 
-  final String id;
-  final String periodId;
-  final String categoryId;
-  final String categoryName; // Denormalized for display
-  final String subcategoryId;
-  final String subcategoryName; // Denormalized for display
-  final double percentage; // Parent Category's percentage
-  final double amount;
+  FrontendBudgetAllocation copyWith({
+    String? id,
+    String? budgetPlanId,
+    String? categoryId,
+    String? categoryName,
+    String? subcategoryId,
+    String? subcategoryName,
+    double? percentage,
+    double? amount,
+    bool? isLocal,
+  }) {
+    return FrontendBudgetAllocation(
+      id: id ?? this.id,
+      budgetPlanId: budgetPlanId ?? this.budgetPlanId,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      subcategoryId: subcategoryId ?? this.subcategoryId,
+      subcategoryName: subcategoryName ?? this.subcategoryName,
+      percentage: percentage ?? this.percentage,
+      amount: amount ?? this.amount,
+      isLocal: isLocal ?? this.isLocal,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    id,
+    budgetPlanId,
+    categoryId,
+    categoryName,
+    subcategoryId,
+    subcategoryName,
+    percentage,
+    amount,
+    isLocal,
+  ];
 }
 
 class BudgetingApiException implements Exception {
@@ -244,26 +451,25 @@ class BudgetingService {
   BudgetingService({required Dio dio}) : _dio = dio;
   final Dio _dio;
 
-  Future<List<BackendIncomeSummaryItem>> fetchSummarizedIncomeForPeriod(
-    String periodId,
-  ) async {
-    final endpoint = '/budgeting/income-summary/$periodId';
-    debugPrint('[BudgetingService-DIO] GET $endpoint');
+  Future<List<BackendIncomeSummaryItem>> fetchSummarizedIncomeForDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    const endpoint = '/budgeting/income-summary';
+    final queryParams = {
+      'startDate': startDate.toUtc().toIso8601String(),
+      'endDate': endDate.toUtc().toIso8601String(),
+    };
+    debugPrint('[BudgetingService-DIO] GET $endpoint with query: $queryParams');
     try {
-      final response = await _dio.get<dynamic>(endpoint);
-      if (response.statusCode == 200 && response.data?['data'] is List) {
-        // Assuming backend wraps in {data: [...]}
+      final response = await _dio.get<dynamic>(
+        endpoint,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200 &&
+          response.data is Map<String, dynamic> &&
+          response.data['data'] is List) {
         final dataList = response.data['data'] as List<dynamic>;
-        return dataList
-            .map(
-              (item) => BackendIncomeSummaryItem.fromJson(
-                item as Map<String, dynamic>,
-              ),
-            )
-            .toList();
-      } else if (response.statusCode == 200 && response.data is List) {
-        // If backend returns list directly
-        final dataList = response.data as List<dynamic>;
         return dataList
             .map(
               (item) => BackendIncomeSummaryItem.fromJson(
@@ -279,11 +485,22 @@ class BudgetingService {
         );
       }
     } on DioException catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] DioException fetchSummarizedIncome: ${e.response?.data ?? e.message}',
+      );
       throw BudgetingApiException(
         e.response?.data?['message']?.toString() ??
             e.message ??
             'Network error fetching income summary.',
         statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] Unexpected error fetchSummarizedIncome: $e',
+      );
+      if (e is BudgetingApiException) rethrow;
+      throw BudgetingApiException(
+        'Unexpected error fetching income summary: $e',
       );
     }
   }
@@ -294,17 +511,10 @@ class BudgetingService {
     debugPrint('[BudgetingService-DIO] GET $endpoint');
     try {
       final response = await _dio.get<dynamic>(endpoint);
-      if (response.statusCode == 200 && response.data?['data'] is List) {
+      if (response.statusCode == 200 &&
+          response.data is Map<String, dynamic> &&
+          response.data['data'] is List) {
         final dataList = response.data['data'] as List<dynamic>;
-        return dataList
-            .map(
-              (item) => BackendExpenseCategorySuggestion.fromJson(
-                item as Map<String, dynamic>,
-              ),
-            )
-            .toList();
-      } else if (response.statusCode == 200 && response.data is List) {
-        final dataList = response.data as List<dynamic>;
         return dataList
             .map(
               (item) => BackendExpenseCategorySuggestion.fromJson(
@@ -320,34 +530,42 @@ class BudgetingService {
         );
       }
     } on DioException catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] DioException fetchExpenseSuggestions: ${e.response?.data ?? e.message}',
+      );
       throw BudgetingApiException(
         e.response?.data?['message']?.toString() ??
             e.message ??
             'Network error fetching expense suggestions.',
         statusCode: e.response?.statusCode,
       );
+    } catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] Unexpected error fetchExpenseSuggestions: $e',
+      );
+      if (e is BudgetingApiException) rethrow;
+      throw BudgetingApiException(
+        'Unexpected error fetching expense suggestions: $e',
+      );
     }
   }
 
-  Future<List<FrontendBudgetAllocation>> saveExpenseAllocations(
+  Future<FrontendBudgetPlan> saveExpenseAllocations(
     SaveExpenseAllocationsRequestDto dto,
   ) async {
     const endpoint = '/budgeting/expense-allocations';
     debugPrint(
-      '[BudgetingService-DIO] POST $endpoint',
-    ); // Body logged by interceptor
+      '[BudgetingService-DIO] POST $endpoint with body: ${dto.toJson()}',
+    );
     try {
       final response = await _dio.post<dynamic>(endpoint, data: dto.toJson());
       if ((response.statusCode == 201 || response.statusCode == 200) &&
-          response.data?['data'] is List) {
-        final dataList = response.data['data'] as List<dynamic>;
-        return dataList
-            .map(
-              (item) => FrontendBudgetAllocation.fromJson(
-                item as Map<String, dynamic>,
-              ),
-            )
-            .toList();
+          response.data is Map<String, dynamic> &&
+          response.data['data'] is Map<String, dynamic>) {
+        // Ensure 'data' holds the BudgetPlan object
+        return FrontendBudgetPlan.fromJson(
+          response.data['data'] as Map<String, dynamic>,
+        );
       } else {
         throw BudgetingApiException(
           response.data?['message']?.toString() ??
@@ -356,37 +574,40 @@ class BudgetingService {
         );
       }
     } on DioException catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] DioException saveExpenseAllocations: ${e.response?.data ?? e.message}',
+      );
       throw BudgetingApiException(
         e.response?.data?['message']?.toString() ??
             e.message ??
             'Network error saving expense allocations.',
         statusCode: e.response?.statusCode,
       );
+    } catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] Unexpected error saveExpenseAllocations: $e',
+      );
+      if (e is BudgetingApiException) rethrow;
+      throw BudgetingApiException(
+        'Unexpected error saving expense allocations: $e',
+      );
     }
   }
 
-  Future<List<FrontendBudgetAllocation>> fetchBudgetAllocationsForPeriod(
-    String periodId,
+  // Fetches allocations for a specific BudgetPlan ID
+  // Backend route: GET /budgeting/plans/:budgetPlanId/allocations
+  // Backend response: { success: true, data: ExpenseAllocation[] }
+  Future<List<FrontendBudgetAllocation>> getBudgetAllocationsForPlan(
+    String budgetPlanId,
   ) async {
-    const endpoint = '/budgeting/allocations';
-    final queryParams = {'periodId': periodId};
-    debugPrint('[BudgetingService-DIO] GET $endpoint with params $queryParams');
+    final endpoint = '/budgeting/plans/$budgetPlanId/allocations';
+    debugPrint('[BudgetingService-DIO] GET $endpoint');
     try {
-      final response = await _dio.get<dynamic>(
-        endpoint,
-        queryParameters: queryParams,
-      );
-      if (response.statusCode == 200 && response.data?['data'] is List) {
+      final response = await _dio.get<dynamic>(endpoint);
+      if (response.statusCode == 200 &&
+          response.data is Map<String, dynamic> &&
+          response.data['data'] is List) {
         final dataList = response.data['data'] as List<dynamic>;
-        return dataList
-            .map(
-              (item) => FrontendBudgetAllocation.fromJson(
-                item as Map<String, dynamic>,
-              ),
-            )
-            .toList();
-      } else if (response.statusCode == 200 && response.data is List) {
-        final dataList = response.data as List<dynamic>;
         return dataList
             .map(
               (item) => FrontendBudgetAllocation.fromJson(
@@ -397,16 +618,69 @@ class BudgetingService {
       } else {
         throw BudgetingApiException(
           response.data?['message']?.toString() ??
-              'Failed to fetch budget allocations.',
+              'Failed to fetch budget allocations for plan.',
           statusCode: response.statusCode,
         );
       }
     } on DioException catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] DioException getBudgetAllocationsForPlan: ${e.response?.data ?? e.message}',
+      );
       throw BudgetingApiException(
         e.response?.data?['message']?.toString() ??
             e.message ??
-            'Network error fetching budget allocations.',
+            'Network error fetching allocations for plan.',
         statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] Unexpected error getBudgetAllocationsForPlan: $e',
+      );
+      if (e is BudgetingApiException) rethrow;
+      throw BudgetingApiException(
+        'Unexpected error fetching allocations for plan: $e',
+      );
+    }
+  }
+
+  // Method to fetch a BudgetPlan by its ID
+  // Backend route: GET /budgeting/plans/:budgetPlanId
+  // Backend response: { success: true, data: PopulatedBudgetPlan }
+  Future<FrontendBudgetPlan> fetchBudgetPlanById(String budgetPlanId) async {
+    final endpoint = '/budgeting/plans/$budgetPlanId';
+    debugPrint('[BudgetingService-DIO] GET $endpoint');
+    try {
+      final response = await _dio.get<dynamic>(endpoint);
+      if (response.statusCode == 200 &&
+          response.data is Map<String, dynamic> &&
+          response.data['data'] is Map<String, dynamic>) {
+        return FrontendBudgetPlan.fromJson(
+          response.data['data'] as Map<String, dynamic>,
+        );
+      } else {
+        throw BudgetingApiException(
+          response.data?['message']?.toString() ??
+              'Failed to fetch budget plan.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] DioException fetchBudgetPlanById: ${e.response?.data ?? e.message}',
+      );
+      throw BudgetingApiException(
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error fetching budget plan.',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] Unexpected error fetchBudgetPlanById: $e',
+      );
+      if (e is BudgetingApiException) rethrow;
+      throw BudgetingApiException(
+        'Unexpected error fetching budget plan: $e',
       );
     }
   }

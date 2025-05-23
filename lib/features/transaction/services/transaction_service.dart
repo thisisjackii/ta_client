@@ -46,7 +46,7 @@ class TransactionService {
       debugPrint('[TransactionService-DIO] Unexpected error classifying: $e');
       if (e is TransactionApiException) rethrow;
       throw TransactionApiException(
-        'An unexpected error occurred during classification: ${e}',
+        'An unexpected error occurred during classification: $e',
       );
     }
   }
@@ -85,7 +85,7 @@ class TransactionService {
       );
       if (e is TransactionApiException) rethrow;
       throw TransactionApiException(
-        'An unexpected error occurred while creating transaction: ${e}',
+        'An unexpected error occurred while creating transaction: $e',
       );
     }
   }
@@ -129,7 +129,7 @@ class TransactionService {
       );
       if (e is TransactionApiException) rethrow;
       throw TransactionApiException(
-        'An unexpected error occurred while updating transaction: ${e}',
+        'An unexpected error occurred while updating transaction: $e',
       );
     }
   }
@@ -168,7 +168,7 @@ class TransactionService {
       );
       if (e is TransactionApiException) rethrow;
       throw TransactionApiException(
-        'An unexpected error occurred while deleting transaction: ${e}',
+        'An unexpected error occurred while deleting transaction: $e',
       );
     }
   }
@@ -236,7 +236,7 @@ class TransactionService {
       );
       if (e is TransactionApiException) rethrow;
       throw TransactionApiException(
-        'An unexpected error occurred while fetching transactions: ${e}',
+        'An unexpected error occurred while fetching transactions: $e',
       );
     }
   }
@@ -278,7 +278,7 @@ class TransactionService {
       );
       if (e is TransactionApiException) rethrow;
       throw TransactionApiException(
-        'An unexpected error occurred while toggling bookmark: ${e}',
+        'An unexpected error occurred while toggling bookmark: $e',
       );
     }
   }

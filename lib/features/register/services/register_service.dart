@@ -15,7 +15,7 @@ class RegisterService {
   final Dio _dio;
 
   Future<List<Map<String, String>>> fetchOccupations() async {
-    const endpoint = '/occupations';
+    const endpoint = '/users/occupations';
     debugPrint('[RegisterService-DIO] GET $endpoint for occupations');
     try {
       final response = await _dio.get<dynamic>(endpoint);
@@ -60,7 +60,7 @@ class RegisterService {
       );
       if (e is RegisterException) rethrow;
       throw RegisterException(
-        'An unexpected error occurred while fetching occupations: ${e}',
+        'An unexpected error occurred while fetching occupations: $e',
       );
     }
   }
@@ -118,7 +118,7 @@ class RegisterService {
       );
       if (e is RegisterException) rethrow;
       throw RegisterException(
-        'An unexpected error occurred during registration: ${e}',
+        'An unexpected error occurred during registration: $e',
       );
     }
   }

@@ -5,14 +5,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 // Import other repositories that need syncing
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
-import 'package:ta_client/features/budgeting/repositories/period_repository.dart'; // Assuming PeriodRepository has sync
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 
 class TransactionSyncService {
   TransactionSyncService({
     required this.transactionRepository,
     required this.budgetingRepository,
-    required this.periodRepository, // Add other repositories that need syncing
     // required AuthState authState // If userId is needed for sync methods
   }) {
     // _authState = authState; // If needed
@@ -20,7 +18,6 @@ class TransactionSyncService {
 
   final TransactionRepository transactionRepository;
   final BudgetingRepository budgetingRepository;
-  final PeriodRepository periodRepository;
   // late AuthState _authState;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
@@ -74,7 +71,7 @@ class TransactionSyncService {
       debugPrint('[SyncService] Error syncing budget plans: $e');
     });
 
-    debugPrint('[SyncService] Attempting to sync pending periods...');
+    // debugPrint('[SyncService] Attempting to sync pending periods...');
     // Assuming PeriodRepository needs userId for context if creating periods for a specific user
     // This requires AuthState to be accessible or userId to be stored reliably.
     // For simplicity, if syncPendingPeriods can operate without explicit userId (e.g. on globally pending items
@@ -87,10 +84,10 @@ class TransactionSyncService {
     // } else {
     //    debugPrint('[SyncService] Cannot sync periods: user not logged in.');
     // }
-    await periodRepository.syncPendingPeriods().catchError((Object e) {
-      // Placeholder for userId
-      debugPrint('[SyncService] Error syncing periods: $e');
-    });
+    // await periodRepository.syncPendingPeriods().catchError((Object e) {
+    //   // Placeholder for userId
+    //   debugPrint('[SyncService] Error syncing periods: $e');
+    // });
 
     debugPrint('[SyncService] All sync attempts finished.');
     // Optionally, trigger a global event or BLoC update to refresh UIs

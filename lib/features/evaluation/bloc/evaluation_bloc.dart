@@ -1,105 +1,72 @@
 // lib/features/evaluation/bloc/evaluation_bloc.dart
 import 'package:bloc/bloc.dart';
-import 'package:flutter/widgets.dart';
-import 'package:intl/intl.dart';
-import 'package:ta_client/features/budgeting/repositories/period_repository.dart';
-// No longer need ConnectivityService here, Repository handles it.
+import 'package:flutter/foundation.dart'; // For debugPrint
+// Removed PeriodRepository import
 import 'package:ta_client/features/evaluation/bloc/evaluation_event.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
-import 'package:ta_client/features/evaluation/services/evaluation_service.dart'; // For EvaluationApiException
+import 'package:ta_client/features/evaluation/services/evaluation_service.dart';
 
 class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
-  EvaluationBloc(this._repo, this._periodRepo /*this._connectivityService*/)
+  EvaluationBloc(this._repo) // Removed PeriodRepo
     : super(EvaluationState.initial()) {
     on<EvaluationDateRangeSelected>(_onDateRangeSelected);
-    on<EvaluationLoadDashboardRequested>(_onLoadDashboard); // Unified event
+    on<EvaluationCalculateAndLoadDashboard>(_onCalculateAndLoadDashboard);
     on<EvaluationLoadDetailRequested>(_onLoadDetail);
     on<EvaluationLoadHistoryRequested>(_onLoadHistory);
+    on<EvaluationClearError>(
+      (_, emit) => emit(state.copyWith(clearError: true)),
+    );
+    on<EvaluationClearDateError>(
+      (_, emit) => emit(state.copyWith(clearDateError: true)),
+    );
   }
   final EvaluationRepository _repo;
-  final PeriodRepository _periodRepo; // Injected
-  // final ConnectivityService _connectivityService; // Injected
-
-  // Helper to get current userId - assumes ProfileBloc is loaded and available via GetIt
-  // This is a simplification; robust userId access might come from an AuthBloc.
-  // String? _getCurrentUserId() {
-  //   /* ... as before ... */
-  //   return null; // Placeholder
-  // }
 
   Future<void> _onDateRangeSelected(
     EvaluationDateRangeSelected event,
     Emitter<EvaluationState> emit,
   ) async {
-    emit(
-      state.copyWith(
-        loading: true,
-        startDate: event.start,
-        endDate: event.end,
-        dashboardItems: [], // Clear previous dashboard items
-      ),
-    );
-    try {
-      // Backend's PeriodService.validatePeriodDatesLogic is also called by ensureAndGetPeriod
-      // but client-side validation can be good for quick feedback if needed.
-      // Your isAtLeastOneMonthAccordingToRequest logic is in the UI page, which is fine.
-
-      // final currentUserId = _getCurrentUserId();
-      // ensureAndGetPeriod handles online/offline for period creation/fetching
-      final period = await _periodRepo.ensureAndGetPeriod(
-        startDate: event.start,
-        endDate: event.end,
-        periodType:
-            'general_evaluation', // Or a more specific type for evaluations
-        description:
-            'Periode Evaluasi (${DateFormat('dd/MM/yy').format(event.start)}-${DateFormat('dd/MM/yy').format(event.end)})',
-        // userIdForLocal: currentUserId, // For offline period creation
-      );
-
+    // Simple date validation (more complex in UI or repo if needed)
+    if (event.end.isBefore(event.start)) {
       emit(
         state.copyWith(
-          // Store the actual period dates from the confirmed/created period object
-          startDate: period.startDate,
-          endDate: period.endDate,
-          // No need to store periodId directly in EvaluationState if LoadDashboard uses start/end
-          // But it's good to have if other operations need it.
-          // For now, let's assume LoadDashboard will trigger calculateAndFetch with dates,
-          // and the repository can re-ensure/fetch period if needed.
-          // OR, pass the period.id to LoadDashboardRequested.
-          loading: false, // Done with period ensuring
-        ),
-      );
-
-      // Now trigger dashboard load WITH the confirmed periodId from the 'period' object
-      add(EvaluationLoadDashboardRequested(periodId: period.id));
-    } catch (e) {
-      debugPrint('[EvaluationBloc] Error ensuring period for evaluation: $e');
-      emit(
-        state.copyWith(
-          error: 'Gagal mengatur periode evaluasi: $e',
-          loading: false,
-        ),
-      );
-    }
-  }
-
-  Future<void> _onLoadDashboard(
-    EvaluationLoadDashboardRequested event, // This event now expects periodId
-    Emitter<EvaluationState> emit,
-  ) async {
-    if (event.periodId.isEmpty) {
-      // This condition should ideally not be met if _onDateRangeSelected works correctly
-      emit(
-        state.copyWith(
-          error: 'ID Periode dibutuhkan untuk memuat dasbor evaluasi.',
-          loading: false,
+          dateError: 'Tanggal akhir tidak boleh sebelum tanggal mulai.',
         ),
       );
       return;
     }
-    // startDate and endDate are already in state from _onDateRangeSelected
-    if (state.startDate == null || state.endDate == null) {
+    // PSPEC 4.1 validation for min 1 month (approx 29 days)
+    final diffDays = event.end.difference(event.start).inDays;
+    if (diffDays < 29) {
+      emit(
+        state.copyWith(
+          dateError: 'Rentang periode evaluasi minimal adalah 1 bulan.',
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        loading: true, // Indicate loading for the date setting part
+        evaluationStartDate: event.start,
+        evaluationEndDate: event.end,
+        dashboardItems: [],
+        clearError: true,
+        clearDateError: true,
+      ),
+    );
+    // Dates are set, now trigger calculation and dashboard load
+    add(const EvaluationCalculateAndLoadDashboard());
+    // emit(state.copyWith(loading: false)); // Loading for calculation will be handled by the next event
+  }
+
+  Future<void> _onCalculateAndLoadDashboard(
+    EvaluationCalculateAndLoadDashboard event,
+    Emitter<EvaluationState> emit,
+  ) async {
+    if (state.evaluationStartDate == null || state.evaluationEndDate == null) {
       emit(
         state.copyWith(
           error: 'Rentang tanggal evaluasi belum diatur.',
@@ -109,16 +76,19 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
       return;
     }
 
-    debugPrint(
-      '[EvaluationBloc] LoadDashboard triggered with periodId: ${event.periodId}',
-    );
-    emit(state.copyWith(loading: true, dashboardItems: []));
+    emit(
+      state.copyWith(loading: true, dashboardItems: [], clearError: true),
+    ); // Show loading for this specific operation
     try {
+      // The repository's getDashboardItems will call the service's
+      // calculateAndFetchEvaluationsForPeriod, which now takes startDate and endDate
+      // if the backend was updated accordingly.
+      // If backend still needs periodId, this BLoC or Repo would need to create one.
+      // Assuming backend /calculate endpoint now takes startDate & endDate.
       final items = await _repo.getDashboardItems(
-        periodId: event.periodId, // Pass periodId to the repository
-        startDate:
-            state.startDate!, // Still pass for offline calculation in repo
-        endDate: state.endDate!, // Still pass for offline calculation in repo
+        startDate: state.evaluationStartDate!,
+        endDate: state.evaluationEndDate!,
+        // periodId is no longer passed if backend calculate is ad-hoc by dates
       );
       emit(state.copyWith(dashboardItems: items, loading: false));
     } on EvaluationApiException catch (e) {
@@ -137,16 +107,24 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
     EvaluationLoadDetailRequested event,
     Emitter<EvaluationState> emit,
   ) async {
-    emit(state.copyWith(loading: true));
+    if (state.evaluationStartDate == null || state.evaluationEndDate == null) {
+      emit(
+        state.copyWith(
+          error: 'Periode evaluasi tidak valid untuk melihat detail.',
+          loading: false,
+        ),
+      );
+      return;
+    }
+    emit(
+      state.copyWith(loading: true, clearDetailItem: true, clearError: true),
+    );
     try {
-      // Repository handles online/offline logic
       final detail = await _repo.getDetail(
         evaluationResultDbId: event.evaluationResultDbId,
         clientRatioId: event.clientRatioId,
-        // The repository will need startDate and endDate for offline calculation context
-        // These should be available in the BLoC state if dashboard was loaded.
-        startDate: state.startDate!,
-        endDate: state.endDate!,
+        startDate: state.evaluationStartDate!, // Pass context dates
+        endDate: state.evaluationEndDate!, // Pass context dates
       );
       emit(state.copyWith(detailItem: detail, loading: false));
     } on EvaluationApiException catch (e) {
@@ -156,7 +134,7 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
       debugPrint('[EvaluationBloc] General error in _onLoadDetail: $e\n$st');
       emit(
         state.copyWith(
-          error: 'Failed to load evaluation detail: $e',
+          error: 'Gagal memuat detail evaluasi: $e',
           loading: false,
         ),
       );
@@ -167,11 +145,10 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
     EvaluationLoadHistoryRequested event,
     Emitter<EvaluationState> emit,
   ) async {
-    emit(state.copyWith(loading: true, history: []));
+    emit(state.copyWith(loading: true, history: [], clearError: true));
     try {
-      // Repository handles online/offline (history is likely online-only via repo)
       final hist = await _repo.getEvaluationHistory(
-        startDate: event.startDate,
+        startDate: event.startDate, // Optional filter dates
         endDate: event.endDate,
       );
       emit(state.copyWith(history: hist, loading: false));
@@ -180,7 +157,12 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
       emit(state.copyWith(error: e.message, loading: false));
     } catch (e, st) {
       debugPrint('[EvaluationBloc] General error in _onLoadHistory: $e\n$st');
-      emit(state.copyWith(error: e.toString(), loading: false));
+      emit(
+        state.copyWith(
+          error: 'Gagal memuat riwayat evaluasi: $e',
+          loading: false,
+        ),
+      );
     }
   }
 }

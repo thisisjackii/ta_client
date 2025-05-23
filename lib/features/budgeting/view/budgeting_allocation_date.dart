@@ -27,8 +27,8 @@ class _BudgetingAllocationDatePageState
   void initState() {
     super.initState();
     final initialState = context.read<BudgetingBloc>().state;
-    _tempStartDate = initialState.expenseStartDate;
-    _tempEndDate = initialState.expenseEndDate;
+    _tempStartDate = initialState.planStartDate;
+    _tempEndDate = initialState.planEndDate;
     // context.read<BudgetingBloc>().add(BudgetingResetExpensePeriodConfirmation());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -49,7 +49,7 @@ class _BudgetingAllocationDatePageState
               bloc: budgetingBloc,
               listenWhen: (prev, curr) =>
                   prev.loading != curr.loading ||
-                  curr.expenseDateConfirmed ||
+                  curr.planDateConfirmed ||
                   curr.dateError != null ||
                   curr.error != null,
               listener: (listenerContext, state) {
@@ -62,14 +62,14 @@ class _BudgetingAllocationDatePageState
                   _showDateSelectionDialog();
                 } else if (state.error != null &&
                     !state.loading &&
-                    !state.expenseDateConfirmed) {
+                    !state.planDateConfirmed) {
                   Navigator.pop(dialogContext);
                   ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(content: Text('Period Error: ${state.error}')),
                   );
                   budgetingBloc.add(BudgetingClearError());
                   _showDateSelectionDialog();
-                } else if (state.expenseDateConfirmed && !state.loading) {
+                } else if (state.planDateConfirmed && !state.loading) {
                   Navigator.pop(dialogContext);
                   Navigator.pushReplacementNamed(
                     context,
@@ -85,8 +85,8 @@ class _BudgetingAllocationDatePageState
                 contentPadding: const EdgeInsets.all(24),
                 content: BudgetingDateSelection(
                   startDate:
-                      _tempStartDate ?? budgetingBloc.state.expenseStartDate,
-                  endDate: _tempEndDate ?? budgetingBloc.state.expenseEndDate,
+                      _tempStartDate ?? budgetingBloc.state.planStartDate,
+                  endDate: _tempEndDate ?? budgetingBloc.state.planEndDate,
                   onStartDateChanged: (date) =>
                       setDialogState(() => _tempStartDate = date),
                   onEndDateChanged: (date) =>
@@ -105,7 +105,7 @@ class _BudgetingAllocationDatePageState
                   ElevatedButton(
                     child:
                         budgetingBloc.state.loading &&
-                            !budgetingBloc.state.expenseDateConfirmed
+                            !budgetingBloc.state.planDateConfirmed
                         ? const SizedBox(
                             height: 20,
                             width: 20,
@@ -115,7 +115,7 @@ class _BudgetingAllocationDatePageState
                     onPressed: () {
                       if (_tempStartDate != null && _tempEndDate != null) {
                         budgetingBloc.add(
-                          BudgetingExpenseDateRangeSelected(
+                          BudgetingPlanDateRangeSelected(
                             start: _tempStartDate!,
                             end: _tempEndDate!,
                             // periodId: budgetingBloc.state.expensePeriodId, // If editing
@@ -139,7 +139,7 @@ class _BudgetingAllocationDatePageState
         );
       },
     ).then((_) {
-      if (!budgetingBloc.state.expenseDateConfirmed && mounted) {
+      if (!budgetingBloc.state.planDateConfirmed && mounted) {
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
         }

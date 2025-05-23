@@ -9,7 +9,6 @@ import 'package:ta_client/core/state/auth_state.dart';
 import 'package:ta_client/core/widgets/custom_route_observer.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
-import 'package:ta_client/features/budgeting/repositories/period_repository.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/login/bloc/login_bloc.dart';
@@ -19,7 +18,6 @@ import 'package:ta_client/features/otp/services/otp_service.dart';
 import 'package:ta_client/features/profile/bloc/profile_bloc.dart';
 import 'package:ta_client/features/profile/repositories/profile_repository.dart';
 import 'package:ta_client/features/register/bloc/register_bloc.dart';
-import 'package:ta_client/features/register/services/register_service.dart';
 import 'package:ta_client/features/transaction/bloc/dashboard_bloc.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_hierarchy_repository.dart';
@@ -33,11 +31,10 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider<OtpBloc>(create: (context) => sl<OtpBloc>()),
         BlocProvider<RegisterBloc>(
-          create: (context) => RegisterBloc(
-            registerService: sl<RegisterService>(),
-            otpBloc: BlocProvider.of<OtpBloc>(context),
-          ),
+          create: (context) =>
+              sl<RegisterBloc>(), // Now gets its OtpBloc dep from GetIt
         ),
         BlocProvider<LoginBloc>(
           create: (context) => LoginBloc(loginService: sl<LoginService>()),
@@ -59,14 +56,10 @@ class App extends StatelessWidget {
           ),
         ),
         BlocProvider<BudgetingBloc>(
-          create: (context) =>
-              BudgetingBloc(sl<BudgetingRepository>(), sl<PeriodRepository>()),
+          create: (context) => BudgetingBloc(sl<BudgetingRepository>()),
         ),
         BlocProvider<EvaluationBloc>(
-          create: (context) => EvaluationBloc(
-            sl<EvaluationRepository>(),
-            sl<PeriodRepository>(),
-          ),
+          create: (context) => EvaluationBloc(sl<EvaluationRepository>()),
         ),
         BlocProvider<ProfileBloc>(
           create: (context) => ProfileBloc(repository: sl<ProfileRepository>()),

@@ -8,33 +8,28 @@ abstract class EvaluationEvent extends Equatable {
 }
 
 class EvaluationDateRangeSelected extends EvaluationEvent {
-  const EvaluationDateRangeSelected(this.start, this.end); // periodId removed
+  const EvaluationDateRangeSelected(this.start, this.end);
   final DateTime start;
   final DateTime end;
   @override
   List<Object?> get props => [start, end];
 }
 
-class EvaluationLoadDashboardRequested extends EvaluationEvent {
-  // Make this required, or ensure it's always set from previous step
-  const EvaluationLoadDashboardRequested({required this.periodId});
-  final String periodId;
-  @override
-  List<Object> get props => [periodId];
+// This event now directly uses dates from BLoC state if backend /calculate takes dates
+// If backend /calculate still needs a periodId, this BLoC needs to create one first
+class EvaluationCalculateAndLoadDashboard extends EvaluationEvent {
+  const EvaluationCalculateAndLoadDashboard();
 }
 
 class EvaluationLoadDetailRequested extends EvaluationEvent {
-  // For offline detail (client-side ratio ID '0', '1', etc.)
-
   const EvaluationLoadDetailRequested({
-    this.evaluationResultDbId,
-    this.clientRatioId,
+    this.evaluationResultDbId, // Backend ID of the EvaluationResult record
+    this.clientRatioId, // Client-side '0'-'6' for offline calculation
   }) : assert(
          evaluationResultDbId != null || clientRatioId != null,
          'Either evaluationResultDbId or clientRatioId must be provided',
        );
-  final String?
-  evaluationResultDbId; // For online detail (ID of EvaluationResult record)
+  final String? evaluationResultDbId;
   final String? clientRatioId;
 
   @override
@@ -48,3 +43,7 @@ class EvaluationLoadHistoryRequested extends EvaluationEvent {
   @override
   List<Object?> get props => [startDate, endDate];
 }
+
+class EvaluationClearError extends EvaluationEvent {}
+
+class EvaluationClearDateError extends EvaluationEvent {}

@@ -96,8 +96,8 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                       ),
                       const SizedBox(width: AppDimensions.smallPadding),
                       Text(
-                        '${s.startDate != null ? '${s.startDate!.day}/${s.startDate!.month}/${s.startDate!.year}' : '--'} - '
-                        '${s.endDate != null ? '${s.endDate!.day}/${s.endDate!.month}/${s.endDate!.year}' : '--'}',
+                        '${s.evaluationStartDate != null ? '${s.evaluationStartDate!.day}/${s.evaluationStartDate!.month}/${s.evaluationStartDate!.year}' : '--'} - '
+                        '${s.evaluationEndDate != null ? '${s.evaluationEndDate!.day}/${s.evaluationEndDate!.month}/${s.evaluationEndDate!.year}' : '--'}',
                       ),
                     ],
                   ),
