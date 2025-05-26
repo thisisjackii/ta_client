@@ -14,6 +14,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     on<LoginEmailChanged>(_onEmailChanged);
     on<LoginPasswordChanged>(_onPasswordChanged);
     on<LoginSubmitted>(_onSubmitted);
+    on<LoginReset>(_onReset);
   }
   final LoginService _loginService;
 
@@ -75,5 +76,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     } catch (e) {
       emit(LoginFailure('An unexpected error occurred during login: $e'));
     }
+  }
+
+  void _onReset(LoginReset event, Emitter<LoginState> emit) {
+    emit(const LoginFormState());
   }
 }

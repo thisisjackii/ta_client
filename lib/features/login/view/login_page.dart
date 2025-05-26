@@ -45,6 +45,7 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(state.error)));
+            context.read<LoginBloc>().add(const LoginReset());
           }
         },
         child: Padding(

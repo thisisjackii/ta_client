@@ -10,6 +10,7 @@ import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_event.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
 import 'package:ta_client/features/evaluation/models/evaluation.dart';
+import 'package:ta_client/features/evaluation/utils/evaluation_calculator.dart'; // Import the new helpers
 
 class EvaluationDashboardPage extends StatefulWidget {
   const EvaluationDashboardPage({super.key});
@@ -24,20 +25,13 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
   @override
   void initState() {
     super.initState();
-    // No automatic load here anymore, as navigation logic handles it.
-    // If evaluationStartDate and evaluationEndDate are null when this page is built,
-    // it will redirect to date selection.
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<EvaluationBloc, EvaluationState>(
       builder: (c, s) {
-        // --- START OF ADDED/MODIFIED CODE ---
         if (s.evaluationStartDate == null || s.evaluationEndDate == null) {
-          // If this page is reached without dates set in the BLoC state
-          // (e.g., direct navigation after "intro seen" and "data exists" checks pass),
-          // then redirect to the date selection page.
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
               debugPrint(
@@ -49,27 +43,21 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
               );
             }
           });
-          // Show a temporary loading/message while redirecting
           return const Scaffold(
             body: Center(child: Text('Mengalihkan ke pemilihan tanggal...')),
           );
         }
-        // --- END OF ADDED/MODIFIED CODE ---
 
-        // Original loading check remains
         if (s.loading && s.dashboardItems.isEmpty) {
-          // Only show full loading if items are empty
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // Check if dashboardItems are empty AFTER dates are confirmed and not loading
         if (!s.loading &&
             s.dashboardItems.isEmpty &&
             s.evaluationStartDate != null &&
             s.evaluationEndDate != null) {
-          // This implies calculation happened but yielded no items (e.g., no transactions in period)
           return Scaffold(
             appBar: AppBar(
               title: const Text(
@@ -78,7 +66,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
               ),
               backgroundColor: AppColors.greyBackground,
               leading: IconButton(
-                // Add back button if needed when no data
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.of(context).pop(),
               ),
@@ -115,14 +102,12 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                     ),
                     const SizedBox(height: AppDimensions.padding),
                     Text(
-                      // Display selected date range
                       'Periode: ${s.evaluationStartDate != null ? '${s.evaluationStartDate!.day}/${s.evaluationStartDate!.month}/${s.evaluationStartDate!.year}' : '--'} s/d ${s.evaluationEndDate != null ? '${s.evaluationEndDate!.day}/${s.evaluationEndDate!.month}/${s.evaluationEndDate!.year}' : '--'}',
                       style: TextStyle(color: Colors.grey[700]),
                     ),
                     const SizedBox(height: AppDimensions.padding),
                     ElevatedButton(
                       onPressed: () {
-                        // Navigate back to date selection to try a different range
                         Navigator.pushReplacementNamed(
                           context,
                           Routes.evaluationDateSelection,
@@ -137,8 +122,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
           );
         }
 
-        // Log the full list once when it arrives
-        // This debug print can be noisy, consider removing or conditionalizing it
         debugPrint('📊 Dashboard items (${s.dashboardItems.length}):');
         for (final item in s.dashboardItems) {
           debugPrint(
@@ -154,11 +137,9 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             backgroundColor: AppColors.greyBackground,
-            // Add a leading back button that goes to date selection or intro if appropriate
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
-                // Decide where to pop: to date selection or further back if needed
                 Navigator.pushReplacementNamed(
                   context,
                   Routes.evaluationDateSelection,
@@ -203,7 +184,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                       ),
                       const SizedBox(width: AppDimensions.smallPadding),
                       Text(
-                        // Ensure s.evaluationStartDate and s.evaluationEndDate are not null here
                         '${s.evaluationStartDate!.day}/${s.evaluationStartDate!.month}/${s.evaluationStartDate!.year} - ${s.evaluationEndDate!.day}/${s.evaluationEndDate!.month}/${s.evaluationEndDate!.year}',
                       ),
                     ],
@@ -211,10 +191,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                 ),
               ),
               const SizedBox(height: AppDimensions.padding),
-              if (s.loading &&
-                  s
-                      .dashboardItems
-                      .isNotEmpty) // Show inline loading if refreshing
+              if (s.loading && s.dashboardItems.isNotEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16.0),
                   child: Center(child: CircularProgressIndicator()),
@@ -227,22 +204,37 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                       '➡️ tapped item [${item.id}] ${item.title}, '
                       'dispatching LoadDetail',
                     );
+
+                    String? detailClientRatioId;
+                    // If no backend ID, it means it's a client-side (offline) calculated item
+                    if (item.backendEvaluationResultId == null) {
+                      // Use the backendRatioCode to get the client-side numeric ID
+                      detailClientRatioId = getClientRatioIdFromBackendCode(
+                        item.backendRatioCode!,
+                      );
+                      if (detailClientRatioId == null) {
+                        debugPrint(
+                          'ERROR: Could not map backendRatioCode ${item.backendRatioCode} to a clientRatioId.',
+                        );
+                        // Handle error, e.g., show a dialog, prevent navigation
+                        return;
+                      }
+                    }
+
                     context.read<EvaluationBloc>().add(
                       EvaluationLoadDetailRequested(
                         evaluationResultDbId: item.backendEvaluationResultId,
-                        clientRatioId: item.backendEvaluationResultId == null
-                            ? item
-                                  .id // Use client-side ID if no backend ID (offline/not yet synced)
-                            : null, // Don't pass clientRatioId if backend ID exists
+                        clientRatioId:
+                            detailClientRatioId, // Pass the mapped ID here
                       ),
                     );
                     Navigator.pushNamed(
                       context,
                       Routes.evaluationDetail,
-                      // Pass the item.id which is the Ratio.id (or client-side '0'-'6')
-                      // The detail page will use this to fetch or identify the correct item.
-                      // If backendEvaluationResultId is available, that's more specific for backend-sourced items.
-                      arguments: item.backendEvaluationResultId ?? item.id,
+                      // The argument passed to the detail page should be the one used for fetching
+                      // which is either the backend ID or the client-side numeric ID.
+                      arguments:
+                          item.backendEvaluationResultId ?? detailClientRatioId,
                     );
                   },
                   child: Card(

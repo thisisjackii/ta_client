@@ -147,21 +147,17 @@ _EvaluationTxSums _computeEvaluationConceptualSums(List<Transaction> txs) {
 }
 
 class EvaluationRepository {
-  EvaluationRepository(
-    this._service,
-    this._transactionRepository,
-  ) // Removed PeriodRepository
-  : _connectivityService = sl<ConnectivityService>(),
+  EvaluationRepository(this._service, this._transactionRepository)
+    : _connectivityService = sl<ConnectivityService>(),
       _hiveService = sl<HiveService>();
 
   final EvaluationService _service;
   final TransactionRepository _transactionRepository;
-  // final PeriodRepository _periodRepository; // REMOVED
   final ConnectivityService _connectivityService;
   final HiveService _hiveService;
 
   static const String evaluationDashboardCacheBoxName =
-      'evaluationDashboardCache_v2'; // Version up
+      'evaluationDashboardCache_v2';
   static const String evaluationResultsCacheBoxName =
       'evaluationResultsCache_v2';
 
@@ -174,7 +170,6 @@ class EvaluationRepository {
   Future<List<Evaluation>> getDashboardItems({
     required DateTime startDate,
     required DateTime endDate,
-    // periodId is no longer directly used here for API call, dates are primary
   }) async {
     final isOnline = await _connectivityService.isOnline;
     final cacheKey = _getDashboardCacheKey(startDate, endDate);
@@ -184,7 +179,6 @@ class EvaluationRepository {
         debugPrint(
           '[EvaluationRepository] Online: Calling service to calculate/fetch evaluations for dates: $startDate - $endDate.',
         );
-        // Service method now takes dates
         final evaluations = await _service
             .calculateAndFetchEvaluationsForDateRange(
               startDate: startDate,
@@ -225,7 +219,7 @@ class EvaluationRepository {
         );
       }
     } else {
-      // OFFLINE LOGIC (remains largely the same)
+      // OFFLINE LOGIC
       debugPrint(
         '[EvaluationRepository] Offline: Attempting to read/calculate evaluations for $startDate - $endDate.',
       );
@@ -278,7 +272,7 @@ class EvaluationRepository {
       final offlineEvaluations = evaluationDefinitions().map((def) {
         final v = def.compute(inRange);
         return Evaluation(
-          id: def.id,
+          id: def.id, // This is the client-side numeric ID (e.g., '0', '1')
           title: def.title,
           yourValue: v,
           idealText: def.idealText,
@@ -287,8 +281,10 @@ class EvaluationRepository {
               ? EvaluationStatusModel.ideal
               : EvaluationStatusModel.notIdeal,
           calculatedAt: DateTime.now(),
-          startDate: startDate, // Store the ad-hoc dates
-          endDate: endDate, // Store the ad-hoc dates
+          startDate: startDate,
+          endDate: endDate,
+          backendRatioCode: def
+              .backendCode, // *** IMPORTANT: Set backendCode here for offline items ***
         );
       }).toList();
       await _hiveService.putJsonString(
@@ -310,15 +306,101 @@ class EvaluationRepository {
     String? clientRatioId, // Client-side '0'-'6' (Ratio.id)
   }) async {
     final isOnline = await _connectivityService.isOnline;
-    if (isOnline && evaluationResultDbId != null) {
+
+    // Prioritize online fetch if a backend ID is available
+    if (evaluationResultDbId != null) {
+      if (isOnline) {
+        debugPrint(
+          '[EvaluationRepository] Online: Calling service for evaluation detail (DB ID): $evaluationResultDbId.',
+        );
+        return _service.fetchEvaluationDetail(evaluationResultDbId);
+      } else {
+        debugPrint(
+          '[EvaluationRepository] Offline: Trying to find cached detail for DB ID: $evaluationResultDbId.',
+        );
+        final cachedDashboardJson = await _hiveService.getJsonString(
+          evaluationDashboardCacheBoxName,
+          _getDashboardCacheKey(startDate, endDate),
+        );
+        if (cachedDashboardJson != null) {
+          try {
+            final decodedList =
+                json.decode(cachedDashboardJson) as List<dynamic>;
+            final cachedEvaluation = decodedList
+                .map(
+                  (item) => Evaluation.fromJson(item as Map<String, dynamic>),
+                )
+                .firstWhereOrNull(
+                  (e) => e.backendEvaluationResultId == evaluationResultDbId,
+                );
+            if (cachedEvaluation != null) {
+              debugPrint(
+                '[EvaluationRepository] Found cached evaluation by DB ID. Recalculating breakdown for detail.',
+              );
+              // If found, we can use its backendRatioCode and other data to regenerate a full Evaluation object
+              // including breakdown, which might not be fully cached in the dashboard item itself.
+              final ratioDef = evaluationDefinitions().firstWhere(
+                (def) => def.backendCode == cachedEvaluation.backendRatioCode,
+                orElse: () => throw Exception(
+                  'Client-side RatioDef not found for backend code ${cachedEvaluation.backendRatioCode} when using cached DB ID.',
+                ),
+              );
+
+              final cachedTransactions = await _transactionRepository
+                  .getCachedTransactionList();
+              final inRange = cachedTransactions
+                  .where(
+                    (t) =>
+                        !t.date.isBefore(startDate) &&
+                        !t.date.isAfter(
+                          endDate
+                              .add(const Duration(days: 1))
+                              .subtract(const Duration(microseconds: 1)),
+                        ),
+                  )
+                  .toList();
+
+              final value = ratioDef.compute(inRange);
+              final conceptualSums = _computeEvaluationConceptualSums(inRange);
+              final breakdown = <ConceptualComponentValue>[];
+
+              // Populate breakdown based on the ratioDef.id (client-side ID)
+              _populateBreakdown(ratioDef.id, conceptualSums, breakdown);
+
+              return Evaluation(
+                id: ratioDef.id, // Client-side numeric ID
+                title: ratioDef.title,
+                yourValue: value,
+                isIdeal: ratioDef.isIdeal(value),
+                idealText: ratioDef.idealText,
+                breakdown: breakdown.isNotEmpty ? breakdown : null,
+                status: ratioDef.isIdeal(value)
+                    ? EvaluationStatusModel.ideal
+                    : EvaluationStatusModel.notIdeal,
+                calculatedAt: DateTime.now(),
+                startDate: startDate,
+                endDate: endDate,
+                backendRatioCode: ratioDef.backendCode,
+                backendEvaluationResultId:
+                    cachedEvaluation.backendEvaluationResultId,
+              );
+            }
+          } catch (e) {
+            debugPrint(
+              '[EvaluationRepository] Error parsing cached dashboard for detail: $e',
+            );
+          }
+        }
+        throw EvaluationApiException(
+          'Offline: Evaluation detail for DB ID $evaluationResultDbId not found in cache.',
+        );
+      }
+    }
+
+    // If no backend ID, or offline and no backend ID was found/handled, then use clientRatioId for local calculation
+    if (clientRatioId != null) {
       debugPrint(
-        '[EvaluationRepository] Online: Calling service for evaluation detail (DB ID): $evaluationResultDbId.',
-      );
-      return _service.fetchEvaluationDetail(evaluationResultDbId);
-    } else if (!isOnline && clientRatioId != null) {
-      // OFFLINE LOGIC (remains the same, using startDate, endDate for transaction filtering)
-      debugPrint(
-        '[EvaluationRepository] Offline: Calculating evaluation detail locally for ratio $clientRatioId for period $startDate - $endDate.',
+        '[EvaluationRepository] Calculating evaluation detail locally for ratio $clientRatioId for period $startDate - $endDate.',
       );
       final cachedTransactions = await _transactionRepository
           .getCachedTransactionList();
@@ -335,109 +417,20 @@ class EvaluationRepository {
           .toList();
 
       final ratioDef = evaluationDefinitions().firstWhere(
-        (def) => def.id == clientRatioId,
+        (def) =>
+            def.id ==
+            clientRatioId, // This is where the clientRatioId must match
         orElse: () => throw Exception(
-          'Offline: Client-side RatioDef not found for ID $clientRatioId',
+          'Client-side RatioDef not found for ID $clientRatioId',
         ),
       );
 
       final value = ratioDef.compute(inRange);
       final conceptualSums = _computeEvaluationConceptualSums(inRange);
       final breakdown = <ConceptualComponentValue>[];
-      // ... (breakdown logic based on clientRatioId and conceptualSums - same as before)
-      if (clientRatioId == '0') {
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Aset Likuid (Numerator)',
-            value: conceptualSums.liquid,
-          ),
-        );
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Pengeluaran Bulanan (Denominator)',
-            value: conceptualSums.expense,
-          ),
-        );
-      } else if (clientRatioId == '1') {
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Aset Likuid (Numerator)',
-            value: conceptualSums.liquid,
-          ),
-        );
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Kekayaan Bersih (Denominator)',
-            value: conceptualSums.netWorth,
-          ),
-        );
-      } else if (clientRatioId == '2') {
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Utang (Numerator)',
-            value: conceptualSums.liabilities,
-          ),
-        );
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Aset (Denominator)',
-            value: conceptualSums.totalAssets,
-          ),
-        );
-      } else if (clientRatioId == '3') {
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Tabungan (Numerator)',
-            value: conceptualSums.savings,
-          ),
-        );
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Penghasilan Kotor (Denominator)',
-            value: conceptualSums.income,
-          ),
-        );
-      } else if (clientRatioId == '4') {
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Pembayaran Utang Bulanan (Numerator)',
-            value: conceptualSums.debtPayments,
-          ),
-        );
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Penghasilan Bersih (Denominator)',
-            value: conceptualSums.netIncome,
-          ),
-        );
-      } else if (clientRatioId == '5') {
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Aset Diinvestasikan (Numerator)',
-            value: conceptualSums.invested,
-          ),
-        );
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Kekayaan Bersih (Denominator)',
-            value: conceptualSums.netWorth,
-          ),
-        );
-      } else if (clientRatioId == '6') {
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Kekayaan Bersih (Numerator)',
-            value: conceptualSums.netWorth,
-          ),
-        );
-        breakdown.add(
-          ConceptualComponentValue(
-            name: 'Total Aset (Denominator)',
-            value: conceptualSums.totalAssets,
-          ),
-        );
-      }
-      // ...
+
+      // Use a helper function to populate the breakdown to avoid code duplication
+      _populateBreakdown(clientRatioId, conceptualSums, breakdown);
 
       return Evaluation(
         id: ratioDef.id,
@@ -451,12 +444,120 @@ class EvaluationRepository {
             : EvaluationStatusModel.notIdeal,
         calculatedAt: DateTime.now(),
         startDate: startDate,
-        endDate: endDate, // Include the ad-hoc dates
+        endDate: endDate,
+        backendRatioCode: ratioDef.backendCode, // Crucial for consistency
       );
     } else {
       throw ArgumentError(
-        'Cannot get detail: Insufficient parameters for current online/offline state.',
+        'Cannot get detail: Either evaluationResultDbId or clientRatioId must be provided.',
       );
+    }
+  }
+
+  // Helper function to populate breakdown components based on clientRatioId
+  void _populateBreakdown(
+    String clientRatioId,
+    _EvaluationTxSums conceptualSums,
+    List<ConceptualComponentValue> breakdown,
+  ) {
+    if (clientRatioId == '0') {
+      breakdown
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Aset Likuid (Numerator)',
+            value: conceptualSums.liquid,
+          ),
+        )
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Pengeluaran Bulanan (Denominator)',
+            value: conceptualSums.expense,
+          ),
+        );
+    } else if (clientRatioId == '1') {
+      breakdown
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Aset Likuid (Numerator)',
+            value: conceptualSums.liquid,
+          ),
+        )
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Kekayaan Bersih (Denominator)',
+            value: conceptualSums.netWorth,
+          ),
+        );
+    } else if (clientRatioId == '2') {
+      breakdown
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Utang (Numerator)',
+            value: conceptualSums.liabilities,
+          ),
+        )
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Aset (Denominator)',
+            value: conceptualSums.totalAssets,
+          ),
+        );
+    } else if (clientRatioId == '3') {
+      breakdown
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Tabungan (Numerator)',
+            value: conceptualSums.savings,
+          ),
+        )
+        ..add(
+          ConceptualComponentValue(
+            name: 'Penghasilan Kotor (Denominator)',
+            value: conceptualSums.income,
+          ),
+        );
+    } else if (clientRatioId == '4') {
+      breakdown
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Pembayaran Utang Bulanan (Numerator)',
+            value: conceptualSums.debtPayments,
+          ),
+        )
+        ..add(
+          ConceptualComponentValue(
+            name: 'Penghasilan Bersih (Denominator)',
+            value: conceptualSums.netIncome,
+          ),
+        );
+    } else if (clientRatioId == '5') {
+      breakdown
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Aset Diinvestasikan (Numerator)',
+            value: conceptualSums.invested,
+          ),
+        )
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Kekayaan Bersih (Denominator)',
+            value: conceptualSums.netWorth,
+          ),
+        );
+    } else if (clientRatioId == '6') {
+      breakdown
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Kekayaan Bersih (Numerator)',
+            value: conceptualSums.netWorth,
+          ),
+        )
+        ..add(
+          ConceptualComponentValue(
+            name: 'Total Aset (Denominator)',
+            value: conceptualSums.totalAssets,
+          ),
+        );
     }
   }
 

@@ -259,6 +259,9 @@ class FrontendBudgetPlan extends Equatable {
     bool local = false,
   }) {
     final allocList = json['allocations'] as List<dynamic>? ?? [];
+    final rawTotalIncome =
+        json['totalCalculatedIncome']; // Get it as dynamic first
+
     return FrontendBudgetPlan(
       id: json['id'] as String,
       userId: json['userId'] as String? ?? '',
@@ -271,7 +274,10 @@ class FrontendBudgetPlan extends Equatable {
       incomeCalculationEndDate: DateTime.parse(
         json['incomeCalculationEndDate'] as String,
       ).toLocal(),
-      totalCalculatedIncome: (json['totalCalculatedIncome'] as num).toDouble(),
+      // CORRECTED PARSING:
+      totalCalculatedIncome: rawTotalIncome is String
+          ? (double.tryParse(rawTotalIncome) ?? 0.0)
+          : (rawTotalIncome as num? ?? 0.0).toDouble(),
       allocations: allocList
           .map(
             (a) => FrontendBudgetAllocation.fromJson(a as Map<String, dynamic>),
