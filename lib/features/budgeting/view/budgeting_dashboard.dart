@@ -34,7 +34,11 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
     final budgetingState = context.read<BudgetingBloc>().state;
     // If there's a currentBudgetPlan, ensure its data is up-to-date
     // Or if navigating here without a plan, prompt to create or select one.
-    if (budgetingState.currentBudgetPlan?.id != null) {
+    if (budgetingState.currentBudgetPlan == null &&
+        !budgetingState.loading &&
+        budgetingState.error == null) {
+      context.read<BudgetingBloc>().add(BudgetingLoadUserPlans());
+    } else if (budgetingState.currentBudgetPlan?.id != null) {
       // Potentially refresh its allocations if needed, or rely on data from save
       // context.read<BudgetingBloc>().add(BudgetingLoadPlanDetails(planId: budgetingState.currentBudgetPlan!.id));
     } else if (budgetingState.planDateConfirmed) {

@@ -1,5 +1,6 @@
 // lib/features/evaluation/models/evaluation.dart
 import 'package:equatable/equatable.dart';
+import 'package:flutter/widgets.dart';
 
 enum EvaluationStatusModel { ideal, notIdeal, incomplete }
 
@@ -39,8 +40,25 @@ class Evaluation extends Equatable {
   // This factory needs to handle various JSON structures it might receive
   factory Evaluation.fromJson(Map<String, dynamic> json) {
     final ratioData = json['ratio'] as Map<String, dynamic>?;
-
     final value = (json['value'] as num? ?? 0).toDouble();
+
+    final statusStringFromJson =
+        (json['status'] as String?)?.toUpperCase() ?? 'INCOMPLETE';
+    final parsedStatus = EvaluationStatusModel.values.firstWhere(
+      (e) => e.name.toUpperCase() == statusStringFromJson,
+      orElse: () {
+        debugPrint(
+          "Warning: Unknown status string '${json['status']}' received. Defaulting to INCOMPLETE.",
+        );
+        return EvaluationStatusModel.incomplete;
+      },
+    );
+
+    final derivedIsIdeal = parsedStatus == EvaluationStatusModel.ideal;
+
+    // If backend also sends an 'isIdeal' boolean, you might prioritize it or log a mismatch
+    // For now, we derive from 'status' if 'isIdeal' is not directly in the 'json' map for this specific item
+    final isIdealFromJson = json['isIdeal'] as bool? ?? derivedIsIdeal;
     EvaluationStatusModel statusModel;
     try {
       statusModel = EvaluationStatusModel.values.firstWhere(
@@ -52,7 +70,8 @@ class Evaluation extends Equatable {
       statusModel = EvaluationStatusModel.incomplete;
     }
 
-    var isIdealCurrent = statusModel == EvaluationStatusModel.ideal;
+    var isIdealCurrent =
+        isIdealFromJson || statusModel == EvaluationStatusModel.ideal;
     // If full ratio data is available, re-calculate isIdeal based on bounds for safety
     if (ratioData != null && ratioData['lowerBound'] != null) {
       final lowerBound = (ratioData['lowerBound'] as num).toDouble();
@@ -142,10 +161,10 @@ class Evaluation extends Equatable {
     if (upper != null) {
       return "${isUpperInc ? '<=' : '<'} ${upper.toStringAsFixed(0)}$unit";
     }
-    return ratioData['title']?.toString().toLowerCase().contains(
+    return (ratioData['title']?.toString().toLowerCase().contains(
               'solvabilitas',
-            ) ==
-            true
+            ) ??
+            false)
         ? '> 0%'
         : 'N/A';
   }

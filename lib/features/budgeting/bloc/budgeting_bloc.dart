@@ -2,6 +2,8 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ta_client/core/services/service_locator.dart';
+import 'package:ta_client/core/state/auth_state.dart';
 // import 'package:ta_client/core/state/auth_state.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
@@ -31,6 +33,7 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
     on<BudgetingClearInfoMessage>(_onClearInfoMessage);
     on<BudgetingResetState>(_onResetState);
     on<BudgetingSyncPendingData>(_onSyncPendingData);
+    on<BudgetingLoadUserPlans>(_onLoadUserPlans);
   }
 
   final BudgetingRepository _budgetingRepo;
@@ -102,10 +105,7 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
       ),
     );
     try {
-      BudgetingRepository.validatePeriodDatesLogic(
-        event.start,
-        event.end,
-      );
+      BudgetingRepository.validatePeriodDatesLogic(event.start, event.end);
       emit(
         state.copyWith(
           planStartDate: event.start,
@@ -221,10 +221,7 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
       emit(state.copyWith(error: e.message, loading: false));
     } catch (e) {
       emit(
-        state.copyWith(
-          error: 'Gagal memuat data alokasi: $e',
-          loading: false,
-        ),
+        state.copyWith(error: 'Gagal memuat data alokasi: $e', loading: false),
       );
     }
   }
@@ -504,6 +501,57 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
         state.copyWith(
           loading: false,
           error: 'Gagal sinkronisasi data anggaran: $e',
+        ),
+      );
+    }
+  }
+
+  Future<void> _onLoadUserPlans(
+    BudgetingLoadUserPlans event,
+    Emitter<BudgetingState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        loading: true,
+        clearError: true,
+        clearCurrentBudgetPlan: true,
+      ),
+    );
+    try {
+      final authState = sl<AuthState>(); // Assuming GetIt access
+      if (!authState.isAuthenticated || authState.currentUser == null) {
+        emit(state.copyWith(loading: false, error: 'User not authenticated.'));
+        return;
+      }
+      final plans = await _budgetingRepo.getBudgetPlansForUser(
+        authState.currentUser!.id,
+      );
+      if (plans.isNotEmpty) {
+        // Load the latest plan, for example. Or provide a way to select.
+        final latestPlan = plans.first; // Assuming sorted by date descending
+        emit(
+          state.copyWith(
+            loading: false,
+            currentBudgetPlan: latestPlan,
+            planDateConfirmed: true,
+            incomeDateConfirmed: true,
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            loading: false,
+            infoMessage: 'Tidak ada rencana anggaran tersimpan.',
+          ),
+        );
+        // Optionally, navigate to intro or prompt creation if direct dashboard access finds no plans
+        // Navigator.of(context).pushNamed(Routes.budgetingIntro);
+      }
+    } catch (e) {
+      emit(
+        state.copyWith(
+          loading: false,
+          error: 'Gagal memuat rencana anggaran: $e',
         ),
       );
     }

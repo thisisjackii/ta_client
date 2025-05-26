@@ -501,6 +501,57 @@ class BudgetingRepository {
     }
   }
 
+  // Add or ensure this method exists and is suitable for checking ANY plan
+  Future<List<FrontendBudgetPlan>> getBudgetPlansForUser(
+    String userId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final isOnline = await _connectivityService.isOnline;
+    final cacheKey =
+        'all_budget_plans_user_$userId'; // A general key for all plans for the user
+
+    if (isOnline) {
+      try {
+        final plans = await _service.fetchBudgetPlansForUser(
+          userId,
+          startDate: startDate,
+          endDate: endDate,
+        ); // Assuming service method exists
+        await _hiveService.putJsonString(
+          budgetPlansCacheBoxName,
+          cacheKey,
+          json.encode(plans.map((p) => p.toJson()).toList()),
+        );
+        return plans;
+      } catch (e) {
+        debugPrint(
+          '[BudgetingRepo] Error fetching all plans: $e. Trying cache.',
+        );
+        // Fall through to cache
+      }
+    }
+    // Try cache (online failure or offline)
+    final cachedJson = await _hiveService.getJsonString(
+      budgetPlansCacheBoxName,
+      cacheKey,
+    );
+    if (cachedJson != null) {
+      try {
+        return (json.decode(cachedJson) as List<dynamic>)
+            .map(
+              (item) =>
+                  FrontendBudgetPlan.fromJson(item as Map<String, dynamic>),
+            )
+            .toList();
+      } catch (parseErr) {
+        debugPrint('Error parsing cached all budget plans: $parseErr');
+        return [];
+      }
+    }
+    return []; // Return empty if no cache and offline or error
+  }
+
   static void validatePeriodDatesLogic(
     DateTime? s,
     DateTime? e, {

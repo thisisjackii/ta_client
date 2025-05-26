@@ -24,25 +24,121 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
   @override
   void initState() {
     super.initState();
-    // if we already have dates, automatically load
-    // final bloc = context.read<EvaluationBloc>();
-    // if (bloc.state.startDate != null && bloc.state.endDate != null) {
-    // debugPrint('▶️ initState: dispatching LoadDashboard');
-    // bloc.add(const EvaluationLoadDashboardRequested(periodId: null));
-    // }
+    // No automatic load here anymore, as navigation logic handles it.
+    // If evaluationStartDate and evaluationEndDate are null when this page is built,
+    // it will redirect to date selection.
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<EvaluationBloc, EvaluationState>(
       builder: (c, s) {
-        if (s.loading) {
+        // --- START OF ADDED/MODIFIED CODE ---
+        if (s.evaluationStartDate == null || s.evaluationEndDate == null) {
+          // If this page is reached without dates set in the BLoC state
+          // (e.g., direct navigation after "intro seen" and "data exists" checks pass),
+          // then redirect to the date selection page.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
+              debugPrint(
+                '[EvaluationDashboardPage] No dates found in state, redirecting to date selection.',
+              );
+              Navigator.pushReplacementNamed(
+                context,
+                Routes.evaluationDateSelection,
+              );
+            }
+          });
+          // Show a temporary loading/message while redirecting
+          return const Scaffold(
+            body: Center(child: Text('Mengalihkan ke pemilihan tanggal...')),
+          );
+        }
+        // --- END OF ADDED/MODIFIED CODE ---
+
+        // Original loading check remains
+        if (s.loading && s.dashboardItems.isEmpty) {
+          // Only show full loading if items are empty
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
+        // Check if dashboardItems are empty AFTER dates are confirmed and not loading
+        if (!s.loading &&
+            s.dashboardItems.isEmpty &&
+            s.evaluationStartDate != null &&
+            s.evaluationEndDate != null) {
+          // This implies calculation happened but yielded no items (e.g., no transactions in period)
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text(
+                AppStrings.evaluationDashboardTitle,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: AppColors.greyBackground,
+              leading: IconButton(
+                // Add back button if needed when no data
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.history),
+                  onPressed: () {
+                    context.read<EvaluationBloc>().add(
+                      const EvaluationLoadHistoryRequested(),
+                    );
+                    Navigator.pushNamed(context, Routes.evaluationHistory);
+                  },
+                ),
+              ],
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppDimensions.padding),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      AppStrings.noDataTitle,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppDimensions.smallPadding),
+                    const Text(
+                      AppStrings.noDataSubtitle,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppDimensions.padding),
+                    Text(
+                      // Display selected date range
+                      'Periode: ${s.evaluationStartDate != null ? '${s.evaluationStartDate!.day}/${s.evaluationStartDate!.month}/${s.evaluationStartDate!.year}' : '--'} s/d ${s.evaluationEndDate != null ? '${s.evaluationEndDate!.day}/${s.evaluationEndDate!.month}/${s.evaluationEndDate!.year}' : '--'}',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                    const SizedBox(height: AppDimensions.padding),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Navigate back to date selection to try a different range
+                        Navigator.pushReplacementNamed(
+                          context,
+                          Routes.evaluationDateSelection,
+                        );
+                      },
+                      child: const Text('Pilih Periode Lain'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
         // Log the full list once when it arrives
+        // This debug print can be noisy, consider removing or conditionalizing it
         debugPrint('📊 Dashboard items (${s.dashboardItems.length}):');
         for (final item in s.dashboardItems) {
           debugPrint(
@@ -58,6 +154,17 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             backgroundColor: AppColors.greyBackground,
+            // Add a leading back button that goes to date selection or intro if appropriate
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                // Decide where to pop: to date selection or further back if needed
+                Navigator.pushReplacementNamed(
+                  context,
+                  Routes.evaluationDateSelection,
+                );
+              },
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.history),
@@ -96,16 +203,23 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                       ),
                       const SizedBox(width: AppDimensions.smallPadding),
                       Text(
-                        '${s.evaluationStartDate != null ? '${s.evaluationStartDate!.day}/${s.evaluationStartDate!.month}/${s.evaluationStartDate!.year}' : '--'} - '
-                        '${s.evaluationEndDate != null ? '${s.evaluationEndDate!.day}/${s.evaluationEndDate!.month}/${s.evaluationEndDate!.year}' : '--'}',
+                        // Ensure s.evaluationStartDate and s.evaluationEndDate are not null here
+                        '${s.evaluationStartDate!.day}/${s.evaluationStartDate!.month}/${s.evaluationStartDate!.year} - ${s.evaluationEndDate!.day}/${s.evaluationEndDate!.month}/${s.evaluationEndDate!.year}',
                       ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: AppDimensions.padding),
+              if (s.loading &&
+                  s
+                      .dashboardItems
+                      .isNotEmpty) // Show inline loading if refreshing
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16.0),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
               ...s.dashboardItems.map((item) {
-                // Log each tile as it's built
                 debugPrint('🔹 rendering tile for [${item.id}] ${item.title}');
                 return GestureDetector(
                   onTap: () {
@@ -114,12 +228,21 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                       'dispatching LoadDetail',
                     );
                     context.read<EvaluationBloc>().add(
-                      EvaluationLoadDetailRequested(),
+                      EvaluationLoadDetailRequested(
+                        evaluationResultDbId: item.backendEvaluationResultId,
+                        clientRatioId: item.backendEvaluationResultId == null
+                            ? item
+                                  .id // Use client-side ID if no backend ID (offline/not yet synced)
+                            : null, // Don't pass clientRatioId if backend ID exists
+                      ),
                     );
                     Navigator.pushNamed(
                       context,
                       Routes.evaluationDetail,
-                      arguments: item.id,
+                      // Pass the item.id which is the Ratio.id (or client-side '0'-'6')
+                      // The detail page will use this to fetch or identify the correct item.
+                      // If backendEvaluationResultId is available, that's more specific for backend-sourced items.
+                      arguments: item.backendEvaluationResultId ?? item.id,
                     );
                   },
                   child: Card(
@@ -140,7 +263,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // 1) Title sits on its own row
                                 Text(
                                   item.title,
                                   style: const TextStyle(
@@ -149,11 +271,8 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-
-                                // 2) now this Row lines up both "your" and "ideal" labels/values
                                 Row(
                                   children: [
-                                    // Your Ratio block
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
@@ -168,12 +287,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            '${item.id == '0' ? formatMonths(item.yourValue) : formatPercent(item.yourValue)}'
-                                            ' ${item.id != '6'
-                                                ? item.status == EvaluationStatusModel.ideal
-                                                      ? '(Ideal)'
-                                                      : '(Not Ideal)'
-                                                : ''}',
+                                            '${item.id == '0' ? formatMonths(item.yourValue) : formatPercent(item.yourValue)} ${item.id != '6' ? (item.status == EvaluationStatusModel.ideal ? '(Ideal)' : '(Tidak Ideal)') : ''}',
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
@@ -188,8 +302,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                                         ],
                                       ),
                                     ),
-
-                                    // Ideal Ratio block (if any)
                                     if (item.idealText != null)
                                       Expanded(
                                         child: Column(

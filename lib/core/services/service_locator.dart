@@ -2,6 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:ta_client/core/services/connectivity_service.dart';
+import 'package:ta_client/core/services/first_launch_service.dart';
 import 'package:ta_client/core/services/hive_service.dart';
 import 'package:ta_client/core/state/auth_state.dart';
 import 'package:ta_client/core/utils/dio_client.dart';
@@ -27,11 +28,12 @@ final sl = GetIt.instance;
 void setupServiceLocator() {
   // Register Dio instance first
   sl
+    // --- Core Services ---
     ..registerLazySingleton<Dio>(createDioInstance)
     ..registerLazySingleton<HiveService>(HiveService.new)
-    // --- Core Services ---
     ..registerLazySingleton<ConnectivityService>(ConnectivityService.new)
     ..registerLazySingleton<AuthState>(AuthState.new)
+    ..registerLazySingleton<FirstLaunchService>(FirstLaunchService.new)
     // --- Authentication & User Feature ---
     // Services now take Dio instance instead of baseUrl
     ..registerLazySingleton<RegisterService>(

@@ -1,6 +1,7 @@
 // lib/features/transaction/bloc/transaction_bloc.dart
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/widgets.dart';
 // For debugPrint
 // Not directly used, repo handles
 import 'package:ta_client/features/transaction/models/account_type.dart'; // Keep for hierarchy
@@ -62,12 +63,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       // result structure: { subcategoryId?, subcategoryName?, categoryId?, categoryName?, accountTypeId?, accountTypeName?, confidence }
       emit(state.copyWith(isLoading: false, classifiedResult: result));
     } on TransactionApiException catch (e) {
-      emit(
-        state.copyWith(
-          isLoading: false,
-          errorMessage: e.message,
-        ),
-      );
+      emit(state.copyWith(isLoading: false, errorMessage: e.message));
     } catch (error) {
       emit(
         state.copyWith(
@@ -218,10 +214,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     try {
       await repository.deleteTransaction(event.transactionId);
       emit(
-        state.copyWith(
-          isLoading: false,
-          isSuccess: true,
-        ),
+        state.copyWith(isLoading: false, isSuccess: true),
       ); // No specific transaction to return
     } on TransactionApiException catch (e) {
       emit(
@@ -281,16 +274,55 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     emit(
       state.copyWith(
         isLoadingHierarchy: true,
-        categories: [],
-        subcategories: [],
+        categories: [], // Clear previous categories for this account type
+        subcategories:
+            [], // Clear all subcategories, as they depend on new categories
         clearErrorMessage: true,
       ),
-    ); // Clear downstream
-    try {
-      final categories = await hierarchyRepository.fetchCategories(
-        event.accountTypeId,
+    );
+
+    // If accountTypeId is empty (e.g., "Pilih Tipe Akun" was selected), emit empty lists and stop.
+    if (event.accountTypeId.isEmpty) {
+      emit(
+        state.copyWith(
+          isLoadingHierarchy: false,
+          categories: [],
+          subcategories: [],
+        ),
       );
-      emit(state.copyWith(isLoadingHierarchy: false, categories: categories));
+      return;
+    }
+
+    try {
+      final categoriesForAccountType = await hierarchyRepository
+          .fetchCategories(event.accountTypeId);
+
+      // Now, fetch subcategories for all these categories
+      final allRelevantSubcategories = <Subcategory>[];
+      if (categoriesForAccountType.isNotEmpty) {
+        // Only proceed if categories were found
+        for (final category in categoriesForAccountType) {
+          try {
+            final subcategoriesForThisCategory = await hierarchyRepository
+                .fetchSubcategories(category.id);
+            allRelevantSubcategories.addAll(subcategoriesForThisCategory);
+          } catch (e) {
+            // Log error for this specific category's subcategories but continue
+            debugPrint(
+              '[TransactionBloc] Failed to load subcategories for ${category.id}: $e',
+            );
+          }
+        }
+      }
+
+      emit(
+        state.copyWith(
+          isLoadingHierarchy: false,
+          categories: categoriesForAccountType,
+          subcategories:
+              allRelevantSubcategories, // Emit all fetched subcategories
+        ),
+      );
     } catch (e) {
       emit(
         state.copyWith(isLoadingHierarchy: false, errorMessage: e.toString()),

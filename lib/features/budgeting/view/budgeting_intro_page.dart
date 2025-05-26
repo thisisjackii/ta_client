@@ -1,15 +1,22 @@
 // lib/features/budgeting/view/budgeting_intro_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
+import 'package:ta_client/core/services/first_launch_service.dart';
+import 'package:ta_client/core/services/service_locator.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 
 class BudgetingIntro extends StatelessWidget {
   const BudgetingIntro({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final firstLaunchService = sl<FirstLaunchService>(); // Get instance
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.info,
@@ -60,7 +67,13 @@ class BudgetingIntro extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                     ),
-                    onPressed: () {
+                    onPressed: () async {
+                      // Make onPressed async
+                      await firstLaunchService.setBudgetingIntroSeen(
+                        true,
+                      ); // Set flag
+                      // Reset BudgetingBloc state for a fresh start
+                      context.read<BudgetingBloc>().add(BudgetingResetState());
                       Navigator.pushNamed(context, Routes.budgetingIncomeDate);
                     },
                     child: const Text(

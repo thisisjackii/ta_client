@@ -109,3 +109,6 @@ class BudgetingClearInfoMessage extends BudgetingEvent {}
 class BudgetingResetState extends BudgetingEvent {}
 
 class BudgetingSyncPendingData extends BudgetingEvent {}
+
+class BudgetingLoadUserPlans
+    extends BudgetingEvent {} // Or more specific like BudgetingLoadLatestPlan

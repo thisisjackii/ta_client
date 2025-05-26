@@ -114,7 +114,13 @@ class BackendExpenseCategorySuggestion extends Equatable {
 
 class SaveExpenseAllocationsRequestDto extends Equatable {
   const SaveExpenseAllocationsRequestDto({
-    required this.planStartDate, required this.planEndDate, required this.incomeCalculationStartDate, required this.incomeCalculationEndDate, required this.totalCalculatedIncome, required this.allocations, this.planDescription,
+    required this.planStartDate,
+    required this.planEndDate,
+    required this.incomeCalculationStartDate,
+    required this.incomeCalculationEndDate,
+    required this.totalCalculatedIncome,
+    required this.allocations,
+    this.planDescription,
     this.budgetPeriodId, // Keep for backward compatibility during DTO parsing if old data exists
   });
 
@@ -238,7 +244,12 @@ class FrontendBudgetPlan extends Equatable {
   const FrontendBudgetPlan({
     required this.id,
     required this.userId,
-    required this.planStartDate, required this.planEndDate, required this.incomeCalculationStartDate, required this.incomeCalculationEndDate, required this.totalCalculatedIncome, this.description,
+    required this.planStartDate,
+    required this.planEndDate,
+    required this.incomeCalculationStartDate,
+    required this.incomeCalculationEndDate,
+    required this.totalCalculatedIncome,
+    this.description,
     this.allocations = const [],
     this.isLocal = false,
   });
@@ -679,8 +690,66 @@ class BudgetingService {
         '[BudgetingService-DIO] Unexpected error fetchBudgetPlanById: $e',
       );
       if (e is BudgetingApiException) rethrow;
+      throw BudgetingApiException('Unexpected error fetching budget plan: $e');
+    }
+  }
+
+  Future<List<FrontendBudgetPlan>> fetchBudgetPlansForUser(
+    String userId, { // userId might not be needed if API infers from token
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    const endpoint = '/budgeting/plans'; // Endpoint to get list of plans
+    final queryParams = <String, String>{};
+    // Backend might not use userId from query if it uses authenticated user's ID
+    // queryParams['userId'] = userId;
+    if (startDate != null) {
+      queryParams['startDate'] = startDate.toUtc().toIso8601String();
+    }
+    if (endDate != null) {
+      queryParams['endDate'] = endDate.toUtc().toIso8601String();
+    }
+
+    debugPrint('[BudgetingService-DIO] GET $endpoint with query: $queryParams');
+    try {
+      final response = await _dio.get<dynamic>(
+        endpoint,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      if (response.statusCode == 200 &&
+          response.data is Map<String, dynamic> &&
+          response.data['data'] is List) {
+        final dataList = response.data['data'] as List<dynamic>;
+        return dataList
+            .map(
+              (item) =>
+                  FrontendBudgetPlan.fromJson(item as Map<String, dynamic>),
+            )
+            .toList();
+      } else {
+        throw BudgetingApiException(
+          response.data?['message']?.toString() ??
+              'Failed to fetch user budget plans.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] DioException fetchBudgetPlansForUser: ${e.response?.data ?? e.message}',
+      );
       throw BudgetingApiException(
-        'Unexpected error fetching budget plan: $e',
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error fetching user budget plans.',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      debugPrint(
+        '[BudgetingService-DIO] Unexpected error fetchBudgetPlansForUser: $e',
+      );
+      if (e is BudgetingApiException) rethrow;
+      throw BudgetingApiException(
+        'Unexpected error fetching user budget plans: $e',
       );
     }
   }

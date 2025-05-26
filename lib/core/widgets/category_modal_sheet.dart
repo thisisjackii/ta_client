@@ -62,7 +62,9 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
           // Right column: Subcategories of the selected parent
           Expanded(
             child: _selectedParent == null
-                ? const Center(child: Text('Select a Category'))
+                ? const Center(
+                    child: Text('Select a category to view subcategories'),
+                  )
                 : ListView.builder(
                     itemCount: widget.categories[_selectedParent]!.length,
                     itemBuilder: (ctx, idx) {
@@ -84,10 +86,7 @@ class _CategoryModalSheetState extends State<CategoryModalSheet> {
                           ),
                           trailing: const Icon(Icons.check, size: 16),
                           onTap: () {
-                            widget.onCategorySelected(
-                              _selectedParent!,
-                              sub,
-                            );
+                            widget.onCategorySelected(_selectedParent!, sub);
                             Navigator.pop(context);
                           },
                         ),

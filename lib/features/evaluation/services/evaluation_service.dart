@@ -41,17 +41,21 @@ class EvaluationService {
         final resultsData = response.data['data'] as List<dynamic>;
         return resultsData.map((data) {
           final item = data as Map<String, dynamic>;
+          final statusString =
+              (item['status'] as String?)?.toUpperCase() ?? 'INCOMPLETE';
+          final evalStatus = EvaluationStatusModel.values.firstWhere(
+            (e) => e.name.toUpperCase() == statusString,
+            orElse: () => EvaluationStatusModel.incomplete,
+          );
+
           return Evaluation(
             id: item['ratioId'] as String,
             title: item['ratioTitle'] as String,
             yourValue: (item['value'] as num).toDouble(),
-            isIdeal: item['isIdeal'] as bool,
-            status: EvaluationStatusModel.values.firstWhere(
-              (e) =>
-                  e.name.toLowerCase() ==
-                  (item['status'] as String).toLowerCase(),
-              orElse: () => EvaluationStatusModel.incomplete,
-            ),
+            isIdeal:
+                evalStatus ==
+                EvaluationStatusModel.ideal, // *** CORRECTED DERIVATION ***
+            status: evalStatus,
             idealText: item['idealRangeDisplay'] as String?,
             calculatedAt:
                 DateTime.now(), // This specific DTO doesn't send calculatedAt

@@ -49,6 +49,7 @@ class _TransactionFormState extends State<TransactionForm> {
   String _pickerSelectedCategoryName = '';
   String _pickerSelectedSubcategoryName = '';
   bool _isClassificationSuggestion = false;
+  bool _initialCategoriesLoadedForEdit = false;
 
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
@@ -157,55 +158,150 @@ class _TransactionFormState extends State<TransactionForm> {
     if (!_isInitializingForEditOrView || widget.transaction == null) return;
 
     final tx = widget.transaction!;
+    final transactionBloc = context.read<TransactionBloc>();
 
-    // Step 1: Set Account Type
+    // Stage 1: Set Account Type and trigger category loading
     if (!_accountTypesLoadedForEdit && state.accountTypes.isNotEmpty) {
+      String?
+      determinedAccountTypeId; // To store the ID of the determined account type
+      AccountType? determinedAccountTypeObject;
+
       if (tx.accountTypeId != null && tx.accountTypeId!.isNotEmpty) {
         try {
           final accType = state.accountTypes.firstWhere(
             (at) => at.id == tx.accountTypeId,
           );
-          _selectedAccountTypeId = accType.id;
-          _selectedAccountTypeObject = accType;
-          submitButtonColor = _colorForAccountType(accType.name);
+          determinedAccountTypeId = accType.id;
+          determinedAccountTypeObject = accType;
         } catch (e) {
           debugPrint(
-            'InitialLoad: AccountType ID ${tx.accountTypeId} not found.',
+            'InitialLoad (Stage 1): AccountType ID ${tx.accountTypeId} not found in BLoC state.',
           );
         }
       } else if (tx.accountTypeName != null) {
-        // Fallback to name if ID not on transaction
         try {
           final accType = state.accountTypes.firstWhere(
             (at) => at.name.toLowerCase() == tx.accountTypeName!.toLowerCase(),
           );
-          _selectedAccountTypeId = accType.id;
-          _selectedAccountTypeObject = accType;
-          submitButtonColor = _colorForAccountType(accType.name);
+          determinedAccountTypeId = accType.id;
+          determinedAccountTypeObject = accType;
         } catch (e) {
           debugPrint(
-            'InitialLoad: AccountType Name ${tx.accountTypeName} not found.',
+            'InitialLoad (Stage 1): AccountType Name ${tx.accountTypeName} not found in BLoC state.',
           );
         }
       }
-      _accountTypesLoadedForEdit = true; // Mark as attempted/done
+
+      _accountTypesLoadedForEdit =
+          true; // Mark that we've attempted to load/set account type
+
+      if (determinedAccountTypeId != null &&
+          determinedAccountTypeObject != null) {
+        // Only update state if it's different or not yet set, to avoid unnecessary rebuilds
+        if (_selectedAccountTypeId != determinedAccountTypeId) {
+          _selectedAccountTypeId = determinedAccountTypeId;
+          _selectedAccountTypeObject = determinedAccountTypeObject;
+          submitButtonColor = _colorForAccountType(
+            determinedAccountTypeObject.name,
+          );
+        }
+        // Crucially, dispatch to load categories for this account type
+        transactionBloc.add(LoadCategoriesRequested(determinedAccountTypeId));
+        // Return here; the listener will pick up the next state change when categories are loaded
+        return;
+      } else {
+        debugPrint(
+          '[Form Edit Init (Stage 1)] Could not determine AccountType from transaction. Categories/Subcategories might not pre-fill correctly.',
+        );
+        // If account type can't be determined, we can't reliably load categories.
+        // End the multi-stage initialization here.
+        _isInitializingForEditOrView = false;
+        _initialCategoriesLoadedForEdit =
+            true; // No categories to load based on this.
+        debugPrint(
+          '[Form Edit Init (Stage 1)] Initialization stopped due to AccountType not found.',
+        );
+        return;
+      }
     }
 
-    // Step 2 & 3: Set Category and Subcategory names for the picker
-    // The actual IDs (_selectedCategoryId, _selectedSubcategoryId) are already set from tx in initState.
-    // The picker displays names. The BLoC handles loading the full hierarchy for the picker.
-    // If the names are different from what's in BLoC state after initial load, update them.
-    if (_pickerSelectedCategoryName != tx.categoryName ||
-        _pickerSelectedSubcategoryName != tx.subcategoryName) {
-      _pickerSelectedCategoryName = tx.categoryName ?? '';
-      _pickerSelectedSubcategoryName = tx.subcategoryName ?? '';
-    }
+    // Stage 2: Categories (and by extension, subcategories) are loaded.
+    // Set picker names and try to match Category/Subcategory IDs.
+    if (_accountTypesLoadedForEdit &&
+        !_initialCategoriesLoadedForEdit &&
+        (state.categories.isNotEmpty || !state.isLoadingHierarchy)) {
+      // Picker names are set from `tx` in initState.
+      // We need to ensure _selectedCategoryId and _selectedSubcategoryId are correctly set
+      // based on the names from `tx` and the newly loaded `state.categories` and `state.subcategories`.
 
-    // If all necessary initial values from transaction are processed
-    if (_accountTypesLoadedForEdit) {
-      // Simplified condition
+      if (tx.categoryName != null && _selectedAccountTypeId != null) {
+        try {
+          final foundCategory = state.categories.firstWhere(
+            (cat) =>
+                cat.name.toLowerCase() == tx.categoryName!.toLowerCase() &&
+                cat.accountTypeId == _selectedAccountTypeId,
+          );
+          _selectedCategoryId = foundCategory.id; // Update/confirm the ID
+
+          if (tx.subcategoryName != null && state.subcategories.isNotEmpty) {
+            final foundSubcategory = state.subcategories.firstWhere(
+              (sub) =>
+                  sub.name.toLowerCase() == tx.subcategoryName!.toLowerCase() &&
+                  sub.categoryId == foundCategory.id,
+            );
+            _selectedSubcategoryId =
+                foundSubcategory.id; // Update/confirm the ID
+          } else if (tx.subcategoryName != null &&
+              state.subcategories.isEmpty &&
+              !state.isLoadingHierarchy) {
+            _selectedSubcategoryId =
+                null; // Subcategories loaded but none match, or list is empty
+            debugPrint(
+              'InitialLoad (Stage 2): Subcategories loaded but empty or no match for "${tx.subcategoryName}".',
+            );
+          }
+        } catch (e) {
+          // If matching fails, the IDs initially set from `tx` (if they existed) or null will remain.
+          // This is acceptable; the user can re-select from the picker if the data is inconsistent.
+          debugPrint(
+            'InitialLoad (Stage 2): Could not precisely match category/subcategory names from tx to loaded data: $e. Picker names are set, actual IDs might differ if user doesnt reselect.',
+          );
+        }
+      } else if (state.categories.isEmpty && !state.isLoadingHierarchy) {
+        debugPrint(
+          'InitialLoad (Stage 2): Categories list is empty for selected Account Type. Picker will reflect this.',
+        );
+        _selectedCategoryId = null;
+        _selectedSubcategoryId = null;
+      }
+
+      // Ensure picker names are definitely from the transaction at this point
+      // (they are set in initState, this is a re-affirmation or update if something was missed)
+      if (_pickerSelectedCategoryName != (tx.categoryName ?? '') ||
+          _pickerSelectedSubcategoryName != (tx.subcategoryName ?? '')) {
+        _pickerSelectedCategoryName = tx.categoryName ?? '';
+        _pickerSelectedSubcategoryName = tx.subcategoryName ?? '';
+      }
+
+      _initialCategoriesLoadedForEdit = true; // Mark this stage as complete
+      _isInitializingForEditOrView =
+          false; // All initialization stages are now complete
+      debugPrint(
+        '[Form Edit Init (Stage 2)] Initialization attempt complete for categories/subcategories.',
+      );
+    } else if (_accountTypesLoadedForEdit &&
+        !_initialCategoriesLoadedForEdit &&
+        state.isLoadingHierarchy) {
+      // Still loading categories/subcategories, wait for the next state update.
+      debugPrint(
+        '[Form Edit Init] Waiting for categories/subcategories to load...',
+      );
+    } else if (_accountTypesLoadedForEdit && _initialCategoriesLoadedForEdit) {
+      // This means all hierarchy loading stages are done.
       _isInitializingForEditOrView = false;
-      debugPrint('[Form Edit Init] Initialization attempt complete.');
+      debugPrint(
+        '[Form Edit Init] All stages previously completed or no further data loaded.',
+      );
     }
   }
 
@@ -285,44 +381,46 @@ class _TransactionFormState extends State<TransactionForm> {
 
     return BlocConsumer<TransactionBloc, TransactionState>(
       listenWhen: (prev, curr) {
-        var shouldListen = false;
-        if (_isInitializingForEditOrView &&
-            prev.accountTypes != curr.accountTypes) {
-          shouldListen =
-              true; // For edit/view mode initialization for account types
+        if (_isInitializingForEditOrView) {
+          // If still initializing, listen to any hierarchy data change or loading state change
+          return prev.accountTypes != curr.accountTypes ||
+              prev.categories != curr.categories ||
+              prev.subcategories != curr.subcategories ||
+              prev.isLoadingHierarchy != curr.isLoadingHierarchy;
         }
-        // For classification results, if not initializing
-        if (!_isInitializingForEditOrView &&
-            prev.classifiedResult != curr.classifiedResult &&
-            curr.operation == TransactionOperation.classify) {
-          shouldListen = true;
-        }
-        if (widget.mode == TransactionFormMode.view &&
-            curr.operation == TransactionOperation.bookmark &&
-            curr.isSuccess) {
-          shouldListen = true;
-        }
-        return shouldListen;
+        // If not initializing, listen for other relevant operations
+        return (prev.classifiedResult != curr.classifiedResult &&
+                curr.operation == TransactionOperation.classify) ||
+            (widget.mode == TransactionFormMode.view &&
+                curr.operation == TransactionOperation.bookmark &&
+                curr.isSuccess);
       },
       listener: (ctx, state) {
-        if (_isInitializingForEditOrView && state.accountTypes.isNotEmpty) {
-          // This setState is crucial to trigger a rebuild after account types are loaded,
-          // allowing _handleInitialLoadForEditView to correctly find and set the account type.
+        if (_isInitializingForEditOrView) {
+          // Call _handleInitialLoadForEditView which might change local state vars.
+          // setState() here ensures the UI rebuilds to reflect those local changes immediately
+          // if _handleInitialLoadForEditView itself doesn't trigger a UI-relevant state emission from BLoC.
           setState(() {
             _handleInitialLoadForEditView(state, ctx);
           });
-        } else if (!_isInitializingForEditOrView &&
-            state.classifiedResult != null &&
+        } else if (state.classifiedResult != null &&
             state.operation == TransactionOperation.classify) {
           setState(() {
-            // Rebuild to reflect classification
             _handleClassificationResult(state, ctx);
           });
         }
+        // No specific listener action for bookmark here, as builder reacts to lastProcessedTransaction
       },
       buildWhen: (prev, curr) =>
-          prev.accountTypes !=
-          curr.accountTypes, // Only rebuild UI for account type list changes
+          prev.accountTypes != curr.accountTypes ||
+          prev.categories != curr.categories || // Rebuild if categories change
+          prev.subcategories !=
+              curr.subcategories || // Rebuild if subcategories change
+          prev.isLoadingHierarchy !=
+              curr.isLoadingHierarchy || // Rebuild if loading state for hierarchy changes
+          prev.classifiedResult != curr.classifiedResult ||
+          (widget.mode == TransactionFormMode.view &&
+              prev.lastProcessedTransaction != curr.lastProcessedTransaction),
       builder: (ctx, state) {
         // Prepare data for CustomDropdownField (Account Type)
         final accountTypeDropdownItems = [
@@ -432,6 +530,10 @@ class _TransactionFormState extends State<TransactionForm> {
                                     _selectedAccountTypeId = null;
                                     _selectedAccountTypeObject = null;
                                     submitButtonColor = Colors.grey;
+                                    // Clear categories and subcategories in BLoC state if "Pilih Tipe Akun" is chosen
+                                    context.read<TransactionBloc>().add(
+                                      const LoadCategoriesRequested(''),
+                                    ); // Pass empty or a special ID
                                   } else {
                                     final foundAccountType = state.accountTypes
                                         .firstWhere(
@@ -442,6 +544,12 @@ class _TransactionFormState extends State<TransactionForm> {
                                     _selectedAccountTypeObject =
                                         foundAccountType;
                                     submitButtonColor = item.color;
+                                    // *** ADD THIS LINE ***
+                                    context.read<TransactionBloc>().add(
+                                      LoadCategoriesRequested(
+                                        foundAccountType.id,
+                                      ),
+                                    );
                                   }
                                 });
                               },
