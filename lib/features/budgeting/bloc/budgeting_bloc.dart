@@ -34,6 +34,7 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
     on<BudgetingResetState>(_onResetState);
     on<BudgetingSyncPendingData>(_onSyncPendingData);
     on<BudgetingLoadUserPlans>(_onLoadUserPlans);
+    on<BudgetingLoadPlanDetails>(_onLoadPlanDetails);
   }
 
   final BudgetingRepository _budgetingRepo;
@@ -207,12 +208,14 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
       // If we decide user can pick from existing plans by date, then we'd fetch it here.
       // For a new plan flow, we only load suggestions.
       // If an existing plan ID *was* passed or stored in state for editing:
-      // final existingPlan = state.currentBudgetPlan?.id != null ? await _budgetingRepo.getBudgetPlanById(state.currentBudgetPlan!.id) : null;
+      final existingPlan = state.currentBudgetPlan?.id != null
+          ? await _budgetingRepo.getBudgetPlanById(state.currentBudgetPlan!.id)
+          : null;
 
       emit(
         state.copyWith(
           expenseCategorySuggestions: suggestions,
-          // currentBudgetPlan: existingPlan, // If loading an existing plan
+          currentBudgetPlan: existingPlan, // If loading an existing plan
           // Populate allocation states from existingPlan if found
           loading: false,
         ),
@@ -489,10 +492,12 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
 
       // Optionally, try to reload data for the current context if possible
       if (currentPlanIdToRefresh != null) {
-        // add(BudgetingLoadPlanDetails(planId: currentPlanIdToRefresh)); // Example event
+        add(
+          BudgetingLoadPlanDetails(planId: currentPlanIdToRefresh),
+        ); // Example event
       } else if (state.planDateConfirmed) {
         // If user was in process of creating new for these dates
-        // add(BudgetingLoadExpenseSuggestionsAndExistingPlan());
+        add(BudgetingLoadExpenseSuggestionsAndExistingPlan());
       }
     } on BudgetingApiException catch (e) {
       emit(state.copyWith(loading: false, error: e.message));
@@ -552,6 +557,73 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
         state.copyWith(
           loading: false,
           error: 'Gagal memuat rencana anggaran: $e',
+        ),
+      );
+    }
+  }
+
+  Future<void> _onLoadPlanDetails(
+    BudgetingLoadPlanDetails event,
+    Emitter<BudgetingState> emit,
+  ) async {
+    emit(
+      state.copyWith(loading: true, clearError: true, clearInfoMessage: true),
+    );
+    try {
+      final plan = await _budgetingRepo.getBudgetPlanById(event.planId);
+      if (plan != null) {
+        // If plan is found, update the state with this plan.
+        // Also update related date fields and income details if they are part of the plan.
+        emit(
+          state.copyWith(
+            loading: false,
+            currentBudgetPlan: plan,
+            // Set dates from the loaded plan
+            planStartDate: plan.planStartDate,
+            planEndDate: plan.planEndDate,
+            planDescription: plan.description,
+            planDateConfirmed:
+                true, // Mark as confirmed as we've loaded a plan for these dates
+            incomeCalculationStartDate: plan.incomeCalculationStartDate,
+            incomeCalculationEndDate: plan.incomeCalculationEndDate,
+            totalCalculatedIncome: plan.totalCalculatedIncome,
+            incomeDateConfirmed: true, // Mark income dates also confirmed
+            // Potentially clear/reset selectedIncomeSubcategoryIds if we want to
+            // derive selections from the plan's totalCalculatedIncome or other stored data.
+            // For now, we're primarily focusing on loading the plan structure.
+            // If the UI for selecting income is separate and not directly tied to the loaded plan's
+            // `totalCalculatedIncome` source, then selectedIncomeSubcategoryIds might not need update here.
+          ),
+        );
+        // After loading plan details, you might want to re-fetch income summary
+        // if the plan's income period is different from what was last fetched,
+        // or if the `totalCalculatedIncome` needs its source breakdown.
+        // For now, this is optional based on your exact flow needs.
+        // add(const BudgetingLoadIncomeSummaryForSelectedDates());
+      } else {
+        emit(
+          state.copyWith(
+            loading: false,
+            error:
+                'Rencana anggaran dengan ID ${event.planId} tidak ditemukan.',
+            clearCurrentBudgetPlan: true, // Clear any stale plan
+          ),
+        );
+      }
+    } on BudgetingApiException catch (e) {
+      emit(
+        state.copyWith(
+          loading: false,
+          error: e.message,
+          clearCurrentBudgetPlan: true,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          loading: false,
+          error: 'Gagal memuat detail rencana anggaran: $e',
+          clearCurrentBudgetPlan: true,
         ),
       );
     }

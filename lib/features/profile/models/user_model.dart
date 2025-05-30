@@ -12,34 +12,58 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    // Safely access the nested occupation object and its name
+    var parsedOccupationName =
+        'Tidak Ada Data'; // Default value or handle as nullable
+    final parsedOccupationId =
+        json['occupationId'] as String?; // This is correct from top level
+
+    final occupationData = json['occupation'] as Map<String, dynamic>?;
+    if (occupationData != null && occupationData['name'] != null) {
+      parsedOccupationName = occupationData['name'] as String;
+      // If occupationId is not at top level but inside occupation object, parse from there too
+      // For your current backend response, 'occupationId' is at top level,
+      // and 'occupation.id' is also available.
+      // If parsedOccupationId was null and you wanted to get it from nested:
+      // parsedOccupationId ??= occupationData['id'] as String?;
+    } else if (json.containsKey('occupationName') &&
+        json['occupationName'] != null) {
+      // Fallback if backend SOMETIMES sends occupationName at top level (less ideal)
+      parsedOccupationName = json['occupationName'] as String;
+    }
+
     return User(
       id: json['id'] as String,
       name: json['name'] as String,
       username: json['username'] as String,
       email: json['email'] as String,
-      address: json['address'] as String,
+      address:
+          json['address'] as String? ??
+          'Tidak Ada Data', // Make address nullable or provide default
       birthdate: DateTime.parse(json['birthdate'] as String).toLocal(),
-      occupationName: json['occupationName'] as String,
-      occupationId: json['occupationId'] as String?,
+      occupationName: parsedOccupationName,
+      occupationId: parsedOccupationId, // This was already correct
     );
   }
   final String id;
   final String name;
   final String username;
   final String email;
-  final String address;
+  final String address; // Consider if this can be null from backend
   final DateTime birthdate;
-  final String occupationName;
+  final String
+  occupationName; // This is non-nullable, ensure it always gets a value
   final String? occupationId;
 
   Map<String, dynamic> toJson() => {
+    // This is for general serialization, maybe not for API update
     'id': id,
     'name': name,
     'username': username,
     'email': email,
     'address': address,
     'birthdate': birthdate.toUtc().toIso8601String(),
-    'occupationMame': occupationName,
+    'occupationName': occupationName, // Corrected typo from 'occupationMame'
     'occupationId': occupationId,
   };
 
@@ -47,23 +71,27 @@ class User {
     'name': name,
     'username': username,
     'address': address,
-    'birthdate': birthdate
-        .toUtc()
-        .toIso8601String(), // Local to UTC ISO for API
+    'birthdate': birthdate.toUtc().toIso8601String(),
     if (occupationId != null && occupationId!.isNotEmpty)
       'occupationId': occupationId,
-    // Do not send email or password for profile update here
+    // Do not send email for profile update here (usually needs verification)
+    // Do not send password
   };
 
+  // toJsonForCache seems fine based on your backend structure for 'occupation'
   Map<String, dynamic> toJsonForCache() => {
-    'id': id, 'name': name, 'username': username, 'email': email,
-    'address': address, 'birthdate': birthdate.toUtc().toIso8601String(),
-    'occupationName': occupationName, 'occupationId': occupationId,
-    // 'createdAt': createdAt?.toUtc().toIso8601String(),
-    // 'updatedAt': updatedAt?.toUtc().toIso8601String(),
-    'occupation': occupationId != null
+    'id': id,
+    'name': name,
+    'username': username,
+    'email': email,
+    'address': address,
+    'birthdate': birthdate.toUtc().toIso8601String(),
+    'occupationName': occupationName,
+    'occupationId': occupationId,
+    'occupation': occupationId != null && occupationName.isNotEmpty
         ? {'id': occupationId, 'name': occupationName}
-        : {'name': occupationName},
+        // If only occupationName is present (e.g. manually entered, no ID)
+        : (occupationName.isNotEmpty ? {'name': occupationName} : null),
   };
 
   User copyWith({

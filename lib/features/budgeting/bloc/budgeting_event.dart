@@ -45,6 +45,15 @@ class BudgetingLoadExpenseSuggestionsAndExistingPlan extends BudgetingEvent {
   const BudgetingLoadExpenseSuggestionsAndExistingPlan();
 }
 
+// New Event: To load details of a specific plan
+class BudgetingLoadPlanDetails extends BudgetingEvent {
+  // <<< NEW EVENT
+  const BudgetingLoadPlanDetails({required this.planId});
+  final String planId;
+  @override
+  List<Object?> get props => [planId];
+}
+
 // --- User Interactions for Building the Budget ---
 class BudgetingSelectIncomeSubcategory extends BudgetingEvent {
   const BudgetingSelectIncomeSubcategory({required this.subcategoryId});

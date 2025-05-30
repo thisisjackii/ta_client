@@ -18,9 +18,10 @@ class EvaluationDatePage extends StatefulWidget {
 class _EvaluationDatePageState extends State<EvaluationDatePage>
     with RouteAware {
   DateTime? _start;
-  DateTime? _end; // single controller to prevent repeats
+  DateTime? _end;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
   _snackBarController;
+  bool _isDialogCurrentlyOpen = false;
 
   @override
   void initState() {
@@ -28,180 +29,233 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
     final now = DateTime.now();
     final initialBlocState = context.read<EvaluationBloc>().state;
 
-    // Initialize dialog dates from BLoC state if available, otherwise default
     _start =
         initialBlocState.evaluationStartDate ?? DateTime(now.year, now.month);
     _end =
         initialBlocState.evaluationEndDate ??
         DateUtils.addDaysToDate(DateTime(now.year, now.month + 1), -1);
 
+    context.read<EvaluationBloc>().add(EvaluationClearDateError());
+    context.read<EvaluationBloc>().add(EvaluationClearError());
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _openDateDialog();
+      if (mounted && !_isDialogCurrentlyOpen) {
+        _openDateDialog();
+      }
     });
   }
 
-  // Helper to get the last day of a given month
   DateTime _lastDayOfMonth(DateTime date) {
     return DateTime(date.year, date.month + 1, 0);
   }
 
-  /// Checks if the period is at least one month based on your specific criteria:
-  /// 1. If start and end are in the same month: true if start is 1st and end is last day of that month.
-  /// 2. If start and end are in different months:
-  ///    a. If end is in the month immediately following start: true if end.day >= start.day.
-  ///    b. If end is more than one month after start: true.
   bool isAtLeastOneMonthApart(DateTime start, DateTime end) {
-    if (end.isBefore(start)) return false; // Invalid range
-
-    // Normalize to ignore time part for day comparisons
+    if (end.isBefore(start)) return false;
     final normStart = DateUtils.dateOnly(start);
     final normEnd = DateUtils.dateOnly(end);
-
-    // Case 1: Start and end dates are in the same calendar month
     if (DateUtils.isSameMonth(normStart, normEnd)) {
       final isFirstDay = normStart.day == 1;
       final isLastDay = normEnd.day == _lastDayOfMonth(normStart).day;
-      // "if it's between 1 and last day of the month" - this means it IS the full month.
       return isFirstDay && isLastDay;
     }
-
-    // Case 2: End date is in a subsequent month
-    // Calculate the date one month after the start date
     final oneMonthAfterStartAnchor = DateUtils.addMonthsToMonthDate(
       normStart,
       1,
     );
-
-    // If normEnd is in any month AFTER the month of oneMonthAfterStartAnchor, it's definitely > 1 month
     if (normEnd.year > oneMonthAfterStartAnchor.year ||
         (normEnd.year == oneMonthAfterStartAnchor.year &&
             normEnd.month > oneMonthAfterStartAnchor.month)) {
       return true;
     }
-
-    // If normEnd is in the SAME month as oneMonthAfterStartAnchor (i.e., exactly one month later)
     if (DateUtils.isSameMonth(normEnd, oneMonthAfterStartAnchor)) {
-      // "it's the same date number between one month and the other"
       return normEnd.day >= normStart.day;
     }
-
-    // If normEnd is before the month of oneMonthAfterStartAnchor (but not in the same month as start),
-    // this case should not be hit if previous checks are correct.
-    // e.g. start=Jan 15, end=Feb 10. oneMonthAfterStartAnchor=Feb 15. normEnd is not same month as oneMonthAfterStartAnchor
-    // and not in a month AFTER. This means it's less than a month by day number.
     return false;
   }
 
-  void _openDateDialog() {
-    showDialog<void>(
+  Future<void> _openDateDialog() async {
+    if (_isDialogCurrentlyOpen) {
+      // If already open, perhaps bring to front or just do nothing.
+      // For now, just preventing re-entry.
+      return;
+    }
+    _isDialogCurrentlyOpen = true;
+
+    // It's good practice to remove any existing snackbar before showing a dialog
+    // that might cover where the snackbar was, or if the dialog action leads to a new snackbar.
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+
+    await showDialog<void>(
       context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text(AppStrings.dateRangePrompt),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CustomDatePicker(
-              label: 'Start',
-              isDatePicker: true,
-              selectedDate: _start,
-              onDateChanged: (d) => setState(() => _start = d),
+      barrierDismissible: false, // User must explicitly cancel or submit
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (stfContext, setDialogState) {
+          return AlertDialog(
+            title: const Text(AppStrings.dateRangePrompt),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomDatePicker(
+                  label: 'Start',
+                  isDatePicker: true,
+                  selectedDate: _start,
+                  onDateChanged: (d) => setDialogState(() => _start = d),
+                ),
+                const SizedBox(height: AppDimensions.smallPadding),
+                CustomDatePicker(
+                  label: 'End',
+                  isDatePicker: true,
+                  selectedDate: _end,
+                  onDateChanged: (d) => setDialogState(() => _end = d),
+                ),
+              ],
             ),
-            const SizedBox(height: AppDimensions.smallPadding),
-            CustomDatePicker(
-              label: 'End',
-              isDatePicker: true,
-              selectedDate: _end,
-              onDateChanged: (d) => setState(() => _end = d),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(AppStrings.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_start == null || _end == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Harap pilih tanggal mulai dan akhir.'),
-                  ),
-                );
-                return;
-              }
-              if (_end!.isBefore(_start!)) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Tanggal akhir tidak boleh sebelum tanggal mulai.',
-                    ),
-                  ),
-                );
-                return;
-              }
-
-              if (!isAtLeastOneMonthApart(_start!, _end!)) {
-                _snackBarController?.close();
-                _snackBarController = ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Rentang periode evaluasi minimal adalah 1 bulan (sesuai kriteria).',
-                    ),
-                  ),
-                );
-                _snackBarController!.closed.then(
-                  (_) => _snackBarController = null,
-                );
-                return; // Don't pop, let user correct
-              }
-
-              // Dates are valid, pop the dialog
-              Navigator.pop(context);
-
-              // Dispatch event to BLoC. BLoC will handle period creation and then load dashboard.
-              context.read<EvaluationBloc>().add(
-                EvaluationDateRangeSelected(_start!, _end!),
-              );
-              // Navigation will now be handled by a BlocListener on EvaluationBloc in this page or a parent
-            },
-            child: const Text(AppStrings.ok),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext); // Close dialog
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context); // Pop EvaluationDatePage itself
+                  } else {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      Routes.dashboard,
+                    ); // Fallback
+                  }
+                },
+                child: const Text(AppStrings.cancel),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // Perform validation
+                  if (_start == null || _end == null) {
+                    ScaffoldMessenger.of(stfContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Harap pilih tanggal mulai dan akhir.'),
+                      ),
+                    );
+                    return;
+                  }
+                  if (_end!.isBefore(_start!)) {
+                    ScaffoldMessenger.of(stfContext).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Tanggal akhir tidak boleh sebelum tanggal mulai.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  if (!isAtLeastOneMonthApart(_start!, _end!)) {
+                    ScaffoldMessenger.of(stfContext).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Rentang periode evaluasi minimal adalah 1 bulan (sesuai kriteria).',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  // If all validations pass:
+                  Navigator.pop(dialogContext); // Close the dialog first
+                  // Then dispatch event. State change will be handled by BlocListener.
+                  context.read<EvaluationBloc>().add(
+                    EvaluationDateRangeSelected(_start!, _end!),
+                  );
+                },
+                child: const Text(AppStrings.ok),
+              ),
+            ],
+          );
+        },
       ),
     );
+
+    // This setState is important to update the page's view if needed
+    // after the dialog closes, and to correctly set _isDialogCurrentlyOpen.
+    if (mounted) {
+      setState(() {
+        _isDialogCurrentlyOpen = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Listen to EvaluationBloc for navigation after dates are processed and dashboard is loaded
-    return BlocListener<EvaluationBloc, EvaluationState>(
-      listener: (context, state) {
-        if (!state.loading &&
-            state.error == null &&
-            state.dashboardItems.isNotEmpty) {
-          // If dashboard items are loaded successfully (implying period was set and data fetched)
-          if (ModalRoute.of(context)?.isCurrent ?? false) {
-            // Check if this page is still current
-            Navigator.pushReplacementNamed(context, Routes.evaluationDashboard);
-          }
-        } else if (!state.loading && state.error != null) {
-          // If an error occurred during period ensuring or dashboard loading after date selection
-          // (and it wasn't handled by the dialog's listener, e.g., dialog already closed)
-          _snackBarController?.close();
-          _snackBarController = ScaffoldMessenger.of(
+    return Scaffold(
+      // The body is minimal because the dialog is the main interaction.
+      // This Scaffold provides context for SnackBars shown by the BlocListener.
+      body: BlocListener<EvaluationBloc, EvaluationState>(
+        listener: (context, state) {
+          // Dismiss any existing snackbar on the main scaffold before showing a new one.
+          ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.error!)));
-          _snackBarController!.closed.then((_) => _snackBarController = null);
-          // Optionally, re-open dialog or allow user to retry
-          // For now, just show error. User might need to go back and try again.
-        }
-      },
-      child: const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ), // Initial loading state
+          ).removeCurrentSnackBar(reason: SnackBarClosedReason.dismiss);
+          _snackBarController = null;
+
+          if (!state.loading) {
+            // Only act when BLoC is not actively processing
+            bool shouldReopenDialog = false;
+
+            if (state.dateError != null) {
+              _snackBarController = ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.dateError!)));
+              context.read<EvaluationBloc>().add(EvaluationClearDateError());
+              shouldReopenDialog = true;
+            } else if (state.error != null) {
+              _snackBarController = ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.error!)));
+              context.read<EvaluationBloc>().add(EvaluationClearError());
+              shouldReopenDialog = true;
+            } else if (state.evaluationStartDate != null &&
+                state.evaluationEndDate != null) {
+              // Dates are processed, no BLoC errors. Check for data.
+              if (state.dashboardItems.isEmpty) {
+                debugPrint(
+                  'Dashboard items: ${state.dashboardItems.map((item) => item.toString()).join(', ')}',
+                );
+                _snackBarController = ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Oops! Belum ada data keuangan untuk periode ini. Pilih periode lain atau catat transaksi.',
+                    ),
+                    duration: Duration(seconds: 4),
+                  ),
+                );
+                shouldReopenDialog = true;
+              } else {
+                // SUCCESS: Data loaded, navigate to dashboard
+                if (ModalRoute.of(context)?.isCurrent ?? false) {
+                  Navigator.pushReplacementNamed(
+                    context,
+                    Routes.evaluationDashboard,
+                  );
+                }
+                return; // Exit listener early on success
+              }
+            }
+
+            if (shouldReopenDialog) {
+              _snackBarController?.closed.then((_) {
+                _snackBarController = null; // Clear controller
+                // Only re-open dialog if it's not already open and widget is mounted
+                if (mounted && !_isDialogCurrentlyOpen) {
+                  _openDateDialog();
+                }
+              });
+            }
+          }
+        },
+        // The child of BlocListener is the static part of the page.
+        // Since the dialog is modal and covers this, we can return a simple placeholder.
+        // If BLoC is loading, it implies dialog was submitted; don't show another spinner here.
+        child: Container(
+          // Optional: You could put a very subtle background or branding here
+          // if you don't want it to be completely white behind the dialog/snackbar.
+          // For now, an empty container is fine.
+        ),
       ),
     );
   }

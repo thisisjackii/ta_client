@@ -36,11 +36,31 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
         onFilterChanged: updateFilterCriteria,
         onShowDoubleEntryRecap: () {
           final dashboardState = context.read<DashboardBloc>().state;
+          var transactionsForRecap = <Transaction>[];
+
           if (dashboardState is DashboardLoaded) {
+            transactionsForRecap = dashboardState.items;
+          } else if (dashboardState is DashboardLoading &&
+              dashboardState.items.isNotEmpty) {
+            // Allow recap if loading but we have previous items
+            transactionsForRecap = dashboardState.items;
+          }
+
+          if (transactionsForRecap.isNotEmpty) {
             Navigator.pushNamed(
               context,
               Routes.doubleEntryRecapPage,
-              arguments: dashboardState.items,
+              arguments: transactionsForRecap,
+            );
+          } else {
+            // Show SnackBar if no transactions are available to show in recap
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Tidak ada data transaksi untuk ditampilkan pada rekap.',
+                ),
+                duration: Duration(seconds: 3),
+              ),
             );
           }
         },

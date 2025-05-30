@@ -1,4 +1,3 @@
-// lib/core/widgets/custom_category_picker.dart
 import 'package:flutter/material.dart';
 import 'package:ta_client/core/widgets/category_modal_sheet.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
@@ -19,17 +18,14 @@ class CustomCategoryPicker extends StatelessWidget {
   final String selectedCategory;
   final String selectedSubCategory;
   final void Function(String, String) onCategorySelected;
-  final String? Function(String?)? validator;
+  final String? Function(String?)? validator; // Validator provided from outside
 
   @override
   Widget build(BuildContext context) {
     return FormField<String>(
-      validator: (_) {
-        if (selectedCategory.isEmpty || selectedSubCategory.isEmpty) {
-          return 'Field cannot be empty';
-        }
-        return null;
-      },
+      // Use the validator passed into the CustomCategoryPicker widget.
+      // This validator will be called by Form.validate() or field.validate().
+      validator: validator,
       builder: (FormFieldState<String> field) {
         return GestureDetector(
           onTap: () {
@@ -39,23 +35,30 @@ class CustomCategoryPicker extends StatelessWidget {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
               builder: (_) => CategoryModalSheet(
+                // Changed builder argument name to avoid conflict
                 categories: categories, // pass it along
                 onCategorySelected: (cat, subCat) {
+                  // Call the external onCategorySelected callback provided to the widget
                   onCategorySelected(cat, subCat);
-                  field.didChange(cat);
+                  // Notify the FormField that the value has changed, which can trigger re-validation.
+                  // The actual string value here ('$cat / $subCat') can be used by the validator if needed,
+                  // but typically the validator will check the component's state (selectedCategory/selectedSubCategory props).
+                  field.didChange('$cat / $subCat');
                 },
               ),
             );
           },
           child: AbsorbPointer(
             child: CustomTextField(
-              label: (selectedCategory.isNotEmpty &&
+              label:
+                  (selectedCategory.isNotEmpty &&
                       selectedSubCategory.isNotEmpty)
                   ? '$selectedCategory / $selectedSubCategory'
                   : 'Pilih Kategori',
-              onChanged: (_) {},
+              onChanged: (value) {}, // Not directly editable, changed via modal
               keyboardType: TextInputType.none,
-              validator: (_) => field.errorText,
+              // This validator for CustomTextField simply displays the error text from the FormField.
+              validator: (value) => field.errorText,
             ),
           ),
         );

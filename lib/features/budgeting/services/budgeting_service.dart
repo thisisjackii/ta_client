@@ -259,8 +259,16 @@ class FrontendBudgetPlan extends Equatable {
     bool local = false,
   }) {
     final allocList = json['allocations'] as List<dynamic>? ?? [];
-    final rawTotalIncome =
-        json['totalCalculatedIncome']; // Get it as dynamic first
+    final rawTotalIncome = json['totalCalculatedIncome'];
+
+    double parsedTotalIncome;
+    if (rawTotalIncome is String) {
+      parsedTotalIncome = double.tryParse(rawTotalIncome) ?? 0.0;
+    } else if (rawTotalIncome is num) {
+      parsedTotalIncome = rawTotalIncome.toDouble();
+    } else {
+      parsedTotalIncome = 0.0; // Default if null or unexpected type
+    }
 
     return FrontendBudgetPlan(
       id: json['id'] as String,
@@ -274,10 +282,7 @@ class FrontendBudgetPlan extends Equatable {
       incomeCalculationEndDate: DateTime.parse(
         json['incomeCalculationEndDate'] as String,
       ).toLocal(),
-      // CORRECTED PARSING:
-      totalCalculatedIncome: rawTotalIncome is String
-          ? (double.tryParse(rawTotalIncome) ?? 0.0)
-          : (rawTotalIncome as num? ?? 0.0).toDouble(),
+      totalCalculatedIncome: parsedTotalIncome, // Use the robustly parsed value
       allocations: allocList
           .map(
             (a) => FrontendBudgetAllocation.fromJson(a as Map<String, dynamic>),
@@ -377,6 +382,15 @@ class FrontendBudgetAllocation extends Equatable {
     Map<String, dynamic> json, {
     bool local = false,
   }) {
+    double parseNumeric(dynamic value) {
+      if (value is String) {
+        return double.tryParse(value) ?? 0.0;
+      } else if (value is num) {
+        return value.toDouble();
+      }
+      return 0;
+    }
+
     return FrontendBudgetAllocation(
       id: json['id'] as String,
       budgetPlanId: json['budgetPlanId'] as String? ?? '',
@@ -390,8 +404,8 @@ class FrontendBudgetAllocation extends Equatable {
           json['subcategory']?['name'] as String? ??
           json['subcategoryName'] as String? ??
           'Unknown Subcategory',
-      percentage: (json['percentage'] as num).toDouble(),
-      amount: (json['amount'] as num).toDouble(),
+      percentage: parseNumeric(json['percentage']), // Use robust parsing
+      amount: parseNumeric(json['amount']), // Use robust parsing
       isLocal: local || (json['isLocal'] as bool? ?? false),
     );
   }

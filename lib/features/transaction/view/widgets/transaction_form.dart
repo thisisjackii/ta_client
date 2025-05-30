@@ -1,12 +1,11 @@
-// lib/features/transaction/view/widgets/transaction_form.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:ta_client/core/widgets/custom_category_picker.dart'; // Your existing custom picker
+import 'package:ta_client/core/widgets/custom_category_picker.dart';
 import 'package:ta_client/core/widgets/custom_date_picker.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
-// Assuming DropdownItem and CustomDropdownField are still used for AccountType
+// Assuming DropdownItem and CustomDropdownField are defined in dropdown_field.dart
 import 'package:ta_client/core/widgets/dropdown_field.dart';
 import 'package:ta_client/core/widgets/rupiah_formatter.dart';
 import 'package:ta_client/features/transaction/bloc/transaction_bloc.dart';
@@ -81,8 +80,8 @@ class _TransactionFormState extends State<TransactionForm> {
       _selectedTime = TimeOfDay.fromDateTime(tx.date);
 
       // Store target IDs and names for initialization
-      _selectedAccountTypeId =
-          tx.accountTypeId; // Assuming Transaction model now has this
+      // _selectedAccountTypeId will be used by _handleInitialLoadForEditView to find _selectedAccountTypeObject
+      _selectedAccountTypeId = tx.accountTypeId;
       _selectedCategoryId = tx.categoryId;
       _selectedSubcategoryId = tx.subcategoryId;
 
@@ -116,7 +115,6 @@ class _TransactionFormState extends State<TransactionForm> {
     }
   }
 
-  // This function tries to set the Account Type dropdown based on a category name
   void _syncAccountTypeFromCategoryName(
     String categoryName,
     TransactionState state,
@@ -124,7 +122,7 @@ class _TransactionFormState extends State<TransactionForm> {
     if (categoryName.isEmpty) return;
 
     Category? foundCategory;
-    // Search through all categories in the state (assuming they might be loaded for various account types)
+    // Search through all categories in the state
     for (final cat in state.categories) {
       if (cat.name.toLowerCase() == categoryName.toLowerCase()) {
         foundCategory = cat;
@@ -142,6 +140,11 @@ class _TransactionFormState extends State<TransactionForm> {
           _selectedAccountTypeId = accType.id;
           _selectedAccountTypeObject = accType;
           submitButtonColor = _colorForAccountType(accType.name);
+          // When account type changes due to category sync, reload categories for the new account type.
+          // This ensures the category picker data is consistent.
+          context.read<TransactionBloc>().add(
+            LoadCategoriesRequested(accType.id),
+          );
         });
       } catch (e) {
         debugPrint(
@@ -162,49 +165,55 @@ class _TransactionFormState extends State<TransactionForm> {
 
     // Stage 1: Set Account Type and trigger category loading
     if (!_accountTypesLoadedForEdit && state.accountTypes.isNotEmpty) {
-      String?
-      determinedAccountTypeId; // To store the ID of the determined account type
+      String? determinedAccountTypeId = tx.accountTypeId;
       AccountType? determinedAccountTypeObject;
 
-      if (tx.accountTypeId != null && tx.accountTypeId!.isNotEmpty) {
+      // Try to find by ID first (which was set in initState)
+      if (determinedAccountTypeId != null &&
+          determinedAccountTypeId.isNotEmpty) {
         try {
           final accType = state.accountTypes.firstWhere(
-            (at) => at.id == tx.accountTypeId,
+            (at) => at.id == determinedAccountTypeId,
           );
-          determinedAccountTypeId = accType.id;
           determinedAccountTypeObject = accType;
         } catch (e) {
           debugPrint(
-            'InitialLoad (Stage 1): AccountType ID ${tx.accountTypeId} not found in BLoC state.',
+            'InitialLoad (Stage 1 - ID): AccountType ID ${tx.accountTypeId} not found in BLoC state. Will try by name if available.',
           );
+          // Keep determinedAccountTypeId as is from tx, but object is null
         }
-      } else if (tx.accountTypeName != null) {
+      }
+
+      // If not found by ID, or no ID, try by name
+      if (determinedAccountTypeObject == null &&
+          tx.accountTypeName != null &&
+          tx.accountTypeName!.isNotEmpty) {
         try {
           final accType = state.accountTypes.firstWhere(
             (at) => at.name.toLowerCase() == tx.accountTypeName!.toLowerCase(),
           );
-          determinedAccountTypeId = accType.id;
+          determinedAccountTypeId = accType.id; // Update ID if found by name
           determinedAccountTypeObject = accType;
         } catch (e) {
           debugPrint(
-            'InitialLoad (Stage 1): AccountType Name ${tx.accountTypeName} not found in BLoC state.',
+            'InitialLoad (Stage 1 - Name): AccountType Name ${tx.accountTypeName} not found in BLoC state.',
           );
         }
       }
 
       _accountTypesLoadedForEdit =
-          true; // Mark that we've attempted to load/set account type
+          true; // Mark that we've processed account types from BLoC state.
 
       if (determinedAccountTypeId != null &&
           determinedAccountTypeObject != null) {
-        // Only update state if it's different or not yet set, to avoid unnecessary rebuilds
-        if (_selectedAccountTypeId != determinedAccountTypeId) {
-          _selectedAccountTypeId = determinedAccountTypeId;
-          _selectedAccountTypeObject = determinedAccountTypeObject;
-          submitButtonColor = _colorForAccountType(
-            determinedAccountTypeObject.name,
-          );
-        }
+        // Update local state for Account Type. This will reflect in the dropdown.
+        // No need for setState here as this function is called within a listener's setState.
+        _selectedAccountTypeId = determinedAccountTypeId;
+        _selectedAccountTypeObject = determinedAccountTypeObject;
+        submitButtonColor = _colorForAccountType(
+          determinedAccountTypeObject.name,
+        );
+
         // Crucially, dispatch to load categories for this account type
         transactionBloc.add(LoadCategoriesRequested(determinedAccountTypeId));
         // Return here; the listener will pick up the next state change when categories are loaded
@@ -213,11 +222,8 @@ class _TransactionFormState extends State<TransactionForm> {
         debugPrint(
           '[Form Edit Init (Stage 1)] Could not determine AccountType from transaction. Categories/Subcategories might not pre-fill correctly.',
         );
-        // If account type can't be determined, we can't reliably load categories.
-        // End the multi-stage initialization here.
         _isInitializingForEditOrView = false;
-        _initialCategoriesLoadedForEdit =
-            true; // No categories to load based on this.
+        _initialCategoriesLoadedForEdit = true;
         debugPrint(
           '[Form Edit Init (Stage 1)] Initialization stopped due to AccountType not found.',
         );
@@ -230,10 +236,6 @@ class _TransactionFormState extends State<TransactionForm> {
     if (_accountTypesLoadedForEdit &&
         !_initialCategoriesLoadedForEdit &&
         (state.categories.isNotEmpty || !state.isLoadingHierarchy)) {
-      // Picker names are set from `tx` in initState.
-      // We need to ensure _selectedCategoryId and _selectedSubcategoryId are correctly set
-      // based on the names from `tx` and the newly loaded `state.categories` and `state.subcategories`.
-
       if (tx.categoryName != null && _selectedAccountTypeId != null) {
         try {
           final foundCategory = state.categories.firstWhere(
@@ -241,7 +243,7 @@ class _TransactionFormState extends State<TransactionForm> {
                 cat.name.toLowerCase() == tx.categoryName!.toLowerCase() &&
                 cat.accountTypeId == _selectedAccountTypeId,
           );
-          _selectedCategoryId = foundCategory.id; // Update/confirm the ID
+          _selectedCategoryId = foundCategory.id;
 
           if (tx.subcategoryName != null && state.subcategories.isNotEmpty) {
             final foundSubcategory = state.subcategories.firstWhere(
@@ -249,20 +251,16 @@ class _TransactionFormState extends State<TransactionForm> {
                   sub.name.toLowerCase() == tx.subcategoryName!.toLowerCase() &&
                   sub.categoryId == foundCategory.id,
             );
-            _selectedSubcategoryId =
-                foundSubcategory.id; // Update/confirm the ID
+            _selectedSubcategoryId = foundSubcategory.id;
           } else if (tx.subcategoryName != null &&
               state.subcategories.isEmpty &&
               !state.isLoadingHierarchy) {
-            _selectedSubcategoryId =
-                null; // Subcategories loaded but none match, or list is empty
+            _selectedSubcategoryId = null;
             debugPrint(
               'InitialLoad (Stage 2): Subcategories loaded but empty or no match for "${tx.subcategoryName}".',
             );
           }
         } catch (e) {
-          // If matching fails, the IDs initially set from `tx` (if they existed) or null will remain.
-          // This is acceptable; the user can re-select from the picker if the data is inconsistent.
           debugPrint(
             'InitialLoad (Stage 2): Could not precisely match category/subcategory names from tx to loaded data: $e. Picker names are set, actual IDs might differ if user doesnt reselect.',
           );
@@ -275,29 +273,24 @@ class _TransactionFormState extends State<TransactionForm> {
         _selectedSubcategoryId = null;
       }
 
-      // Ensure picker names are definitely from the transaction at this point
-      // (they are set in initState, this is a re-affirmation or update if something was missed)
       if (_pickerSelectedCategoryName != (tx.categoryName ?? '') ||
           _pickerSelectedSubcategoryName != (tx.subcategoryName ?? '')) {
         _pickerSelectedCategoryName = tx.categoryName ?? '';
         _pickerSelectedSubcategoryName = tx.subcategoryName ?? '';
       }
 
-      _initialCategoriesLoadedForEdit = true; // Mark this stage as complete
-      _isInitializingForEditOrView =
-          false; // All initialization stages are now complete
+      _initialCategoriesLoadedForEdit = true;
+      _isInitializingForEditOrView = false;
       debugPrint(
         '[Form Edit Init (Stage 2)] Initialization attempt complete for categories/subcategories.',
       );
     } else if (_accountTypesLoadedForEdit &&
         !_initialCategoriesLoadedForEdit &&
         state.isLoadingHierarchy) {
-      // Still loading categories/subcategories, wait for the next state update.
       debugPrint(
         '[Form Edit Init] Waiting for categories/subcategories to load...',
       );
     } else if (_accountTypesLoadedForEdit && _initialCategoriesLoadedForEdit) {
-      // This means all hierarchy loading stages are done.
       _isInitializingForEditOrView = false;
       debugPrint(
         '[Form Edit Init] All stages previously completed or no further data loaded.',
@@ -315,17 +308,14 @@ class _TransactionFormState extends State<TransactionForm> {
     }
 
     final result = state.classifiedResult!;
-    // final transactionBloc = BlocProvider.of<TransactionBloc>(context);
-
     final classifiedSubcategoryId = result['subcategoryId'] as String?;
-    final classifiedSubcategoryName =
-        result['subcategoryName'] as String?; // ML suggestion
+    final classifiedSubcategoryName = result['subcategoryName'] as String?;
     final classifiedCategoryId = result['categoryId'] as String?;
     final classifiedCategoryName = result['categoryName'] as String?;
     final classifiedAccountTypeId = result['accountTypeId'] as String?;
-    // final classifiedAccountTypeName = result['accountTypeName'] as String?;
 
     var changed = false;
+    bool accountTypeChangedDueToClassification = false;
 
     if (classifiedAccountTypeId != null &&
         _selectedAccountTypeId != classifiedAccountTypeId) {
@@ -337,6 +327,7 @@ class _TransactionFormState extends State<TransactionForm> {
         _selectedAccountTypeObject = accType;
         submitButtonColor = _colorForAccountType(accType.name);
         changed = true;
+        accountTypeChangedDueToClassification = true;
       } catch (e) {
         /* ignore if not found */
       }
@@ -353,7 +344,6 @@ class _TransactionFormState extends State<TransactionForm> {
       changed = true;
     }
 
-    // Update names for the picker
     if (classifiedCategoryName != null &&
         _pickerSelectedCategoryName != classifiedCategoryName) {
       _pickerSelectedCategoryName = classifiedCategoryName;
@@ -363,16 +353,22 @@ class _TransactionFormState extends State<TransactionForm> {
       final subNameWithEmoji = '$classifiedSubcategoryName ✨';
       if (_pickerSelectedSubcategoryName != subNameWithEmoji) {
         _pickerSelectedSubcategoryName = subNameWithEmoji;
-        _isClassificationSuggestion =
-            true; // Mark that current picker subcat name is a suggestion
+        _isClassificationSuggestion = true;
         changed = true;
       }
     }
 
     if (changed) {
-      setState(() {}); // Rebuild to show updated selections/picker text
+      // If account type changed due to classification, reload categories for that new account type
+      if (accountTypeChangedDueToClassification &&
+          _selectedAccountTypeId != null) {
+        context.read<TransactionBloc>().add(
+          LoadCategoriesRequested(_selectedAccountTypeId!),
+        );
+      }
+      // setState(() {}); // Rebuild to show updated selections/picker text
+      // setState is already called in the listener that calls this.
     }
-    // No need to clear classifiedResult here, TransactionBloc should handle it or have a specific event.
   }
 
   @override
@@ -382,24 +378,22 @@ class _TransactionFormState extends State<TransactionForm> {
     return BlocConsumer<TransactionBloc, TransactionState>(
       listenWhen: (prev, curr) {
         if (_isInitializingForEditOrView) {
-          // If still initializing, listen to any hierarchy data change or loading state change
           return prev.accountTypes != curr.accountTypes ||
               prev.categories != curr.categories ||
               prev.subcategories != curr.subcategories ||
               prev.isLoadingHierarchy != curr.isLoadingHierarchy;
         }
-        // If not initializing, listen for other relevant operations
         return (prev.classifiedResult != curr.classifiedResult &&
                 curr.operation == TransactionOperation.classify) ||
             (widget.mode == TransactionFormMode.view &&
                 curr.operation == TransactionOperation.bookmark &&
-                curr.isSuccess);
+                curr.isSuccess) ||
+            // Listen for category/subcategory changes if account type was changed by user/classification
+            prev.categories != curr.categories ||
+            prev.subcategories != curr.subcategories;
       },
       listener: (ctx, state) {
         if (_isInitializingForEditOrView) {
-          // Call _handleInitialLoadForEditView which might change local state vars.
-          // setState() here ensures the UI rebuilds to reflect those local changes immediately
-          // if _handleInitialLoadForEditView itself doesn't trigger a UI-relevant state emission from BLoC.
           setState(() {
             _handleInitialLoadForEditView(state, ctx);
           });
@@ -409,20 +403,16 @@ class _TransactionFormState extends State<TransactionForm> {
             _handleClassificationResult(state, ctx);
           });
         }
-        // No specific listener action for bookmark here, as builder reacts to lastProcessedTransaction
       },
       buildWhen: (prev, curr) =>
           prev.accountTypes != curr.accountTypes ||
-          prev.categories != curr.categories || // Rebuild if categories change
-          prev.subcategories !=
-              curr.subcategories || // Rebuild if subcategories change
-          prev.isLoadingHierarchy !=
-              curr.isLoadingHierarchy || // Rebuild if loading state for hierarchy changes
+          prev.categories != curr.categories ||
+          prev.subcategories != curr.subcategories ||
+          prev.isLoadingHierarchy != curr.isLoadingHierarchy ||
           prev.classifiedResult != curr.classifiedResult ||
           (widget.mode == TransactionFormMode.view &&
               prev.lastProcessedTransaction != curr.lastProcessedTransaction),
       builder: (ctx, state) {
-        // Prepare data for CustomDropdownField (Account Type)
         final accountTypeDropdownItems = [
           DropdownItem(
             label: 'Pilih Tipe Akun',
@@ -440,35 +430,28 @@ class _TransactionFormState extends State<TransactionForm> {
         final displayedAccountTypeValue =
             _selectedAccountTypeObject?.name ?? 'Pilih Tipe Akun';
 
-        // Prepare data for CustomCategoryPicker (needs Map<String, List<String>>)
-        // This is the complex part: transforming API data to the picker's expected format.
-        // This should ideally be done more efficiently, perhaps with a helper or memoization.
         final categoryPickerData = <String, List<String>>{};
-        if (state.accountTypes.isNotEmpty &&
-            state.categories.isNotEmpty &&
-            state.subcategories.isNotEmpty) {
+        if (_selectedAccountTypeId != null && state.categories.isNotEmpty) {
           for (final cat in state.categories) {
-            // Only include categories that belong to the currently selected account type,
-            // OR all categories if no account type is selected yet (might be too broad).
-            // For now, let's assume we only show categories for the *selected* account type in the modal.
-            // This means the modal itself might need to be more dynamic or CustomCategoryPicker enhanced.
-            // OR, the `categoryMapping` passed to CustomCategoryPicker is filtered here.
-            if (_selectedAccountTypeId == null ||
-                cat.accountTypeId == _selectedAccountTypeId) {
+            if (cat.accountTypeId == _selectedAccountTypeId) {
               final subs = state.subcategories
                   .where((s) => s.categoryId == cat.id)
                   .map((s) => s.name)
                   .toList();
               if (subs.isNotEmpty) {
                 categoryPickerData[cat.name] = subs;
+              } else {
+                // Add category even if it has no subcategories for the picker to show it
+                categoryPickerData[cat.name] = [];
               }
             }
           }
-        }
-        // If no account type selected, show all categories (could be overwhelming)
-        if (_selectedAccountTypeId == null &&
+        } else if (_selectedAccountTypeId == null &&
             categoryPickerData.isEmpty &&
-            state.categories.isNotEmpty) {
+            state.categories.isNotEmpty &&
+            !state.isLoadingHierarchy) {
+          // Show all categories if no account type selected (less ideal, but a fallback)
+          // This case should be less common if account type selection drives category loading
           for (final cat in state.categories) {
             final subs = state.subcategories
                 .where((s) => s.categoryId == cat.id)
@@ -476,6 +459,8 @@ class _TransactionFormState extends State<TransactionForm> {
                 .toList();
             if (subs.isNotEmpty) {
               categoryPickerData[cat.name] = subs;
+            } else {
+              categoryPickerData[cat.name] = [];
             }
           }
         }
@@ -485,8 +470,8 @@ class _TransactionFormState extends State<TransactionForm> {
           child: Form(
             key: _formKey,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Description
                 CustomTextField(
                   label: 'Deskripsi',
                   controller: _descriptionController,
@@ -500,200 +485,181 @@ class _TransactionFormState extends State<TransactionForm> {
                 ),
                 const SizedBox(height: 16),
 
-                // Dropdown: Account Type
-                Row(
-                  children: [
-                    const Text(
-                      'Tipe Akun',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    Expanded(
-                      child: CustomDropdownField(
-                        items: accountTypeDropdownItems,
-                        selectedValue: displayedAccountTypeValue,
-                        onChanged: isReadOnly
-                            ? (item) {}
-                            : (item) {
-                                setState(() {
-                                  _pickerSelectedCategoryName =
-                                      ''; // Reset category picker
-                                  _pickerSelectedSubcategoryName = '';
-                                  _selectedCategoryId = null;
-                                  _selectedSubcategoryId = null;
-                                  _isClassificationSuggestion = false;
-
-                                  if (item.label == 'Pilih Tipe Akun') {
-                                    _selectedAccountTypeId = null;
-                                    _selectedAccountTypeObject = null;
-                                    submitButtonColor = Colors.grey;
-                                    // Clear categories and subcategories in BLoC state if "Pilih Tipe Akun" is chosen
-                                    context.read<TransactionBloc>().add(
-                                      const LoadCategoriesRequested(''),
-                                    ); // Pass empty or a special ID
-                                  } else {
-                                    final foundAccountType = state.accountTypes
-                                        .firstWhere(
-                                          (t) => t.name == item.label,
-                                        );
-                                    _selectedAccountTypeId =
-                                        foundAccountType.id;
-                                    _selectedAccountTypeObject =
-                                        foundAccountType;
-                                    submitButtonColor = item.color;
-                                    // *** ADD THIS LINE ***
-                                    context.read<TransactionBloc>().add(
-                                      LoadCategoriesRequested(
-                                        foundAccountType.id,
-                                      ),
-                                    );
-                                  }
-                                });
-                              },
-                      ),
-                    ),
-                  ],
+                const Text(
+                  'Tipe Akun',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 16),
-
-                // Amount
-                Row(
-                  children: [
-                    const Text(
-                      'Total',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    Expanded(
-                      child: CustomTextField(
-                        label: 'Masukkan Total',
-                        controller: _amountController,
-                        isEnabled: !isReadOnly,
-                        onTap: isReadOnly ? _switchToEdit : null,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [RupiahInputFormatter()],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Total tidak boleh kosong';
-                          }
-                          final rawAmount = value.replaceAll(
-                            RegExp('[^0-9]'),
-                            '',
-                          );
-                          final parsedAmount =
-                              double.tryParse(rawAmount) ?? 0.0;
-                          if (parsedAmount <= 0) {
-                            return 'Total harus lebih dari 0';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Category / Subcategory picker
-                Row(
-                  children: [
-                    const Text(
-                      'Kategori',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    Expanded(
-                      child: CustomCategoryPicker(
-                        categories:
-                            categoryPickerData, // Use dynamically generated data
-                        selectedCategory: _pickerSelectedCategoryName,
-                        selectedSubCategory: _pickerSelectedSubcategoryName,
-                        onCategorySelected: isReadOnly
-                            ? (cat, subCat) {}
-                            : (catName, subCatName) {
-                                setState(() {
-                                  _pickerSelectedCategoryName = catName;
-                                  _pickerSelectedSubcategoryName = subCatName;
-                                  _isClassificationSuggestion =
-                                      false; // User manually selected
-
-                                  // Find IDs for submission
-                                  try {
-                                    final foundCat = state.categories
-                                        .firstWhere(
-                                          (c) =>
-                                              c.name.toLowerCase() ==
-                                                  catName.toLowerCase() &&
-                                              (_selectedAccountTypeId == null ||
-                                                  c.accountTypeId ==
-                                                      _selectedAccountTypeId),
-                                        );
-                                    _selectedCategoryId = foundCat.id;
-                                    // Sync account type if not already matching
-                                    if (_selectedAccountTypeId !=
-                                        foundCat.accountTypeId) {
-                                      final accType = state.accountTypes
-                                          .firstWhere(
-                                            (at) =>
-                                                at.id == foundCat.accountTypeId,
-                                          );
-                                      _selectedAccountTypeId = accType.id;
-                                      _selectedAccountTypeObject = accType;
-                                      submitButtonColor = _colorForAccountType(
-                                        accType.name,
-                                      );
-                                    }
-                                    final foundSub = state.subcategories
-                                        .firstWhere(
-                                          (s) =>
-                                              s.name.toLowerCase() ==
-                                                  subCatName.toLowerCase() &&
-                                              s.categoryId == foundCat.id,
-                                        );
-                                    _selectedSubcategoryId = foundSub.id;
-                                  } catch (e) {
-                                    debugPrint(
-                                      'Error finding IDs for picker selection: $catName / $subCatName. Error: $e',
-                                    );
-                                    _selectedCategoryId =
-                                        null; // Clear if not found
+                const SizedBox(height: 4),
+                FormField<String>(
+                  validator: (value) {
+                    if (_selectedAccountTypeId == null && !isReadOnly) {
+                      return 'Tipe Akun harus dipilih';
+                    }
+                    return null;
+                  },
+                  builder: (FormFieldState<String> field) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CustomDropdownField(
+                          // No label prop needed here as we have a Text widget above
+                          items: accountTypeDropdownItems,
+                          selectedValue: displayedAccountTypeValue,
+                          onChanged: isReadOnly
+                              ? (item) {}
+                              : (item) {
+                                  setState(() {
+                                    _pickerSelectedCategoryName = '';
+                                    _pickerSelectedSubcategoryName = '';
+                                    _selectedCategoryId = null;
                                     _selectedSubcategoryId = null;
-                                  }
-                                });
-                              },
-                        validator: (_) {
-                          // CustomCategoryPicker itself handles the FormField
-                          if (_pickerSelectedCategoryName.isEmpty ||
-                              _pickerSelectedSubcategoryName.isEmpty) {
-                            return 'Kategori harus dipilih';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
+                                    _isClassificationSuggestion = false;
+
+                                    if (item.label == 'Pilih Tipe Akun') {
+                                      _selectedAccountTypeId = null;
+                                      _selectedAccountTypeObject = null;
+                                      submitButtonColor = Colors.grey;
+                                      context.read<TransactionBloc>().add(
+                                        const LoadCategoriesRequested(
+                                          '',
+                                        ), // Clear/load empty categories
+                                      );
+                                      field.didChange(null); // For validation
+                                    } else {
+                                      final foundAccountType = state
+                                          .accountTypes
+                                          .firstWhere(
+                                            (t) => t.name == item.label,
+                                          );
+                                      _selectedAccountTypeId =
+                                          foundAccountType.id;
+                                      _selectedAccountTypeObject =
+                                          foundAccountType;
+                                      submitButtonColor = item.color;
+                                      context.read<TransactionBloc>().add(
+                                        LoadCategoriesRequested(
+                                          foundAccountType.id,
+                                        ),
+                                      );
+                                      field.didChange(
+                                        item.label,
+                                      ); // For validation
+                                    }
+                                  });
+                                },
+                        ),
+                        if (field.hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: 5,
+                              left: 0,
+                            ), // Aligned with dropdown
+                            child: Text(
+                              field.errorText!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
 
-                // Date & Time
+                const Text(
+                  'Total',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                CustomTextField(
+                  label: 'Masukkan Total',
+                  controller: _amountController,
+                  isEnabled: !isReadOnly,
+                  onTap: isReadOnly ? _switchToEdit : null,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [RupiahInputFormatter()],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Total tidak boleh kosong';
+                    }
+                    final rawAmount = value.replaceAll(RegExp('[^0-9]'), '');
+                    final parsedAmount = double.tryParse(rawAmount) ?? 0.0;
+                    if (parsedAmount <= 0) {
+                      return 'Total harus lebih dari 0';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                const Text(
+                  'Kategori',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                CustomCategoryPicker(
+                  categories: categoryPickerData,
+                  selectedCategory: _pickerSelectedCategoryName,
+                  selectedSubCategory: _pickerSelectedSubcategoryName,
+                  onCategorySelected: isReadOnly
+                      ? (cat, subCat) {}
+                      : (catName, subCatName) {
+                          setState(() {
+                            _pickerSelectedCategoryName = catName;
+                            _pickerSelectedSubcategoryName = subCatName;
+                            _isClassificationSuggestion = false;
+
+                            try {
+                              final foundCat = state.categories.firstWhere(
+                                (c) =>
+                                    c.name.toLowerCase() ==
+                                        catName.toLowerCase() &&
+                                    (_selectedAccountTypeId == null ||
+                                        c.accountTypeId ==
+                                            _selectedAccountTypeId),
+                              );
+                              _selectedCategoryId = foundCat.id;
+
+                              // Sync account type if not already matching AND if it's a valid type
+                              if (_selectedAccountTypeId !=
+                                  foundCat.accountTypeId) {
+                                _syncAccountTypeFromCategoryName(
+                                  catName,
+                                  state,
+                                );
+                              }
+
+                              final foundSub = state.subcategories.firstWhere(
+                                (s) =>
+                                    s.name.toLowerCase() ==
+                                        subCatName.toLowerCase() &&
+                                    s.categoryId == foundCat.id,
+                              );
+                              _selectedSubcategoryId = foundSub.id;
+                            } catch (e) {
+                              debugPrint(
+                                'Error finding IDs for picker selection: $catName / $subCatName. Error: $e',
+                              );
+                              _selectedCategoryId = null;
+                              _selectedSubcategoryId = null;
+                            }
+                          });
+                        },
+                  validator: (String? value) {
+                    // Signature matches FormField validator
+                    if (_pickerSelectedCategoryName.isEmpty ||
+                        _pickerSelectedSubcategoryName.isEmpty && !isReadOnly) {
+                      return 'Kategori harus dipilih';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
                 Row(
                   children: [
-                    const Text(
-                      'Waktu',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 24),
                     Expanded(
                       child: CustomDatePicker(
                         label: 'Tanggal',
@@ -703,7 +669,7 @@ class _TransactionFormState extends State<TransactionForm> {
                         onDateChanged: isReadOnly
                             ? null
                             : (date) => setState(() => _selectedDate = date),
-                        validator: (v) => _selectedDate == null
+                        validator: (v) => _selectedDate == null && !isReadOnly
                             ? 'Tanggal harus dipilih'
                             : null,
                       ),
@@ -717,6 +683,7 @@ class _TransactionFormState extends State<TransactionForm> {
                         onTimeChanged: isReadOnly
                             ? null
                             : (time) => setState(() => _selectedTime = time),
+                        // Time is optional for validation, but not null in model
                       ),
                     ),
                   ],
@@ -773,10 +740,19 @@ class _TransactionFormState extends State<TransactionForm> {
     if (_currentMode == TransactionFormMode.view) {
       setState(() {
         _currentMode = TransactionFormMode.edit;
-        // When switching to edit, ensure picker names are clean (no emoji)
         _pickerSelectedSubcategoryName = _pickerSelectedSubcategoryName
             .replaceAll(' ✨', '');
         _isClassificationSuggestion = false;
+        // Re-trigger initial data load for edit to ensure everything is fresh for editing
+        // and categories are loaded for the current account type.
+        // This is important if the view mode didn't fully load/display everything.
+        _isInitializingForEditOrView = true;
+        _accountTypesLoadedForEdit =
+            false; // Reset flag to allow re-processing of account type
+        _initialCategoriesLoadedForEdit = false; // Reset flag for categories
+
+        // Request account types again, which will cascade to category loading in _handleInitialLoadForEditView
+        context.read<TransactionBloc>().add(LoadAccountTypesRequested());
       });
     }
   }
@@ -795,14 +771,14 @@ class _TransactionFormState extends State<TransactionForm> {
       );
       return;
     }
-    if (_selectedDate == null ||
-        _selectedSubcategoryId == null ||
-        _selectedCategoryId == null ||
-        _selectedAccountTypeId == null) {
+    // The individual field validators (now including Account Type) handle mandatory checks.
+    // _selectedAccountTypeId check is now part of the FormField validator.
+    // We still need to ensure category/subcategory IDs are resolved.
+    if (_selectedSubcategoryId == null || _selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Harap lengkapi pilihan tipe akun, kategori, dan subkategori.',
+            'Kategori atau Subkategori belum teridentifikasi. Harap pilih kembali.',
           ),
         ),
       );
@@ -820,7 +796,6 @@ class _TransactionFormState extends State<TransactionForm> {
       _selectedTime?.minute ?? DateTime.now().minute,
     );
 
-    // Get names from selected objects for the Transaction model
     final subcatObj = context
         .read<TransactionBloc>()
         .state
@@ -828,22 +803,22 @@ class _TransactionFormState extends State<TransactionForm> {
         .firstWhere(
           (s) => s.id == _selectedSubcategoryId,
           orElse: () => Subcategory(
-            id: '',
+            id: _selectedSubcategoryId!, // Should not be null if validated
             name: _pickerSelectedSubcategoryName.replaceAll(' ✨', ''),
-            categoryId: '',
+            categoryId: _selectedCategoryId!, // Should not be null
           ),
         );
     final catObj = context.read<TransactionBloc>().state.categories.firstWhere(
       (c) => c.id == _selectedCategoryId,
       orElse: () => Category(
-        id: '',
+        id: _selectedCategoryId!, // Should not be null
         name: _pickerSelectedCategoryName,
-        accountTypeId: '',
+        accountTypeId: _selectedAccountTypeId!, // Should not be null
       ),
     );
     final accTypeObj =
-        _selectedAccountTypeObject ??
-        const AccountType(id: '', name: 'Unknown');
+        _selectedAccountTypeObject ?? // Should be set if _selectedAccountTypeId is not null
+        AccountType(id: _selectedAccountTypeId!, name: 'Unknown');
 
     final tx = Transaction(
       id:
@@ -855,11 +830,11 @@ class _TransactionFormState extends State<TransactionForm> {
       amount: parsedAmount,
       date: combinedDateTime,
       subcategoryId: _selectedSubcategoryId!,
-      categoryId: _selectedCategoryId, // Populate with actual ID
-      accountTypeId: _selectedAccountTypeId, // Populate with actual ID
+      categoryId: _selectedCategoryId,
+      accountTypeId: _selectedAccountTypeId,
       isBookmarked: widget.transaction?.isBookmarked ?? false,
       userId: widget.transaction?.userId,
-      subcategoryName: subcatObj.name, // Use name from object
+      subcategoryName: subcatObj.name,
       categoryName: catObj.name,
       accountTypeName: accTypeObj.name,
     );
@@ -882,3 +857,8 @@ class _TransactionFormState extends State<TransactionForm> {
     }
   }
 }
+
+// The DropdownItem class and _CustomDropdownFieldState (if defined in this file)
+// would remain the same. Assuming they are in 'dropdown_field.dart' as per the import.
+// If CustomDropdownField is in the same file as the original problem, it does not need changes
+// based on the problem description for these specific issues.

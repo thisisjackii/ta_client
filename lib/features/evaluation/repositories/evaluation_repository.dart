@@ -184,6 +184,31 @@ class EvaluationRepository {
               startDate: startDate,
               endDate: endDate,
             );
+
+        // NEW: Check if all returned evaluations are essentially "empty"
+        final allAreEffectivelyEmpty =
+            evaluations.isNotEmpty &&
+            evaluations.every(
+              (e) =>
+                  e.yourValue == 0.0 &&
+                  e.status == EvaluationStatusModel.incomplete,
+            );
+        // You might need a more robust check for "effectively empty" based on how backend signals this.
+        // For instance, if backend always returns 7 items even with no data, and they all have value 0 and status INCOMPLETE/NOT_IDEAL,
+        // then this condition could work.
+
+        if (allAreEffectivelyEmpty) {
+          debugPrint(
+            '[EvaluationRepository] Online: Backend returned evaluations, but all appear to be zero/incomplete. Treating as no data for this period.',
+          );
+          await _hiveService.putJsonString(
+            evaluationDashboardCacheBoxName,
+            cacheKey,
+            json.encode([]), // Cache an empty list
+          );
+          return []; // Return empty list
+        }
+
         await _hiveService.putJsonString(
           evaluationDashboardCacheBoxName,
           cacheKey,
@@ -240,10 +265,11 @@ class EvaluationRepository {
           debugPrint(
             '[EvaluationRepository] Error parsing cached evaluations (offline): $parseError. Recalculating.',
           );
+          // Fall through to recalculate if cache is corrupt
         }
       }
       debugPrint(
-        '[EvaluationRepository] Offline: No valid cache. Calculating evaluations locally.',
+        '[EvaluationRepository] Offline: No valid cache or cache parsing failed. Calculating evaluations locally.',
       );
       final cachedTransactions = await _transactionRepository
           .getCachedTransactionList();
@@ -259,16 +285,20 @@ class EvaluationRepository {
           )
           .toList();
 
-      if (inRange.isEmpty && cachedTransactions.isNotEmpty) {
+      if (inRange.isEmpty) {
         debugPrint(
-          '[EvaluationRepository-OFFLINE] No cached transactions in the selected date range for dashboard.',
+          '[EvaluationRepository-OFFLINE] No transactions found in the selected date range ($startDate - $endDate). Returning empty dashboard items and caching empty list for this range.',
         );
-      } else if (cachedTransactions.isEmpty) {
-        debugPrint(
-          '[EvaluationRepository-OFFLINE] No cached transactions available at all.',
+        // Cache an empty list for this range to reflect no data for this period
+        await _hiveService.putJsonString(
+          evaluationDashboardCacheBoxName,
+          cacheKey,
+          json.encode([]), // Cache empty list
         );
+        return []; // Return empty list
       }
 
+      // If inRange is not empty, proceed to calculate
       final offlineEvaluations = evaluationDefinitions().map((def) {
         final v = def.compute(inRange);
         return Evaluation(
@@ -283,8 +313,7 @@ class EvaluationRepository {
           calculatedAt: DateTime.now(),
           startDate: startDate,
           endDate: endDate,
-          backendRatioCode: def
-              .backendCode, // *** IMPORTANT: Set backendCode here for offline items ***
+          backendRatioCode: def.backendCode,
         );
       }).toList();
       await _hiveService.putJsonString(
@@ -293,7 +322,7 @@ class EvaluationRepository {
         json.encode(offlineEvaluations.map((e) => e.toJson()).toList()),
       );
       debugPrint(
-        '[EvaluationRepository-OFFLINE] Calculated and cached ${offlineEvaluations.length} items.',
+        '[EvaluationRepository-OFFLINE] Calculated and cached ${offlineEvaluations.length} items for range $startDate - $endDate.',
       );
       return offlineEvaluations;
     }
@@ -415,6 +444,10 @@ class EvaluationRepository {
                 ),
           )
           .toList();
+
+      // If inRange is empty for detail calculation, it implies no data for this specific ratio's components.
+      // The compute function in RatioDef should handle empty list (e.g., return 0).
+      // The breakdown will also be based on these (likely zero) sums.
 
       final ratioDef = evaluationDefinitions().firstWhere(
         (def) =>

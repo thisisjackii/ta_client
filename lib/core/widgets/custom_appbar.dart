@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/constants/app_colors.dart';
+import 'package:ta_client/core/widgets/pdf_viewer.dart';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -30,6 +31,8 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _CustomAppBarState extends State<CustomAppBar> {
+  final String _infoPdfUrl =
+      'https://drive.google.com/uc?export=download&id=1wHMt7tr4AnWQeikogczo1ayBh646g3Zl';
   @override
   Widget build(BuildContext context) {
     final monthYearText = DateFormat('MMM yyyy').format(widget.selectedMonth);
@@ -88,7 +91,24 @@ class _CustomAppBarState extends State<CustomAppBar> {
               IconButton(
                 icon: const Icon(Icons.info),
                 onPressed: () {
-                  // Handle settings action if needed.
+                  if (_infoPdfUrl == 'YOUR_DIRECT_PDF_LINK_HERE' ||
+                      _infoPdfUrl.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tautan PDF informasi belum diatur.'),
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (BuildContext context) => PdfViewer(
+                        pdfUrl: _infoPdfUrl,
+                        title: 'Panduan Pengguna', // Or any relevant title
+                      ),
+                    ),
+                  );
                 },
               ),
               IconButton(

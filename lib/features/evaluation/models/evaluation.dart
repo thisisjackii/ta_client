@@ -41,14 +41,20 @@ class Evaluation extends Equatable {
   factory Evaluation.fromJson(Map<String, dynamic> json) {
     final ratioData = json['ratio'] as Map<String, dynamic>?;
     final value = (json['value'] as num? ?? 0).toDouble();
-
     final statusStringFromJson =
-        (json['status'] as String?)?.toUpperCase() ?? 'INCOMPLETE';
+        (json['status'] as String?)?.toUpperCase().replaceAll('_', '') ??
+        'INCOMPLETE'; // Normalize by removing underscore and uppercasing
+
     final parsedStatus = EvaluationStatusModel.values.firstWhere(
-      (e) => e.name.toUpperCase() == statusStringFromJson,
+      (e) =>
+          e.name.toUpperCase() ==
+          statusStringFromJson, // e.g., "NOTIDEAL" == "NOTIDEAL"
       orElse: () {
+        // It seems you have another status parser below, maybe consolidate?
+        // For now, just ensure this one works for "NOT_IDEAL"
+        final originalStatusString = (json['status'] as String?);
         debugPrint(
-          "Warning: Unknown status string '${json['status']}' received. Defaulting to INCOMPLETE.",
+          "Warning: Unknown status string '$originalStatusString' received (normalized: $statusStringFromJson). Defaulting to INCOMPLETE.",
         );
         return EvaluationStatusModel.incomplete;
       },

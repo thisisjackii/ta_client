@@ -40,7 +40,9 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
       context.read<BudgetingBloc>().add(BudgetingLoadUserPlans());
     } else if (budgetingState.currentBudgetPlan?.id != null) {
       // Potentially refresh its allocations if needed, or rely on data from save
-      // context.read<BudgetingBloc>().add(BudgetingLoadPlanDetails(planId: budgetingState.currentBudgetPlan!.id));
+      context.read<BudgetingBloc>().add(
+        BudgetingLoadPlanDetails(planId: budgetingState.currentBudgetPlan!.id),
+      );
     } else if (budgetingState.planDateConfirmed) {
       // If dates were set but no plan yet (e.g. after save error)
       // This scenario should ideally resolve to either a currentBudgetPlan or an error state

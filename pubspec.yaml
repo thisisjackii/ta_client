@@ -23,6 +23,7 @@ dependencies:
   flutter_inset_shadow: ^2.0.3
   flutter_localizations:
     sdk: flutter
+  flutter_pdfview: ^1.4.0+1
   flutter_svg: ^2.0.17
   get_it: ^8.0.3
   hive: ^2.2.3
@@ -31,6 +32,7 @@ dependencies:
   intl: ^0.20.2
   jwt_decode: ^0.3.1
   month_picker_dialog: ^6.0.2
+  path_provider: ^2.1.5
   provider: ^6.1.2
   quickalert: ^1.1.0
   shared_preferences: ^2.5.3
