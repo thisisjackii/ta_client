@@ -9,7 +9,7 @@ import 'package:ta_client/features/transaction/models/transaction.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_hierarchy_repository.dart';
 import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 import 'package:ta_client/features/transaction/services/transaction_service.dart'
-    show TransactionService, TransactionApiException;
+    show TransactionApiException, TransactionService;
 
 // Mocks
 class MockTransactionRepository extends Mock implements TransactionRepository {}
@@ -29,30 +29,30 @@ void main() {
   late TransactionBloc transactionBloc;
 
   // Test Data
-  final tAccountType1 = AccountType(id: 'at1', name: 'Pemasukan');
-  final tAccountType2 = AccountType(id: 'at2', name: 'Pengeluaran');
-  final tCategory1 = Category(id: 'cat1', name: 'Gaji', accountTypeId: 'at1');
-  final tCategory2 = Category(
+  const tAccountType1 = AccountType(id: 'at1', name: 'Pemasukan');
+  const tAccountType2 = AccountType(id: 'at2', name: 'Pengeluaran');
+  const tCategory1 = Category(id: 'cat1', name: 'Gaji', accountTypeId: 'at1');
+  const tCategory2 = Category(
     id: 'cat2',
     name: 'Makanan',
     accountTypeId: 'at2',
   );
-  final tCategory3 = Category(
+  const tCategory3 = Category(
     id: 'cat3',
     name: 'Transportasi',
     accountTypeId: 'at2',
   );
-  final tSubcategory1 = Subcategory(
+  const tSubcategory1 = Subcategory(
     id: 'sub1',
     name: 'Gaji Bulanan',
     categoryId: 'cat1',
   );
-  final tSubcategory2 = Subcategory(
+  const tSubcategory2 = Subcategory(
     id: 'sub2',
     name: 'Restoran',
     categoryId: 'cat2',
   );
-  final tSubcategory3 = Subcategory(
+  const tSubcategory3 = Subcategory(
     id: 'sub3',
     name: 'Bensin',
     categoryId: 'cat3',
@@ -61,7 +61,7 @@ void main() {
   final tTransactionInput = Transaction(
     id: '', // Empty for creation
     description: 'Makan siang',
-    amount: 75.0,
+    amount: 75,
     date: DateTime(2023, 10, 26, 12, 30),
     subcategoryId: 'sub2', // Will be filled
     // Denormalized fields will be filled by BLoC/Repo logic or from full subcategory object
@@ -70,7 +70,7 @@ void main() {
   final tCreatedTransaction = Transaction(
     id: 'tx-backend-123',
     description: 'Makan siang',
-    amount: 75.0,
+    amount: 75,
     date: DateTime(2023, 10, 26, 12, 30),
     subcategoryId: 'sub2',
     subcategoryName: 'Restoran',
@@ -78,8 +78,6 @@ void main() {
     categoryName: 'Makanan',
     accountTypeId: 'at2',
     accountTypeName: 'Pengeluaran',
-    isBookmarked: false,
-    isLocal: false,
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
   );
@@ -122,10 +120,8 @@ void main() {
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.create,
-            isSuccess: false,
           ),
           TransactionState(
-            isLoading: false,
             isSuccess: true,
             operation: TransactionOperation.create,
             lastProcessedTransaction: tCreatedTransaction,
@@ -152,11 +148,8 @@ void main() {
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.create,
-            isSuccess: false,
           ),
           const TransactionState(
-            isLoading: false,
-            isSuccess: false,
             operation: TransactionOperation.create,
             errorMessage: 'Network error during create',
           ),
@@ -176,11 +169,8 @@ void main() {
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.create,
-            isSuccess: false,
           ),
           const TransactionState(
-            isLoading: false,
-            isSuccess: false,
             operation: TransactionOperation.create,
             errorMessage:
                 'Gagal membuat transaksi: Exception: Some other error',
@@ -191,7 +181,7 @@ void main() {
 
     group('UpdateTransactionRequested', () {
       final tUpdatedTransaction = tCreatedTransaction.copyWith(
-        description: "Makan malam enak",
+        description: 'Makan malam enak',
       );
       blocTest<TransactionBloc, TransactionState>(
         'emits [loading, success with updated transaction] when repository updateTransaction is successful',
@@ -208,10 +198,8 @@ void main() {
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.update,
-            isSuccess: false,
           ),
           TransactionState(
-            isLoading: false,
             isSuccess: true,
             operation: TransactionOperation.update,
             lastProcessedTransaction: tUpdatedTransaction,
@@ -240,11 +228,8 @@ void main() {
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.update,
-            isSuccess: false,
           ),
           const TransactionState(
-            isLoading: false,
-            isSuccess: false,
             operation: TransactionOperation.update,
             errorMessage: 'Update failed server-side',
           ),
@@ -268,10 +253,8 @@ void main() {
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.delete,
-            isSuccess: false,
           ),
           const TransactionState(
-            isLoading: false,
             isSuccess: true,
             operation: TransactionOperation.delete,
           ), // No lastProcessedTransaction for delete
@@ -299,11 +282,8 @@ void main() {
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.delete,
-            isSuccess: false,
           ),
           const TransactionState(
-            isLoading: false,
-            isSuccess: false,
             operation: TransactionOperation.delete,
             errorMessage: 'Delete failed',
           ),
@@ -331,14 +311,13 @@ void main() {
           ).thenAnswer((_) async => classificationResult);
           return transactionBloc;
         },
-        act: (bloc) => bloc.add(ClassifyTransactionRequested(description)),
+        act: (bloc) => bloc.add(const ClassifyTransactionRequested(description)),
         expect: () => [
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.classify,
           ),
           TransactionState(
-            isLoading: false,
             operation: TransactionOperation.classify,
             classifiedResult: classificationResult,
           ),
@@ -358,14 +337,13 @@ void main() {
           ).thenThrow(TransactionApiException('Classifier down'));
           return transactionBloc;
         },
-        act: (bloc) => bloc.add(ClassifyTransactionRequested(description)),
+        act: (bloc) => bloc.add(const ClassifyTransactionRequested(description)),
         expect: () => [
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.classify,
           ),
           const TransactionState(
-            isLoading: false,
             operation: TransactionOperation.classify,
             errorMessage: 'Classifier down',
           ),
@@ -391,11 +369,8 @@ void main() {
           const TransactionState(
             isLoading: true,
             operation: TransactionOperation.bookmark,
-
-            isSuccess: false,
           ),
           TransactionState(
-            isLoading: false,
             isSuccess: true,
             operation: TransactionOperation.bookmark,
             lastProcessedTransaction: tBookmarkedTransaction,
@@ -425,7 +400,6 @@ void main() {
         expect: () => [
           const TransactionState(isLoadingHierarchy: true),
           TransactionState(
-            isLoadingHierarchy: false,
             accountTypes: accountTypes,
           ),
         ],
@@ -439,7 +413,7 @@ void main() {
       blocTest<TransactionBloc, TransactionState>(
         'emits [loadingHierarchy, clears previous, success with categories and their subcategories]',
         // Seed with some previous hierarchy data to ensure it gets cleared
-        seed: () => TransactionState(
+        seed: () => const TransactionState(
           categories: [tCategory2],
           subcategories: [tSubcategory2],
         ),
@@ -457,12 +431,9 @@ void main() {
           // Initial state after event: loading, categories and subcategories cleared
           const TransactionState(
             isLoadingHierarchy: true,
-            categories: [],
-            subcategories: [],
           ),
           // Final state: not loading, new categories and subcategories loaded
           TransactionState(
-            isLoadingHierarchy: false,
             categories: categoriesForAT1,
             subcategories: subcategoriesForCat1,
           ),
@@ -484,13 +455,9 @@ void main() {
         expect: () => [
           const TransactionState(
             isLoadingHierarchy: true,
-            categories: [],
-            subcategories: [],
           ),
           const TransactionState(
-            isLoadingHierarchy: false,
-            categories: [],
-            subcategories: [],
+            
           ),
         ],
         verify: (_) {
@@ -511,13 +478,8 @@ void main() {
         expect: () => [
           const TransactionState(
             isLoadingHierarchy: true,
-            categories: [],
-            subcategories: [],
           ),
           const TransactionState(
-            isLoadingHierarchy: false,
-            categories: [],
-            subcategories: [],
             errorMessage: 'Exception: Fetch cat error',
           ),
         ],
@@ -528,7 +490,7 @@ void main() {
       final subcategoriesForCat2 = [tSubcategory2];
       blocTest<TransactionBloc, TransactionState>(
         'emits [loadingHierarchy, clears previous subcategories, success with subcategories]',
-        seed: () => TransactionState(
+        seed: () => const TransactionState(
           subcategories: [tSubcategory1],
         ), // Seed with existing subcategories
         build: () {
@@ -539,9 +501,8 @@ void main() {
         },
         act: (bloc) => bloc.add(LoadSubcategoriesRequested(tCategory2.id)),
         expect: () => [
-          const TransactionState(isLoadingHierarchy: true, subcategories: []),
+          const TransactionState(isLoadingHierarchy: true),
           TransactionState(
-            isLoadingHierarchy: false,
             subcategories: subcategoriesForCat2,
           ),
         ],
@@ -560,9 +521,7 @@ void main() {
         act: (bloc) => bloc.add(TransactionClearStatus()),
         expect: () => [
           const TransactionState(
-            isSuccess: false,
-            errorMessage: null,
-            infoMessage: null,
+            
           ),
         ],
       );

@@ -8,7 +8,9 @@ import 'package:ta_client/core/state/auth_state.dart';
 import 'package:ta_client/core/utils/logging_interceptor.dart';
 
 Dio createDioInstance() {
-  final baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:4000/api/v1';
+  final baseUrl =
+      dotenv.env['API_BASE_URL'] ??
+      'https://formal-momentum-340310.et.r.appspot.com/api/v1/';
   final dio = Dio(
     BaseOptions(
       baseUrl: baseUrl,

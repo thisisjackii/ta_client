@@ -497,7 +497,7 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
         ); // Example event
       } else if (state.planDateConfirmed) {
         // If user was in process of creating new for these dates
-        add(BudgetingLoadExpenseSuggestionsAndExistingPlan());
+        add(const BudgetingLoadExpenseSuggestionsAndExistingPlan());
       }
     } on BudgetingApiException catch (e) {
       emit(state.copyWith(loading: false, error: e.message));

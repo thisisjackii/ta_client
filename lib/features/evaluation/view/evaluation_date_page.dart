@@ -195,7 +195,7 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
 
           if (!state.loading) {
             // Only act when BLoC is not actively processing
-            bool shouldReopenDialog = false;
+            var shouldReopenDialog = false;
 
             if (state.dateError != null) {
               _snackBarController = ScaffoldMessenger.of(
@@ -221,7 +221,6 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
                     content: Text(
                       'Oops! Belum ada data keuangan untuk periode ini. Pilih periode lain atau catat transaksi.',
                     ),
-                    duration: Duration(seconds: 4),
                   ),
                 );
                 shouldReopenDialog = true;

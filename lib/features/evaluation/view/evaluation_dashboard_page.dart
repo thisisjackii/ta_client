@@ -184,7 +184,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
               // Show loading indicator if we are reloading/recalculating but already have some items
               if (s.loading && s.dashboardItems.isNotEmpty)
                 const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16.0),
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   child: Center(child: CircularProgressIndicator()),
                 ),
               ...s.dashboardItems.map((item) {
@@ -276,7 +276,9 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            '${item.id == '0' ? formatMonths(item.yourValue) : formatPercent(item.yourValue)} ${item.id != '6' ? (item.status == EvaluationStatusModel.ideal ? '(Ideal)' : '(Tidak Ideal)') : ''}',
+                                            // OLD: '${item.id == '0' ? formatMonths(item.yourValue) : formatPercent(item.yourValue)} ${item.id != '6' ? (item.status == EvaluationStatusModel.ideal ? '(Ideal)' : '(Tidak Ideal)') : ''}',
+                                            // NEW:
+                                            '${item.backendRatioCode == 'LIQUIDITY_RATIO' ? formatMonths(item.yourValue) : formatPercent(item.yourValue)} ${item.backendRatioCode != 'SOLVENCY_RATIO' ? (item.status == EvaluationStatusModel.ideal ? '(Ideal)' : '(Tidak Ideal)') : ''}',
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,

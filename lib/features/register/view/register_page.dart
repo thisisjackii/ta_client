@@ -1,7 +1,7 @@
 // lib/features/register/view/register_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart'; // For DateFormat
+// For DateFormat
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/services/service_locator.dart';
@@ -126,7 +126,7 @@ class _RegisterPageState extends State<RegisterPage> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Gagal memuat daftar profesi: ${e}')),
+              SnackBar(content: Text('Gagal memuat daftar profesi: $e')),
             );
           }
         });

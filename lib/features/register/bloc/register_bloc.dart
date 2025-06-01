@@ -125,7 +125,7 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       emit(
         state.copyWith(
           status: RegisterStatus.failure,
-          errorMessage: 'Terjadi kesalahan saat meminta OTP: ${err}',
+          errorMessage: 'Terjadi kesalahan saat meminta OTP: $err',
         ),
       );
     }
@@ -179,7 +179,7 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       emit(
         state.copyWith(
           status: RegisterStatus.failure,
-          errorMessage: 'Registrasi akhir gagal: ${err}',
+          errorMessage: 'Registrasi akhir gagal: $err',
         ),
       );
     }

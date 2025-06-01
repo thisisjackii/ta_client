@@ -165,7 +165,7 @@ class _TransactionFormState extends State<TransactionForm> {
 
     // Stage 1: Set Account Type and trigger category loading
     if (!_accountTypesLoadedForEdit && state.accountTypes.isNotEmpty) {
-      String? determinedAccountTypeId = tx.accountTypeId;
+      var determinedAccountTypeId = tx.accountTypeId;
       AccountType? determinedAccountTypeObject;
 
       // Try to find by ID first (which was set in initState)
@@ -315,7 +315,7 @@ class _TransactionFormState extends State<TransactionForm> {
     final classifiedAccountTypeId = result['accountTypeId'] as String?;
 
     var changed = false;
-    bool accountTypeChangedDueToClassification = false;
+    var accountTypeChangedDueToClassification = false;
 
     if (classifiedAccountTypeId != null &&
         _selectedAccountTypeId != classifiedAccountTypeId) {
@@ -553,7 +553,6 @@ class _TransactionFormState extends State<TransactionForm> {
                           Padding(
                             padding: const EdgeInsets.only(
                               top: 5,
-                              left: 0,
                             ), // Aligned with dropdown
                             child: Text(
                               field.errorText!,

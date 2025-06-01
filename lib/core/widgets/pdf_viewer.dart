@@ -1,27 +1,23 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart'; // Still needed for native
-import 'package:dio/dio.dart'; // Still needed for native download
-
+// For IFrameElement on web
 // --- Conditional Imports for Platform Views & dart:io ---
 // For dart:io on native
 import 'dart:io' as io;
-// For IFrameElement on web
-import 'dart:html' as html; // Only available on web
-// For PlatformViewRegistry on web (Flutter 3.10+)
-// If using older Flutter, you might need a different import or approach for ui.platformViewRegistry
-import 'dart:ui_web' as ui_web;
 
+import 'package:dio/dio.dart'; // Still needed for native download
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart'; // Still needed for native
+import 'package:path/path.dart' as p;
 // For path_provider on native
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'package:ta_client/core/widgets/pdf_viewer_platform_specific.dart'
+    as pdf_platform;
 
 class PdfViewer extends StatefulWidget {
+  const PdfViewer({required this.pdfUrl, super.key, this.title = 'Informasi'});
   final String
   pdfUrl; // This should be the Google Drive SHARE link for iframe, or direct download for native
   final String title;
-
-  const PdfViewer({super.key, required this.pdfUrl, this.title = 'Informasi'});
 
   @override
   State<PdfViewer> createState() => _PdfViewerState();
@@ -50,16 +46,11 @@ class _PdfViewerState extends State<PdfViewer> {
 
     if (kIsWeb) {
       // For web, register the IFrame view factory
-      // This needs to be done only once per view type.
-      // Doing it in initState is generally fine.
-      ui_web.platformViewRegistry.registerViewFactory(
+      final embedUrl = _getGoogleDriveEmbedUrl(widget.pdfUrl);
+      // Use the conditionally imported helper to register the view factory.
+      pdf_platform.registerPlatformView(
         _iframeViewType,
-        (int viewId) => html.IFrameElement()
-          ..src =
-              _getGoogleDriveEmbedUrl(widget.pdfUrl) // Use embeddable URL
-          ..style.border = 'none'
-          ..style.width = '100%'
-          ..style.height = '100%',
+        (int viewId) => pdf_platform.createIFrameElement(embedUrl),
       );
       setState(() {
         _isLoading =
@@ -75,10 +66,10 @@ class _PdfViewerState extends State<PdfViewer> {
     // Assuming shareUrl is like: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
     // or uc?export=download&id=FILE_ID
     // We need to extract FILE_ID and construct a /preview or /embed link
-    Uri uri = Uri.parse(shareUrl);
+    final uri = Uri.parse(shareUrl);
     String? fileId;
     if (uri.pathSegments.contains('file') && uri.pathSegments.contains('d')) {
-      int dIndex = uri.pathSegments.indexOf('d');
+      final dIndex = uri.pathSegments.indexOf('d');
       if (dIndex + 1 < uri.pathSegments.length) {
         fileId = uri.pathSegments[dIndex + 1];
       }
@@ -95,7 +86,7 @@ class _PdfViewerState extends State<PdfViewer> {
     }
     // Fallback if ID extraction fails, though this might not work well
     debugPrint(
-      "Could not extract FILE_ID from Google Drive URL: $shareUrl. Using original URL for IFrame.",
+      'Could not extract FILE_ID from Google Drive URL: $shareUrl. Using original URL for IFrame.',
     );
     return shareUrl; // Or throw error
   }
@@ -103,17 +94,17 @@ class _PdfViewerState extends State<PdfViewer> {
   @override
   void dispose() {
     if (!kIsWeb) {
-      _cancelToken.cancel("PDF Viewer disposed for native");
+      _cancelToken.cancel('PDF Viewer disposed for native');
     }
     super.dispose();
   }
 
   // --- Native Specific File Path Logic ---
   Future<String> _getNativeFilePath(String url) async {
-    if (kIsWeb) throw UnsupportedError("File path ops not on web.");
+    if (kIsWeb) throw UnsupportedError('File path ops not on web.');
     final dir = await getTemporaryDirectory();
     final fileName =
-        '${p.basename(url).split("?").first.replaceAll(RegExp(r'[^a-zA-Z0-9.]'), '_')}_${url.hashCode}.pdf';
+        '${p.basename(url).split("?").first.replaceAll(RegExp('[^a-zA-Z0-9.]'), '_')}_${url.hashCode}.pdf';
     return p.join(dir.path, fileName);
   }
 
@@ -122,25 +113,27 @@ class _PdfViewerState extends State<PdfViewer> {
     String url,
     CancelToken cancelToken,
   ) async {
-    if (kIsWeb) throw UnsupportedError("File download to path not on web.");
-    Dio dio = Dio();
+    if (kIsWeb) throw UnsupportedError('File download to path not on web.');
+    final dio = Dio();
     try {
       // For native, ensure you use a direct download link if widget.pdfUrl was changed for iframe
       // However, CustomAppBar should pass the direct download link for native.
-      String nativeDownloadUrl = url;
-      if (url.contains("/preview") || url.contains("/view")) {
+      var nativeDownloadUrl = url;
+      if (url.contains('/preview') || url.contains('/view')) {
         // Attempt to convert to download link if it looks like a share/preview link
-        Uri uri = Uri.parse(url);
+        final uri = Uri.parse(url);
         String? fileId;
         if (uri.pathSegments.contains('file') &&
             uri.pathSegments.contains('d')) {
-          int dIndex = uri.pathSegments.indexOf('d');
-          if (dIndex + 1 < uri.pathSegments.length)
+          final dIndex = uri.pathSegments.indexOf('d');
+          if (dIndex + 1 < uri.pathSegments.length) {
             fileId = uri.pathSegments[dIndex + 1];
+          }
         }
-        if (fileId != null)
+        if (fileId != null) {
           nativeDownloadUrl =
               'https://drive.google.com/uc?export=download&id=$fileId';
+        }
       }
 
       await dio.download(
@@ -196,7 +189,7 @@ class _PdfViewerState extends State<PdfViewer> {
       // NATIVE Implementation
       final localPath = await _getNativeFilePath(widget.pdfUrl);
       final file = io.File(localPath);
-      bool needsDownload = true;
+      var needsDownload = true;
 
       if (await file.exists()) {
         final lastModified = await file.lastModified();
@@ -241,7 +234,7 @@ class _PdfViewerState extends State<PdfViewer> {
         debugPrint('Error loading PDF: $e');
         if (mounted) {
           setState(() {
-            _errorMessage = 'Gagal memuat PDF (Native): ${e.toString()}';
+            _errorMessage = 'Gagal memuat PDF (Native): $e';
             _isLoading = false;
           });
         }
@@ -262,12 +255,13 @@ class _PdfViewerState extends State<PdfViewer> {
                   IconButton(
                     icon: const Icon(Icons.chevron_left),
                     onPressed: () {
-                      if (_currentPage > 0)
+                      if (_currentPage > 0) {
                         _pdfViewController!.setPage(_currentPage - 1);
+                      }
                     },
                   ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Center(
                     child: Text('${_currentPage + 1}/$_totalPages'),
                   ),
@@ -276,8 +270,9 @@ class _PdfViewerState extends State<PdfViewer> {
                   IconButton(
                     icon: const Icon(Icons.chevron_right),
                     onPressed: () {
-                      if (_currentPage < _totalPages - 1)
+                      if (_currentPage < _totalPages - 1) {
                         _pdfViewController!.setPage(_currentPage + 1);
+                      }
                     },
                   ),
               ],
@@ -294,7 +289,7 @@ class _PdfViewerState extends State<PdfViewer> {
     if (_errorMessage != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -322,15 +317,10 @@ class _PdfViewerState extends State<PdfViewer> {
       // Native
       if (_localPdfPath != null) {
         return PDFView(
-          filePath: _localPdfPath!,
-          enableSwipe: true,
-          swipeHorizontal: false,
+          filePath: _localPdfPath,
           autoSpacing: false,
-          pageFling: true,
-          pageSnap: true,
           defaultPage: _currentPage,
           fitPolicy: FitPolicy.BOTH,
-          preventLinkNavigation: false,
           onRender: (pages) {
             if (mounted) setState(() => _totalPages = pages ?? 0);
           },
@@ -338,10 +328,9 @@ class _PdfViewerState extends State<PdfViewer> {
             if (mounted) setState(() => _errorMessage = error.toString());
           },
           onPageError: (page, error) {
-            if (mounted)
-              setState(
-                () => _errorMessage = 'Halaman $page: ${error.toString()}',
-              );
+            if (mounted) {
+              setState(() => _errorMessage = 'Halaman $page: $error');
+            }
           },
           onViewCreated: (controller) => _pdfViewController = controller,
           onPageChanged: (page, total) {

@@ -81,6 +81,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  checked_yaml:
+    dependency: transitive
+    description:
+      name: checked_yaml
+      sha256: feb6bed21949061731a7a75fc5d2aa727cf160b91af9a3e464c5e3a32e28b5ff
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.3"
   cli_config:
     dependency: transitive
     description:
@@ -141,10 +149,10 @@ packages:
     dependency: transitive
     description:
       name: coverage
-      sha256: "802bd084fb82e55df091ec8ad1553a7331b61c08251eef19a508b6f3f3a9858d"
+      sha256: "4b8701e48a58f7712492c9b1f7ba0bb9d525644dd66d023b62e1fc8cdb560c8a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.13.1"
+    version: "1.14.0"
   crypto:
     dependency: transitive
     description:
@@ -157,10 +165,10 @@ packages:
     dependency: transitive
     description:
       name: dart_style
-      sha256: "27eb0ae77836989a3bc541ce55595e8ceee0992807f14511552a898ddd0d88ac"
+      sha256: "5b236382b47ee411741447c1f1e111459c941ea1b3f2b540dde54c210a3662af"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.1"
+    version: "3.1.0"
   dartx:
     dependency: transitive
     description:
@@ -529,10 +537,10 @@ packages:
     dependency: "direct main"
     description:
       name: month_picker_dialog
-      sha256: "9a9a626907b0c54f1c7f4b68d27971f6df5c100411b79357161cd6a5629bfeac"
+      sha256: bb8dbf89a9bc9f5ab3ab457d1c2ecd19aac84a4c83fad39a0e9ce32aec1eb787
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.3"
+    version: "6.2.3"
   nested:
     dependency: transitive
     description:
@@ -566,7 +574,7 @@ packages:
     source: hosted
     version: "2.2.0"
   path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path
       sha256: "75cca69d1490965be98c73ceaea117e8a04dd21217b37b292c9ddbec0d955bc5"
@@ -685,6 +693,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  pubspec_parse:
+    dependency: transitive
+    description:
+      name: pubspec_parse
+      sha256: "0560ba233314abbed0a48a2956f7f022cce7c3e1e73df540277da7544cad4082"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.5.0"
   quickalert:
     dependency: "direct main"
     description:
@@ -934,10 +950,10 @@ packages:
     dependency: transitive
     description:
       name: vector_graphics_compiler
-      sha256: "1b4b9e706a10294258727674a340ae0d6e64a7231980f9f9a3d12e4b42407aad"
+      sha256: "557a315b7d2a6dbb0aaaff84d857967ce6bdc96a63dc6ee2a57ce5a6ee5d3331"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.16"
+    version: "1.1.17"
   vector_math:
     dependency: transitive
     description:
@@ -971,7 +987,7 @@ packages:
     source: hosted
     version: "1.1.1"
   web:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: web
       sha256: "868d88a33d8a87b18ffc05f9f030ba328ffefba92d6c127917a2ba740f9cfe4a"
