@@ -1,202 +1,360 @@
 // C:\Users\PONGO\RemoteProjects\ta_client\lib\features\evaluation\view\widgets\custom_slider_single_range.dart
+import 'dart:math' as math; // For min/max
 import 'package:another_xlider/another_xlider.dart';
+import 'package:another_xlider/enums/hatch_mark_alignment_enum.dart';
 import 'package:another_xlider/models/handler.dart';
 import 'package:another_xlider/models/hatch_mark.dart';
+import 'package:another_xlider/models/hatch_mark_label.dart';
 import 'package:another_xlider/models/tooltip/tooltip.dart';
 import 'package:another_xlider/models/tooltip/tooltip_box.dart';
+import 'package:another_xlider/models/tooltip/tooltip_position_offset.dart';
 import 'package:another_xlider/models/trackbar.dart';
 import 'package:flutter/material.dart';
-// No longer needs BlocBuilder here, it gets data via props
 import 'package:ta_client/core/constants/app_colors.dart';
 import 'package:ta_client/core/constants/app_dimensions.dart';
-import 'package:ta_client/core/utils/calculations.dart'; // For formatPercent, formatMonths
+import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/evaluation/view/widgets/slider_limit_type.dart';
 
 class CustomSliderSingleRange extends StatelessWidget {
   const CustomSliderSingleRange({
-    required this.currentValue, // Current value of the ratio
-    required this.idealText, // Pre-formatted ideal text (e.g., "≥ 10%", "15% - 100%")
-    required this.limit, // The significant limit for single-bound sliders (e.g., 3 for Liquidity, 10 for Savings)
-    required this.limitType, // e.g., moreThanEqual
-    this.isMonthValue =
-        false, // True if the value is in months (Liquidity Ratio)
+    required this.currentValue,
+    required this.idealText,
+    required this.limit,
+    required this.limitType,
+    this.isMonthValue = false,
     super.key,
   });
 
   final double currentValue;
   final String idealText;
-  final double limit;
+  final double limit; // The ideal target/threshold point
   final SliderLimitType limitType;
   final bool isMonthValue;
 
   @override
   Widget build(BuildContext context) {
-    final v = currentValue; // Use the passed currentValue
+    final v = currentValue; // The actual value of the ratio
 
-    // Determine min/max for the slider track based on the limit and current value
-    // Ensure the current value is always visible on the track.
-    double sliderMin;
-    double sliderMax;
-    const padding = 30.0; // How much space to give around the limit/value
+    // --- Define the VISIBLE fixed track and its labels ---
+    double visibleTrackMin;
+    double visibleTrackMax;
+    List<FlutterSliderHatchMarkLabel> hatchMarkLabels = [];
 
     if (isMonthValue) {
-      // Special handling for Liquidity Ratio (months)
-      sliderMin = 0.0; // Start from 0 months
-      sliderMax =
-          (v > (limit + padding / 2) ? v : (limit + padding / 2)) +
-          padding / 2; // Ensure current value and limit are visible
-      sliderMax = sliderMax < 7.0 ? 7.0 : sliderMax; // Minimum max of 7 months
+      visibleTrackMin = 0.0;
+      visibleTrackMax =
+          12.0; // Example: standard visible track for months up to 1 year
+
+      // Labels for month track
+      hatchMarkLabels.add(
+        FlutterSliderHatchMarkLabel(
+          percent: 0,
+          label: Text(
+            formatMonths(visibleTrackMin),
+            style: const TextStyle(fontSize: 10),
+          ),
+        ),
+      );
+      if (limit >= visibleTrackMin &&
+          limit <= visibleTrackMax &&
+          limit != visibleTrackMin &&
+          limit != visibleTrackMax) {
+        hatchMarkLabels.add(
+          FlutterSliderHatchMarkLabel(
+            percent:
+                (limit - visibleTrackMin) /
+                (visibleTrackMax - visibleTrackMin) *
+                100,
+            label: Text(
+              formatMonths(limit),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+            ),
+          ),
+        );
+      }
+      hatchMarkLabels.add(
+        FlutterSliderHatchMarkLabel(
+          percent: 100,
+          label: Text(
+            formatMonths(visibleTrackMax),
+            style: const TextStyle(fontSize: 10),
+          ),
+        ),
+      );
     } else {
       // Percentage based
-      sliderMin = 0.0; // Percentages usually start from 0
-      sliderMax = 100.0 + padding; // Go a bit beyond 100% if value can exceed
-      if (v > 100) sliderMax = v + padding; // Adjust if value is very high
-      sliderMax = sliderMax > (limit + padding)
-          ? sliderMax
-          : (limit + padding); // Ensure limit is visible
-    }
-    // Ensure sliderMin is less than sliderMax, and current value is within these.
-    if (sliderMin >= sliderMax) sliderMax = sliderMin + padding;
-    final clampedDisplayValue = v.clamp(sliderMin, sliderMax);
+      visibleTrackMin = 0.0;
+      visibleTrackMax = 100.0;
 
-    // Determine if current value is ideal based on limit and type
+      // Labels for percentage track
+      hatchMarkLabels.add(
+        FlutterSliderHatchMarkLabel(
+          percent: 0,
+          label: Text(
+            formatPercent(visibleTrackMin),
+            style: const TextStyle(fontSize: 10),
+          ),
+        ),
+      );
+      if (limit > visibleTrackMin && limit < visibleTrackMax) {
+        // Show limit if it's between 0 and 100 and not an edge
+        hatchMarkLabels.add(
+          FlutterSliderHatchMarkLabel(
+            percent: limit,
+            label: Text(
+              formatPercent(limit),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+            ),
+          ),
+        );
+      }
+      hatchMarkLabels.add(
+        FlutterSliderHatchMarkLabel(
+          percent: 100,
+          label: Text(
+            formatPercent(visibleTrackMax),
+            style: const TextStyle(fontSize: 10),
+          ),
+        ),
+      );
+    }
+
+    // --- Determine the SLIDER's actual min/max to accommodate the thumb for currentValue ---
+    // The slider's track will be drawn from sliderMin to sliderMax.
+    // The hatchMarkLabels percent is relative to THIS sliderMin/Max.
+    double internalSliderMin = visibleTrackMin;
+    double internalSliderMax = visibleTrackMax;
+    const tailPadding =
+        5.0; // How much "tail" to show visually if value is outside visible track
+
+    if (v < visibleTrackMin) {
+      internalSliderMin = v - tailPadding;
+    }
+    if (v > visibleTrackMax) {
+      internalSliderMax = v + tailPadding;
+    }
+    // Ensure there's always some range and min < max
+    if (internalSliderMin >= internalSliderMax) {
+      internalSliderMax = internalSliderMin + 10;
+    }
+
+    // Recalculate hatch mark label percentages based on the new internalSliderMin/Max
+    List<FlutterSliderHatchMarkLabel> finalHatchMarkLabels = [];
+    if (isMonthValue) {
+      // 0 Months Label
+      if (visibleTrackMin >= internalSliderMin &&
+          visibleTrackMin <= internalSliderMax) {
+        finalHatchMarkLabels.add(
+          FlutterSliderHatchMarkLabel(
+            percent:
+                (visibleTrackMin - internalSliderMin) /
+                (internalSliderMax - internalSliderMin) *
+                100,
+            label: Text(
+              formatMonths(visibleTrackMin),
+              style: const TextStyle(fontSize: 10),
+            ),
+          ),
+        );
+      }
+      // Limit Label
+      if (limit >= internalSliderMin &&
+          limit <= internalSliderMax &&
+          limit != visibleTrackMin &&
+          limit != visibleTrackMax) {
+        finalHatchMarkLabels.add(
+          FlutterSliderHatchMarkLabel(
+            percent:
+                (limit - internalSliderMin) /
+                (internalSliderMax - internalSliderMin) *
+                100,
+            label: Text(
+              formatMonths(limit),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+            ),
+          ),
+        );
+      }
+      // 12 Months Label
+      if (visibleTrackMax >= internalSliderMin &&
+          visibleTrackMax <= internalSliderMax) {
+        finalHatchMarkLabels.add(
+          FlutterSliderHatchMarkLabel(
+            percent:
+                (visibleTrackMax - internalSliderMin) /
+                (internalSliderMax - internalSliderMin) *
+                100,
+            label: Text(
+              formatMonths(visibleTrackMax),
+              style: const TextStyle(fontSize: 10),
+            ),
+          ),
+        );
+      }
+    } else {
+      // Percentage
+      // 0% Label
+      if (visibleTrackMin >= internalSliderMin &&
+          visibleTrackMin <= internalSliderMax) {
+        finalHatchMarkLabels.add(
+          FlutterSliderHatchMarkLabel(
+            percent:
+                (visibleTrackMin - internalSliderMin) /
+                (internalSliderMax - internalSliderMin) *
+                100,
+            label: Text(
+              formatPercent(visibleTrackMin),
+              style: const TextStyle(fontSize: 10),
+            ),
+          ),
+        );
+      }
+      // Limit Label
+      if (limit > visibleTrackMin &&
+          limit < visibleTrackMax &&
+          limit >= internalSliderMin &&
+          limit <= internalSliderMax) {
+        finalHatchMarkLabels.add(
+          FlutterSliderHatchMarkLabel(
+            percent:
+                (limit - internalSliderMin) /
+                (internalSliderMax - internalSliderMin) *
+                100,
+            label: Text(
+              formatPercent(limit),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+            ),
+          ),
+        );
+      }
+      // 100% Label
+      if (visibleTrackMax >= internalSliderMin &&
+          visibleTrackMax <= internalSliderMax) {
+        finalHatchMarkLabels.add(
+          FlutterSliderHatchMarkLabel(
+            percent:
+                (visibleTrackMax - internalSliderMin) /
+                (internalSliderMax - internalSliderMin) *
+                100,
+            label: Text(
+              formatPercent(visibleTrackMax),
+              style: const TextStyle(fontSize: 10),
+            ),
+          ),
+        );
+      }
+    }
+
+    // The value for the slider thumb position. Must be within internalSliderMin/Max.
+    final clampedValueForThumb = v.clamp(internalSliderMin, internalSliderMax);
+
     final bool isValueIdeal = switch (limitType) {
       SliderLimitType.lessThan => v < limit,
       SliderLimitType.lessThanEqual => v <= limit,
       SliderLimitType.moreThan => v > limit,
       SliderLimitType.moreThanEqual => v >= limit,
     };
-    // For ranges like "15% - 100%", the 'limit' passed might be 15 and type moreThanEqual.
-    // A more complex isIdeal check would be needed if the slider had to represent both ends of a range.
-    // For now, assuming single limit comparison.
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Evaluasi Rasio', // This title is generic for the slider section
+          'Evaluasi Rasio',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: AppDimensions.padding),
         Column(
           children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                FlutterSlider(
-                  // Background track for min/max labels
-                  values: [sliderMin, sliderMax],
-                  rangeSlider: true,
-                  min: sliderMin,
-                  max: sliderMax,
-                  disabled: true,
-                  handler: FlutterSliderHandler(
-                    decoration: const BoxDecoration(),
-                    child: const Icon(
-                      Icons.circle,
-                      color: Colors.transparent,
-                      size: 0.1,
-                    ),
-                  ), // Invisible
-                  rightHandler: FlutterSliderHandler(
-                    decoration: const BoxDecoration(),
-                    child: const Icon(
-                      Icons.circle,
-                      color: Colors.transparent,
-                      size: 0.1,
-                    ),
-                  ), // Invisible
-                  trackBar: FlutterSliderTrackBar(
-                    activeTrackBarHeight: 12,
-                    inactiveTrackBarHeight: 12,
-                  ), // Standard track
-                ),
-                FlutterSlider(
-                  // Actual value slider
-                  values: [clampedDisplayValue],
-                  min: sliderMin,
-                  max: sliderMax,
-                  disabled: true,
-                  handler: FlutterSliderHandler(
-                    decoration: const BoxDecoration(),
-                    child: Icon(
-                      Icons.circle,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: FlutterSlider(
+                values: [clampedValueForThumb],
+                min: internalSliderMin,
+                max: internalSliderMax,
+                visibleTouchArea: true,
+                disabled: true,
+                handlerHeight: 18, // Adjusted
+                handlerWidth: 18, // Adjusted
+                handler: FlutterSliderHandler(
+                  decoration: const BoxDecoration(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
                       color: isValueIdeal
                           ? AppColors.ideal
                           : AppColors.notIdeal,
-                    ),
-                  ),
-                  trackBar: FlutterSliderTrackBar(
-                    activeTrackBarHeight: 12,
-                    inactiveTrackBarHeight: 12,
-                    activeTrackBar: BoxDecoration(
-                      color: isValueIdeal
-                          ? AppColors.ideal
-                          : AppColors.notIdeal,
-                    ),
-                    inactiveTrackBar: BoxDecoration(color: Colors.grey[300]),
-                  ),
-                  tooltip: FlutterSliderTooltip(
-                    alwaysShowTooltip: true,
-                    format: (valStr) {
-                      final valNum = double.tryParse(valStr) ?? 0.0;
-                      return isMonthValue
-                          ? formatMonths(valNum)
-                          : formatPercent(valNum);
-                    },
-                    textStyle: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
-                    ),
-                    boxStyle: FlutterSliderTooltipBox(
-                      decoration: BoxDecoration(
+                      border: Border.all(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.grey),
+                        width: 2,
+                      ), // White border for better visibility
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 2,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                trackBar: FlutterSliderTrackBar(
+                  activeTrackBarHeight: 8, // Adjusted
+                  inactiveTrackBarHeight: 8, // Adjusted
+                  activeTrackBar: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4), // Adjusted
+                    color: isValueIdeal
+                        ? AppColors.ideal.withOpacity(0.7)
+                        : AppColors.notIdeal.withOpacity(0.7),
+                  ),
+                  inactiveTrackBar: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4), // Adjusted
+                    color: Colors.grey[300],
+                  ),
+                  // --- This is where we can try to make the "fixed" part of the track visually distinct ---
+                  // We can use 'activeDisabledTrackBarColor' or 'inactiveDisabledTrackBarColor'
+                  // or draw custom track. For simplicity, we'll rely on hatch marks for fixed points.
+                  // The track will visually extend if internalSliderMin/Max are beyond visibleTrackMin/Max.
+                ),
+                tooltip: FlutterSliderTooltip(
+                  alwaysShowTooltip: true,
+                  format: (valStr_from_slider_position) {
+                    return isMonthValue
+                        ? formatMonths(v)
+                        : formatPercent(v); // Always show original 'v'
+                  },
+                  textStyle: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  boxStyle: FlutterSliderTooltipBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: Colors.grey.shade400,
+                        width: 1.5,
                       ),
                     ),
                   ),
-                  hatchMark: FlutterSliderHatchMark(
-                    displayLines: true,
-                    density: 0.4,
-                    linesDistanceFromTrackBar: 5,
-                  ),
+                  positionOffset: FlutterSliderTooltipPositionOffset(top: -30),
                 ),
-              ],
+                hatchMark: FlutterSliderHatchMark(
+                  displayLines: true,
+                  density: 0.5,
+                  linesDistanceFromTrackBar: 5,
+                  linesAlignment: FlutterSliderHatchMarkAlignment
+                      .values[0], // Use 'values' alignment
+                  labelsDistanceFromTrackBar: 20,
+                  labels: finalHatchMarkLabels,
+                ),
+              ),
             ),
-            const SizedBox(height: AppDimensions.smallPadding),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isMonthValue
-                      ? formatMonths(sliderMin)
-                      : formatPercent(sliderMin),
-                  style: const TextStyle(fontSize: 10),
-                ),
-                // Ideal limit text in the middle (if applicable)
-                if (!isMonthValue ||
-                    limit !=
-                        3) // Avoid redundant "3 Bulan" if min is also 3 for liquidity
-                  Text(
-                    isMonthValue ? formatMonths(limit) : formatPercent(limit),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
-                Text(
-                  isMonthValue
-                      ? formatMonths(sliderMax)
-                      : formatPercent(sliderMax),
-                  style: const TextStyle(fontSize: 10),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.padding / 2),
+            const SizedBox(height: AppDimensions.padding / 2 + 15),
             Text(
               'Nilai ideal adalah $idealText. Rasio kamu saat ini adalah ${isMonthValue ? formatMonths(v) : formatPercent(v)}.',
               style: const TextStyle(fontSize: 14),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
