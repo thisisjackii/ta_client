@@ -45,9 +45,7 @@ class CustomSliderSingleRange extends StatelessWidget {
       sliderMax =
           (v > (limit + padding / 2) ? v : (limit + padding / 2)) +
           padding / 2; // Ensure current value and limit are visible
-      sliderMax = sliderMax < 7.0
-          ? 7.0
-          : sliderMax / 3; // Minimum max of 7 months
+      sliderMax = sliderMax < 7.0 ? 7.0 : sliderMax; // Minimum max of 7 months
     } else {
       // Percentage based
       sliderMin = 0.0; // Percentages usually start from 0
