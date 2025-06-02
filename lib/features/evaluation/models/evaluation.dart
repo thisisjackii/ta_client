@@ -1,4 +1,4 @@
-// lib/features/evaluation/models/evaluation.dart
+// C:\Users\PONGO\RemoteProjects\ta_client\lib\features\evaluation\models\evaluation.dart
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 
@@ -6,7 +6,6 @@ enum EvaluationStatusModel { ideal, notIdeal, incomplete }
 
 class ConceptualComponentValue extends Equatable {
   const ConceptualComponentValue({required this.name, required this.value});
-
   factory ConceptualComponentValue.fromJson(Map<String, dynamic> json) {
     return ConceptualComponentValue(
       name: json['name'] as String,
@@ -15,38 +14,34 @@ class ConceptualComponentValue extends Equatable {
   }
   final String name;
   final double value;
-
   @override
   List<Object?> get props => [name, value];
 }
 
 class Evaluation extends Equatable {
   const Evaluation({
-    required this.id, // Can be Ratio.id (from backend) or client-side '0', '1'
+    required this.id,
     required this.title,
     required this.yourValue,
     required this.isIdeal,
     required this.status,
     required this.calculatedAt,
-    this.startDate, // ADDED for evaluation scope
-    this.endDate, // ADDED for evaluation scope
+    this.startDate,
+    this.endDate,
     this.idealText,
     this.breakdown,
     this.backendRatioCode,
-    this.backendEvaluationResultId, // This is the DB ID of the EvaluationResult record
+    this.backendEvaluationResultId,
+    this.calculatedNumerator, // <<< ADDED
+    this.calculatedDenominator, // <<< ADDED
   });
 
   factory Evaluation.fromJson(Map<String, dynamic> json) {
-    final ratioData =
-        json['ratio']
-            as Map<String, dynamic>?; // From nested EvaluationResult.ratio
+    final ratioData = json['ratio'] as Map<String, dynamic>?;
     final value = (json['value'] as num? ?? 0).toDouble();
-
     final statusStringRaw = json['status'] as String?;
-    // Normalize: remove underscore and uppercase. Handles "NOT_IDEAL" and "NOTIDEAL"
     final statusStringNormalized =
         statusStringRaw?.toUpperCase().replaceAll('_', '') ?? 'INCOMPLETE';
-
     EvaluationStatusModel parsedStatus;
     try {
       parsedStatus = EvaluationStatusModel.values.firstWhere(
@@ -54,31 +49,34 @@ class Evaluation extends Equatable {
       );
     } catch (_) {
       debugPrint(
-        "[Evaluation.fromJson] Warning: Unknown status string '$statusStringRaw' (normalized: $statusStringNormalized). Defaulting to INCOMPLETE.",
+        "[Evaluation.fromJson] Warning: Unknown status string '$statusStringRaw'. Defaulting to INCOMPLETE.",
       );
       parsedStatus = EvaluationStatusModel.incomplete;
     }
+    final isIdealResult = parsedStatus == EvaluationStatusModel.ideal;
 
-    final isIdeal = parsedStatus == EvaluationStatusModel.ideal;
+    String? finalIdealText =
+        ratioData?['idealText'] as String? ??
+        json['idealRangeDisplay'] as String?;
+    if (finalIdealText == null ||
+        finalIdealText == "Rentang ideal tidak ditentukan" ||
+        finalIdealText == "N/A") {
+      finalIdealText = _constructIdealTextFromRatioData(ratioData);
+    }
 
     return Evaluation(
       id:
-          json['ratioId']
-              as String? ?? // From SingleRatioCalculationResultDto (backend /evaluations/calculate response)
-          ratioData?['id']
-              as String? ?? // From nested EvaluationResult.ratio.id (backend /evaluations/history response)
-          json['id']
-              as String, // Fallback to EvaluationResult.id itself if other IDs are missing
+          json['ratioId'] as String? ??
+          ratioData?['id'] as String? ??
+          json['id'] as String,
       title:
           ratioData?['title'] as String? ??
-          json['ratioTitle']
-              as String? ?? // From SingleRatioCalculationResultDto
-          json['title']
-              as String? ?? // Fallback if top-level title exists from other sources
+          json['ratioTitle'] as String? ??
+          json['title'] as String? ??
           'Unknown Ratio',
       yourValue: value,
       status: parsedStatus,
-      isIdeal: isIdeal,
+      isIdeal: isIdealResult,
       calculatedAt: DateTime.parse(
         json['calculatedAt'] as String? ?? DateTime.now().toIso8601String(),
       ).toLocal(),
@@ -88,17 +86,9 @@ class Evaluation extends Equatable {
       endDate: json['endDate'] != null
           ? DateTime.parse(json['endDate'] as String).toLocal()
           : null,
-      idealText:
-          ratioData?['idealText']
-              as String? ?? // Prefer idealText from nested Ratio
-          _constructIdealText(
-            ratioData,
-          ) ?? // Construct if needed from bounds (if ratioData available)
-          json['idealRangeDisplay']
-              as String?, // From SingleRatioCalculationResultDto
+      idealText: finalIdealText,
       backendRatioCode:
           ratioData?['code'] as String? ?? json['ratioCode'] as String?,
-      // If the root json object is an EvaluationResult, its 'id' is the backendEvaluationResultId
       backendEvaluationResultId:
           (json.containsKey('ratioId') && json.containsKey('userId'))
           ? json['id'] as String?
@@ -108,41 +98,34 @@ class Evaluation extends Equatable {
             (e) => ConceptualComponentValue.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
+      calculatedNumerator: (json['calculatedNumerator'] as num?)
+          ?.toDouble(), // <<< ADDED PARSING
+      calculatedDenominator: (json['calculatedDenominator'] as num?)
+          ?.toDouble(), // <<< ADDED PARSING
     );
   }
 
-  static String? _constructIdealText(Map<String, dynamic>? ratioData) {
-    if (ratioData == null) {
-      return 'N/A'; // Default if no ratio data to construct from
-    }
-    final lower = ratioData['lowerBound'] as num?;
-    final upper = ratioData['upperBound'] as num?;
-    final isLowerInc = ratioData['isLowerBoundInclusive'] as bool? ?? true;
-    final isUpperInc = ratioData['isUpperBoundInclusive'] as bool? ?? true;
+  static String? _constructIdealTextFromRatioData(
+    Map<String, dynamic>? ratioData,
+  ) {
+    if (ratioData == null) return 'N/A';
+    final code = ratioData['code'] as String?;
+    final lower = (ratioData['lowerBound'] as num?)?.toDouble();
+    final upper = (ratioData['upperBound'] as num?)?.toDouble();
     final multiplier = (ratioData['multiplier'] as num?)?.toDouble() ?? 1.0;
-    final unit = multiplier == 100.0
+    final String unit = multiplier == 100.0
         ? '%'
-        : (ratioData['code'] == 'LIQUIDITY_RATIO' ? ' Bulan' : '');
+        : (code == 'LIQUIDITY_RATIO' ? ' Bulan' : '');
+    String? formatB(double? v) => v != null ? v.toStringAsFixed(0) : '';
 
-    if (ratioData['code'] == 'LIQUIDITY_RATIO') {
-      return '3-6 Bulan'; // Specific text
-    }
-
-    if (lower != null && upper != null) {
-      return "${isLowerInc ? '>=' : '>'} ${lower.toStringAsFixed(0)}$unit dan ${isUpperInc ? '<=' : '<'} ${upper.toStringAsFixed(0)}$unit";
-    }
-    if (lower != null) {
-      return "${isLowerInc ? '>=' : '>'} ${lower.toStringAsFixed(0)}$unit";
-    }
-    if (upper != null) {
-      return "${isUpperInc ? '<=' : '<'} ${upper.toStringAsFixed(0)}$unit";
-    }
-    return (ratioData['title']?.toString().toLowerCase().contains(
-              'solvabilitas',
-            ) ??
-            false)
-        ? '> 0%' // Specific for solvency if no bounds given
-        : 'N/A'; // General fallback
+    if (code == 'LIQUIDITY_RATIO')
+      return lower != null ? '≥ ${formatB(lower)}$unit' : '≥ 3 Bulan';
+    if (code == 'SOLVENCY_RATIO') return '-';
+    if (lower != null && upper != null)
+      return '${formatB(lower)}$unit - ${formatB(upper)}$unit';
+    if (lower != null) return '≥ ${formatB(lower)}$unit';
+    if (upper != null) return '≤ ${formatB(upper)}$unit';
+    return 'N/A';
   }
 
   final String id;
@@ -157,14 +140,15 @@ class Evaluation extends Equatable {
   final DateTime calculatedAt;
   final DateTime? startDate;
   final DateTime? endDate;
+  final double? calculatedNumerator; // <<< ADDED
+  final double? calculatedDenominator; // <<< ADDED
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
     'yourValue': yourValue,
     'isIdeal': isIdeal,
-    'status': status
-        .name, // Ensure this matches what backend might expect if re-serializing
+    'status': status.name,
     'calculatedAt': calculatedAt.toUtc().toIso8601String(),
     if (startDate != null) 'startDate': startDate!.toUtc().toIso8601String(),
     if (endDate != null) 'endDate': endDate!.toUtc().toIso8601String(),
@@ -175,8 +159,10 @@ class Evaluation extends Equatable {
     'breakdown': breakdown
         ?.map((e) => {'name': e.name, 'value': e.value})
         .toList(),
-    // Include 'ratio' if needed for caching/re-serialization in specific contexts
-    // For now, keeping it flat as it's primarily for consuming backend data.
+    if (calculatedNumerator != null)
+      'calculatedNumerator': calculatedNumerator, // <<< ADDED
+    if (calculatedDenominator != null)
+      'calculatedDenominator': calculatedDenominator, // <<< ADDED
   };
 
   Evaluation copyWith({
@@ -189,10 +175,11 @@ class Evaluation extends Equatable {
     DateTime? startDate,
     DateTime? endDate,
     String? idealText,
-    ValueGetter<List<ConceptualComponentValue>?>?
-    breakdown, // Use ValueGetter for nullable list
+    ValueGetter<List<ConceptualComponentValue>?>? breakdown,
     String? backendRatioCode,
     String? backendEvaluationResultId,
+    double? calculatedNumerator, // <<< ADDED
+    double? calculatedDenominator, // <<< ADDED
   }) {
     return Evaluation(
       id: id ?? this.id,
@@ -208,6 +195,10 @@ class Evaluation extends Equatable {
       backendRatioCode: backendRatioCode ?? this.backendRatioCode,
       backendEvaluationResultId:
           backendEvaluationResultId ?? this.backendEvaluationResultId,
+      calculatedNumerator:
+          calculatedNumerator ?? this.calculatedNumerator, // <<< ADDED
+      calculatedDenominator:
+          calculatedDenominator ?? this.calculatedDenominator, // <<< ADDED
     );
   }
 
@@ -225,5 +216,6 @@ class Evaluation extends Equatable {
     breakdown,
     backendRatioCode,
     backendEvaluationResultId,
+    calculatedNumerator, calculatedDenominator, // <<< ADDED
   ];
 }

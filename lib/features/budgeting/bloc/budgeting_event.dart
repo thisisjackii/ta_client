@@ -121,3 +121,38 @@ class BudgetingSyncPendingData extends BudgetingEvent {}
 
 class BudgetingLoadUserPlans
     extends BudgetingEvent {} // Or more specific like BudgetingLoadLatestPlan
+
+class BudgetingStartEdit extends BudgetingEvent {
+  // <<< NEW EVENT
+  const BudgetingStartEdit({required this.planId});
+  final String planId;
+  @override
+  List<Object?> get props => [planId];
+}
+
+class BudgetingDeleteCategoryAllocation extends BudgetingEvent {
+  // For swipe-delete
+  const BudgetingDeleteCategoryAllocation({required this.categoryId});
+  final String categoryId;
+  @override
+  List<Object?> get props => [categoryId];
+}
+
+class BudgetingToggleDashboardSubItem extends BudgetingEvent {
+  // For direct subcategory toggle
+  const BudgetingToggleDashboardSubItem({
+    required this.parentCategoryId,
+    required this.subcategoryId,
+    required this.isSelected,
+  });
+  final String parentCategoryId;
+  final String subcategoryId;
+  final bool isSelected;
+  @override
+  List<Object?> get props => [parentCategoryId, subcategoryId, isSelected];
+}
+
+class BudgetingClearStatus extends BudgetingEvent {
+  // <<< ADD THIS EVENT
+  const BudgetingClearStatus();
+}

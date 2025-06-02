@@ -39,6 +39,8 @@ class BudgetingState extends Equatable {
     this.error,
     this.saveSuccess = false,
     this.infoMessage,
+    this.initialSpendingForEditedPlan = const {}, // <<< NEW PROPERTY
+    this.isEditing = false, // <<< NEW PROPERTY to indicate edit mode
   });
 
   // Income period related
@@ -74,6 +76,10 @@ class BudgetingState extends Equatable {
   final bool saveSuccess;
   final String? infoMessage;
 
+  final Map<String, double>
+  initialSpendingForEditedPlan; // categoryId -> spentAmount
+  final bool isEditing;
+
   BudgetingState copyWith({
     DateTime? incomeCalculationStartDate,
     DateTime? incomeCalculationEndDate,
@@ -99,6 +105,9 @@ class BudgetingState extends Equatable {
     bool? saveSuccess,
     String? infoMessage,
     bool clearInfoMessage = false,
+    Map<String, double>? initialSpendingForEditedPlan,
+    bool? isEditing,
+    bool clearInitialSpending = false, // To clear when not editing
   }) {
     return BudgetingState(
       incomeCalculationStartDate:
@@ -131,6 +140,10 @@ class BudgetingState extends Equatable {
       error: clearError ? null : error ?? this.error,
       saveSuccess: saveSuccess ?? this.saveSuccess,
       infoMessage: clearInfoMessage ? null : infoMessage ?? this.infoMessage,
+      initialSpendingForEditedPlan: clearInitialSpending
+          ? const {}
+          : initialSpendingForEditedPlan ?? this.initialSpendingForEditedPlan,
+      isEditing: isEditing ?? this.isEditing,
     );
   }
 
@@ -156,5 +169,7 @@ class BudgetingState extends Equatable {
     error,
     saveSuccess,
     infoMessage,
+    initialSpendingForEditedPlan,
+    isEditing,
   ];
 }

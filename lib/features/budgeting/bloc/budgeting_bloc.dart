@@ -1,6 +1,7 @@
 // lib/features/budgeting/bloc/budgeting_bloc.dart
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/core/services/service_locator.dart';
 import 'package:ta_client/core/state/auth_state.dart';
@@ -9,12 +10,15 @@ import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
 import 'package:ta_client/features/budgeting/services/budgeting_service.dart';
+import 'package:ta_client/features/transaction/repositories/transaction_repository.dart';
 
 class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
   BudgetingBloc(
     this._budgetingRepo,
   ) // Removed PeriodRepo direct dependency from constructor
-  : super(const BudgetingState()) {
+  : _transactionRepository =
+          sl<TransactionRepository>(), // <<< Inject TransactionRepository
+      super(const BudgetingState()) {
     on<BudgetingIncomeDateRangeSelected>(_onIncomeDateRangeSelected);
     on<BudgetingPlanDateRangeSelected>(_onPlanDateRangeSelected);
     on<BudgetingLoadIncomeSummaryForSelectedDates>(_onLoadIncomeSummary);
@@ -31,13 +35,19 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
     on<BudgetingSaveExpensePlan>(_onSaveExpensePlan);
     on<BudgetingClearError>(_onClearError);
     on<BudgetingClearInfoMessage>(_onClearInfoMessage);
-    on<BudgetingResetState>(_onResetState);
     on<BudgetingSyncPendingData>(_onSyncPendingData);
     on<BudgetingLoadUserPlans>(_onLoadUserPlans);
     on<BudgetingLoadPlanDetails>(_onLoadPlanDetails);
+    on<BudgetingStartEdit>(_onStartEdit); // <<< ADDED HANDLER
+    // Make sure ResetState also clears editing flags
+    on<BudgetingResetState>(_onResetState);
+    on<BudgetingDeleteCategoryAllocation>(_onDeleteCategoryAllocation);
+    on<BudgetingToggleDashboardSubItem>(_onToggleDashboardSubItem);
+    on<BudgetingClearStatus>(_onClearStatus); // <<< ADD THIS HANDLER
   }
 
   final BudgetingRepository _budgetingRepo;
+  final TransactionRepository _transactionRepository; // <<< NEW
 
   Future<void> _onIncomeDateRangeSelected(
     BudgetingIncomeDateRangeSelected event,
@@ -151,20 +161,61 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
       );
       return;
     }
-    emit(state.copyWith(loading: true, saveSuccess: false, clearError: true));
+    emit(
+      state.copyWith(
+        loading: true,
+        saveSuccess: false,
+        clearError: true,
+        incomeSummary: [],
+      ),
+    ); // Clear previous summary while loading new
     try {
       final summary = await _budgetingRepo.getSummarizedIncomeForDateRange(
         startDate: state.incomeCalculationStartDate!,
         endDate: state.incomeCalculationEndDate!,
       );
-      emit(state.copyWith(incomeSummary: summary, loading: false));
-    } on BudgetingApiException catch (e) {
-      emit(state.copyWith(error: e.message, loading: false));
+
+      List<String> newSelectedIncomeSubcategoryIds = [];
+
+      if (state.currentBudgetPlan != null) {
+        // For a loaded plan, assume all income items fetched for its income calculation period
+        // were the ones contributing to its totalCalculatedIncome for display purposes.
+        // The card will show the plan's total, and this list will provide the breakdown items.
+        if (summary.isNotEmpty) {
+          newSelectedIncomeSubcategoryIds = summary
+              .expand(
+                (cat) => cat.subcategories.map((sub) => sub.subcategoryId),
+              )
+              .toList();
+          debugPrint(
+            "[BudgetingBloc] For loaded plan, setting selectedIncomeSubcategoryIds to all ${newSelectedIncomeSubcategoryIds.length} fetched income items for display breakdown.",
+          );
+        }
+      } else {
+        // If no current plan (i.e., in creation flow), retain existing selections.
+        // This part is usually handled by _onSelectIncomeSubcategory.
+        // However, if this event is triggered during creation after date change, we might want to reset or re-evaluate.
+        // For now, if no plan, we don't automatically select all from summary; selections are manual.
+        newSelectedIncomeSubcategoryIds = List.from(
+          state.selectedIncomeSubcategoryIds,
+        );
+      }
+
+      emit(
+        state.copyWith(
+          incomeSummary: summary,
+          loading: false,
+          selectedIncomeSubcategoryIds: newSelectedIncomeSubcategoryIds,
+        ),
+      );
     } catch (e) {
+      // If fetching income summary fails, keep the current plan's total income but show no breakdown.
       emit(
         state.copyWith(
           error: 'Gagal memuat ringkasan pemasukan: $e',
           loading: false,
+          incomeSummary: [], // Clear summary on error
+          selectedIncomeSubcategoryIds: [], // Clear selections on error
         ),
       );
     }
@@ -456,7 +507,12 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
   }
 
   void _onResetState(BudgetingResetState event, Emitter<BudgetingState> emit) {
-    emit(const BudgetingState()); // Reset to initial state
+    emit(
+      const BudgetingState().copyWith(
+        isEditing: false,
+        clearInitialSpending: true,
+      ),
+    ); // Ensure editing flags are reset
   }
 
   Future<void> _onSyncPendingData(
@@ -520,10 +576,12 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
         loading: true,
         clearError: true,
         clearCurrentBudgetPlan: true,
+        isEditing: false,
+        clearInitialSpending: true,
       ),
     );
     try {
-      final authState = sl<AuthState>(); // Assuming GetIt access
+      final authState = sl<AuthState>();
       if (!authState.isAuthenticated || authState.currentUser == null) {
         emit(state.copyWith(loading: false, error: 'User not authenticated.'));
         return;
@@ -532,16 +590,23 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
         authState.currentUser!.id,
       );
       if (plans.isNotEmpty) {
-        // Load the latest plan, for example. Or provide a way to select.
         final latestPlan = plans.first; // Assuming sorted by date descending
         emit(
           state.copyWith(
-            loading: false,
+            loading: false, // Stop initial loading
             currentBudgetPlan: latestPlan,
+            planStartDate: latestPlan.planStartDate,
+            planEndDate: latestPlan.planEndDate,
+            planDescription: latestPlan.description,
             planDateConfirmed: true,
+            incomeCalculationStartDate: latestPlan.incomeCalculationStartDate,
+            incomeCalculationEndDate: latestPlan.incomeCalculationEndDate,
+            totalCalculatedIncome: latestPlan.totalCalculatedIncome,
             incomeDateConfirmed: true,
           ),
         );
+        // After loading plan, trigger income summary load for its income period
+        add(const BudgetingLoadIncomeSummaryForSelectedDates());
       } else {
         emit(
           state.copyWith(
@@ -549,8 +614,6 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
             infoMessage: 'Tidak ada rencana anggaran tersimpan.',
           ),
         );
-        // Optionally, navigate to intro or prompt creation if direct dashboard access finds no plans
-        // Navigator.of(context).pushNamed(Routes.budgetingIntro);
       }
     } catch (e) {
       emit(
@@ -567,65 +630,422 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
     Emitter<BudgetingState> emit,
   ) async {
     emit(
-      state.copyWith(loading: true, clearError: true, clearInfoMessage: true),
-    );
+      state.copyWith(
+        loading: true,
+        clearError: true,
+        clearInfoMessage: true,
+        clearCurrentBudgetPlan: true,
+      ),
+    ); // Keep isEditing as is or reset if needed
     try {
       final plan = await _budgetingRepo.getBudgetPlanById(event.planId);
       if (plan != null) {
-        // If plan is found, update the state with this plan.
-        // Also update related date fields and income details if they are part of the plan.
         emit(
           state.copyWith(
-            loading: false,
+            loading: false, // Stop initial loading
             currentBudgetPlan: plan,
-            // Set dates from the loaded plan
             planStartDate: plan.planStartDate,
             planEndDate: plan.planEndDate,
             planDescription: plan.description,
-            planDateConfirmed:
-                true, // Mark as confirmed as we've loaded a plan for these dates
+            planDateConfirmed: true,
             incomeCalculationStartDate: plan.incomeCalculationStartDate,
             incomeCalculationEndDate: plan.incomeCalculationEndDate,
             totalCalculatedIncome: plan.totalCalculatedIncome,
-            incomeDateConfirmed: true, // Mark income dates also confirmed
-            // Potentially clear/reset selectedIncomeSubcategoryIds if we want to
-            // derive selections from the plan's totalCalculatedIncome or other stored data.
-            // For now, we're primarily focusing on loading the plan structure.
-            // If the UI for selecting income is separate and not directly tied to the loaded plan's
-            // `totalCalculatedIncome` source, then selectedIncomeSubcategoryIds might not need update here.
+            incomeDateConfirmed: true,
+            // selectedIncomeSubcategoryIds: [], // Don't reset here yet, let income summary load
+            // initialSpendingForEditedPlan: state.isEditing ? state.initialSpendingForEditedPlan : {}, // Preserve if editing
           ),
         );
-        // After loading plan details, you might want to re-fetch income summary
-        // if the plan's income period is different from what was last fetched,
-        // or if the `totalCalculatedIncome` needs its source breakdown.
-        // For now, this is optional based on your exact flow needs.
-        // add(const BudgetingLoadIncomeSummaryForSelectedDates());
+        // After loading plan, trigger income summary load for its income period
+        add(const BudgetingLoadIncomeSummaryForSelectedDates());
+        // If editing, also re-calculate/load initial spending
+        if (state.isEditing) {
+          // This logic might be better inside _onStartEdit or a dedicated event
+          // For now, assuming _onStartEdit already populated initialSpending
+        }
       } else {
         emit(
           state.copyWith(
             loading: false,
             error:
                 'Rencana anggaran dengan ID ${event.planId} tidak ditemukan.',
-            clearCurrentBudgetPlan: true, // Clear any stale plan
+            clearCurrentBudgetPlan: true,
+            isEditing: false,
           ),
         );
       }
-    } on BudgetingApiException catch (e) {
-      emit(
-        state.copyWith(
-          loading: false,
-          error: e.message,
-          clearCurrentBudgetPlan: true,
-        ),
-      );
     } catch (e) {
       emit(
         state.copyWith(
           loading: false,
           error: 'Gagal memuat detail rencana anggaran: $e',
           clearCurrentBudgetPlan: true,
+          isEditing: false,
         ),
       );
     }
+  }
+
+  Future<void> _onStartEdit(
+    BudgetingStartEdit event,
+    Emitter<BudgetingState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        loading: true,
+        clearError: true,
+        clearInfoMessage: true,
+        clearCurrentBudgetPlan: true,
+        isEditing: true,
+        clearInitialSpending: true,
+      ),
+    );
+    try {
+      final planToEdit = await _budgetingRepo.getBudgetPlanById(event.planId);
+      if (planToEdit == null) {
+        emit(
+          state.copyWith(
+            loading: false,
+            error: 'Rencana anggaran untuk diedit tidak ditemukan.',
+            isEditing: false,
+          ),
+        );
+        return;
+      }
+
+      // Calculate initial spending for this plan
+      final categorySpending = <String, double>{};
+      final subcategorySpending =
+          <String, double>{}; // subcategoryId -> spentAmount
+
+      final transactionsForPlanPeriod = await _transactionRepository.fetchTransactions(
+        // This needs to fetch transactions for the *user* within the *plan's date range*
+        // Assuming fetchTransactions can take date filters or similar.
+        // For simplicity, let's assume it gets all user's transactions and we filter client-side.
+        // This is NOT ideal for performance but simplifies the BLoC change.
+        // A better approach is a repository method: getTransactionsForUserInDateRange(userId, startDate, endDate)
+      );
+
+      final relevantTransactions = transactionsForPlanPeriod
+          .where(
+            (tx) =>
+                !tx.date.isBefore(planToEdit.planStartDate) &&
+                !tx.date.isAfter(
+                  planToEdit.planEndDate
+                      .add(const Duration(days: 1))
+                      .subtract(const Duration(microseconds: 1)),
+                ) &&
+                tx.accountTypeName?.toLowerCase() ==
+                    'pengeluaran', // Only expenses count against budget
+          )
+          .toList();
+
+      for (final alloc in planToEdit.allocations) {
+        final spentInCat = relevantTransactions
+            .where(
+              (tx) => tx.categoryId == alloc.categoryId,
+            ) // Assuming Transaction has categoryId
+            .fold(0.toDouble(), (sum, tx) => sum + tx.amount);
+        categorySpending[alloc.categoryId] = spentInCat;
+
+        final spentInSubcat = relevantTransactions
+            .where((tx) => tx.subcategoryId == alloc.subcategoryId)
+            .fold(0.toDouble(), (sum, tx) => sum + tx.amount);
+        subcategorySpending[alloc.subcategoryId] = spentInSubcat;
+      }
+
+      final newExpenseAllocationPercentages = <String, double>{};
+      final newSelectedExpenseSubItems = <String, List<String>>{};
+      final newSelectedExpenseCategoryIds = <String>[];
+
+      for (final alloc in planToEdit.allocations) {
+        if (!newSelectedExpenseCategoryIds.contains(alloc.categoryId)) {
+          newSelectedExpenseCategoryIds.add(alloc.categoryId);
+        }
+        newExpenseAllocationPercentages.putIfAbsent(
+          alloc.categoryId,
+          () => alloc.percentage,
+        );
+        newSelectedExpenseSubItems
+            .putIfAbsent(alloc.categoryId, () => [])
+            .add(alloc.subcategoryId);
+      }
+
+      emit(
+        state.copyWith(
+          loading: false,
+          currentBudgetPlan: planToEdit,
+          planStartDate: planToEdit.planStartDate,
+          planEndDate: planToEdit.planEndDate,
+          planDescription: planToEdit.description,
+          planDateConfirmed: true,
+          incomeCalculationStartDate: planToEdit.incomeCalculationStartDate,
+          incomeCalculationEndDate: planToEdit.incomeCalculationEndDate,
+          totalCalculatedIncome: planToEdit.totalCalculatedIncome,
+          incomeDateConfirmed: true,
+          selectedExpenseCategoryIds: newSelectedExpenseCategoryIds,
+          expenseAllocationPercentages: newExpenseAllocationPercentages,
+          selectedExpenseSubItems: newSelectedExpenseSubItems,
+          initialSpendingForEditedPlan:
+              categorySpending, // Store the calculated spending
+          // isEditing: true, // Already set at the start of this handler
+        ),
+      );
+      add(const BudgetingLoadExpenseSuggestionsAndExistingPlan());
+    } on BudgetingApiException catch (e) {
+      emit(state.copyWith(loading: false, error: e.message, isEditing: false));
+    } catch (e) {
+      emit(
+        state.copyWith(
+          loading: false,
+          error: 'Gagal memulai edit rencana: $e',
+          isEditing: false,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onDeleteCategoryAllocation(
+    BudgetingDeleteCategoryAllocation event,
+    Emitter<BudgetingState> emit,
+  ) async {
+    if (state.currentBudgetPlan == null) {
+      emit(
+        state.copyWith(error: 'Tidak ada rencana aktif untuk dimodifikasi.'),
+      );
+      return;
+    }
+    // Check spending (TC-63) - This relies on initialSpendingForEditedPlan being populated
+    // when the plan was loaded into currentBudgetPlan. We might need to refresh it or ensure it's accurate.
+    // For simplicity, let's assume it's available if currentBudgetPlan is set.
+    // A more robust way: recalculate spending for this category JUST before delete.
+    final spendingInThisCategory =
+        state.initialSpendingForEditedPlan[event.categoryId] ?? 0.0;
+    if (spendingInThisCategory > 0) {
+      emit(
+        state.copyWith(
+          error:
+              'Tidak dapat menghapus kategori yang sudah memiliki progres pengeluaran.',
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(loading: true, clearError: true, clearInfoMessage: true),
+    );
+
+    final updatedPlan = state.currentBudgetPlan!.copyWith(
+      allocations: List<FrontendBudgetAllocation>.from(
+        state.currentBudgetPlan!.allocations,
+      )..removeWhere((alloc) => alloc.categoryId == event.categoryId),
+    );
+
+    // Update BLoC state immediately for UI responsiveness
+    final newSelectedCategoryIds = List<String>.from(
+      state.selectedExpenseCategoryIds,
+    )..remove(event.categoryId);
+    final newExpenseAllocationPercentages = Map<String, double>.from(
+      state.expenseAllocationPercentages,
+    )..remove(event.categoryId);
+    final newSelectedExpenseSubItems = Map<String, List<String>>.from(
+      state.selectedExpenseSubItems,
+    )..remove(event.categoryId);
+
+    // Recalculate DTO for saving
+    final dto = _createSaveDtoFromState(
+      state.copyWith(
+        // Use a state copy with updated allocation lists
+        currentBudgetPlan: updatedPlan,
+        selectedExpenseCategoryIds: newSelectedCategoryIds,
+        expenseAllocationPercentages: newExpenseAllocationPercentages,
+        selectedExpenseSubItems: newSelectedExpenseSubItems,
+      ),
+    );
+
+    try {
+      final savedPlan = await _budgetingRepo.saveBudgetPlanWithAllocations(dto);
+      emit(
+        state.copyWith(
+          loading: false,
+          saveSuccess: true,
+          currentBudgetPlan: savedPlan, // Update with the plan from backend
+          infoMessage: 'Kategori alokasi dihapus dan rencana disimpan.',
+          // Manually update the lists in the state based on the DTO that was saved
+          selectedExpenseCategoryIds: newSelectedCategoryIds,
+          expenseAllocationPercentages: newExpenseAllocationPercentages,
+          selectedExpenseSubItems: newSelectedExpenseSubItems,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          loading: false,
+          error: 'Gagal menghapus alokasi kategori: $e',
+        ),
+      );
+      // Revert optimistic UI update if save fails? More complex, for now, rely on user refresh or re-edit.
+    }
+  }
+
+  Future<void> _onToggleDashboardSubItem(
+    BudgetingToggleDashboardSubItem event,
+    Emitter<BudgetingState> emit,
+  ) async {
+    if (state.currentBudgetPlan == null) {
+      emit(
+        state.copyWith(error: 'Tidak ada rencana aktif untuk dimodifikasi.'),
+      );
+      return;
+    }
+
+    // Check spending for the parent category (TC-67)
+    final spendingInParentCategory =
+        state.initialSpendingForEditedPlan[event.parentCategoryId] ?? 0.0;
+    if (spendingInParentCategory > 0) {
+      emit(
+        state.copyWith(
+          error:
+              'Tidak dapat mengubah subkategori karena kategori induk sudah memiliki progres pengeluaran.',
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(loading: true, clearError: true, clearInfoMessage: true),
+    );
+
+    final newSelectedExpenseSubItems = Map<String, List<String>>.from(
+      state.selectedExpenseSubItems,
+    );
+    final subItemsForParent = List<String>.from(
+      newSelectedExpenseSubItems[event.parentCategoryId] ?? [],
+    );
+
+    if (event.isSelected) {
+      if (!subItemsForParent.contains(event.subcategoryId)) {
+        subItemsForParent.add(event.subcategoryId);
+      }
+    } else {
+      subItemsForParent.remove(event.subcategoryId);
+    }
+    // If a category ends up with no subcategories selected but still has a percentage,
+    // the save DTO logic should ideally handle this (e.g., by not including it or erroring).
+    // For now, we assume the percentage remains and user might need to adjust it via full edit.
+    if (subItemsForParent.isEmpty &&
+        (state.expenseAllocationPercentages[event.parentCategoryId] ?? 0.0) >
+            0) {
+      emit(
+        state.copyWith(
+          loading: false,
+          error:
+              "Kategori '${state.currentBudgetPlan?.allocations.firstWhere((a) => a.categoryId == event.parentCategoryId).categoryName}' harus memiliki minimal satu subkategori terpilih jika dialokasikan persentase.",
+        ),
+      );
+      return;
+    }
+    newSelectedExpenseSubItems[event.parentCategoryId] = subItemsForParent;
+
+    // Create the DTO to save the entire plan with this one subitem change
+    final dto = _createSaveDtoFromState(
+      state.copyWith(selectedExpenseSubItems: newSelectedExpenseSubItems),
+    );
+
+    try {
+      final savedPlan = await _budgetingRepo.saveBudgetPlanWithAllocations(dto);
+      emit(
+        state.copyWith(
+          loading: false,
+          saveSuccess: true,
+          currentBudgetPlan: savedPlan,
+          selectedExpenseSubItems:
+              newSelectedExpenseSubItems, // Reflect change in BLoC state
+          infoMessage: 'Subkategori diperbarui dan rencana disimpan.',
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          loading: false,
+          error: 'Gagal memperbarui subkategori: $e',
+        ),
+      );
+    }
+  }
+
+  void _onClearStatus(
+    BudgetingClearStatus event,
+    Emitter<BudgetingState> emit,
+  ) {
+    // <<< ADD THIS METHOD
+    emit(
+      state.copyWith(
+        saveSuccess: false,
+        clearError: true,
+        clearInfoMessage: true,
+        // Decide if other flags like 'loading' should also be reset here
+        // or if this event is purely for success/error/info message clearing.
+      ),
+    );
+  }
+
+  // Helper to create SaveExpenseAllocationsRequestDto from current BLoC state
+  SaveExpenseAllocationsRequestDto _createSaveDtoFromState(
+    BudgetingState currentState,
+  ) {
+    if (currentState.currentBudgetPlan == null) {
+      // This should ideally not happen if currentBudgetPlan is always set when modifications are possible
+      throw StateError(
+        'Cannot create DTO without a current budget plan in state.',
+      );
+    }
+    final plan = currentState.currentBudgetPlan!;
+    final allocationDetails = <FrontendAllocationDetailDto>[];
+
+    for (final catId in currentState.selectedExpenseCategoryIds) {
+      final percentage =
+          currentState.expenseAllocationPercentages[catId] ?? 0.0;
+      final selectedSubIds = currentState.selectedExpenseSubItems[catId] ?? [];
+
+      // Only include categories that have a percentage and selected subcategories
+      if (percentage > 0 && selectedSubIds.isNotEmpty) {
+        allocationDetails.add(
+          FrontendAllocationDetailDto(
+            categoryId: catId,
+            percentage: percentage,
+            selectedSubcategoryIds: selectedSubIds,
+          ),
+        );
+      } else if (percentage > 0 && selectedSubIds.isEmpty) {
+        // This case should be prevented by UI or earlier validation, but as a safeguard:
+        debugPrint(
+          'Warning: Category $catId has percentage but no subcategories selected. It will not be included in save DTO.',
+        );
+      }
+    }
+    // Validate total percentage again before creating DTO
+    final totalPercentageClient = allocationDetails.fold<double>(
+      0,
+      (sum, alloc) => sum + alloc.percentage,
+    );
+    if (allocationDetails.isNotEmpty &&
+        (totalPercentageClient < 99.99 || totalPercentageClient > 100.01) &&
+        currentState.totalCalculatedIncome > 0) {
+      // This should ideally be caught by UI first.
+      throw ArgumentError(
+        'Total persentase alokasi harus 100% atau 0%. Saat ini: ${totalPercentageClient.toStringAsFixed(1)}%',
+      );
+    }
+
+    return SaveExpenseAllocationsRequestDto(
+      planDescription: plan.description,
+      planStartDate: plan.planStartDate,
+      planEndDate: plan.planEndDate,
+      incomeCalculationStartDate: plan.incomeCalculationStartDate,
+      incomeCalculationEndDate: plan.incomeCalculationEndDate,
+      totalCalculatedIncome: plan.totalCalculatedIncome,
+      allocations: allocationDetails,
+    );
   }
 }

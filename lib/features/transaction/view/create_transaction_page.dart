@@ -47,9 +47,11 @@ class CreateTransactionPage extends StatelessWidget {
             }
           });
         } else if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${state.errorMessage}')),
-          );
+          // TODO Uncomment this
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(content: Text('Error: ${state.errorMessage}')),
+          // );
+          // TODO remove this
           // QuickAlert.show(
           //   context: context,
           //   type: QuickAlertType.error,

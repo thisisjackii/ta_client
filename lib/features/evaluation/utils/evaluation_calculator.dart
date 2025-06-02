@@ -1,3 +1,4 @@
+// lib/features/evaluation/utils/evaluation_calculator.dart
 import 'package:ta_client/features/transaction/models/transaction.dart';
 
 typedef RatioFn = double Function(List<Transaction> txs);
@@ -158,101 +159,106 @@ _TxSums _computeSums(List<Transaction> txs) {
 /// Returns all six of your ratios.
 List<RatioDef> evaluationDefinitions() {
   return [
-    // 0: Liquidity Ratio (months)
     RatioDef(
       id: '0',
       title: 'Rasio Likuiditas',
-      idealText: '3–6 Bulan',
-      backendCode: 'LIQUIDITY_RATIO', // Add backend code here
+      idealText: '≥ 3 Bulan',
+      backendCode: 'LIQUIDITY_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        return s.expense > 0 ? s.liquid / s.expense : 0.0;
+        if (s.expense == 0) return s.liquid > 0 ? double.infinity : 0.0;
+        return s.liquid / s.expense;
       },
-      isIdeal: (v) => v >= 3 && v <= 6,
+      isIdeal: (v) => v >= 3,
     ),
-
-    // 1: Current Assets / Net Worth (%)
     RatioDef(
       id: '1',
-      title:
-          'Rasio aset lancar terhadap kekayaan bersih', // Update title to match dashboard exactly
-      idealText: '>= 15% dan <= 100%', // Update ideal text
-      backendCode: 'LIQUID_ASSETS_TO_NET_WORTH_RATIO', // Add backend code here
+      title: 'Rasio aset lancar terhadap kekayaan bersih',
+      idealText: '15% - 100%',
+      backendCode: 'LIQUID_ASSETS_TO_NET_WORTH_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        // Correcting the ideal text interpretation and calculation for consistency
-        return s.netWorth != 0 ? (s.liquid / s.netWorth) * 100 : 0.0;
+        if (s.netWorth == 0)
+          return s.liquid == 0
+              ? 0.0
+              : (s.liquid > 0 ? double.infinity : double.negativeInfinity);
+        return (s.liquid / s.netWorth) * 100;
       },
-      isIdeal: (v) => v >= 15 && v <= 100, // Updated ideal check
+      isIdeal: (v) => v >= 15 && v <= 100,
     ),
-
-    // 2: Debt-to-Asset (%)
     RatioDef(
       id: '2',
-      title:
-          'Rasio utang terhadap aset', // Update title to match dashboard exactly
-      idealText: '>= 0% dan <= 50%', // Update ideal text
-      backendCode: 'DEBT_TO_ASSET_RATIO', // Add backend code here
+      title: 'Rasio utang terhadap aset',
+      idealText: '≤ 50%', // From seed, only upper bound for this one
+      backendCode: 'DEBT_TO_ASSET_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        return s.totalAssets > 0 ? (s.liabilities / s.totalAssets) * 100 : 0.0;
+        if (s.totalAssets == 0)
+          return s.liabilities > 0 ? double.infinity : 0.0;
+        return (s.liabilities / s.totalAssets) * 100;
       },
-      isIdeal: (v) => v >= 0 && v <= 50, // Updated ideal check
+      isIdeal: (v) =>
+          v <=
+          50, // Assuming implicit lower bound of 0 is acceptable. If strictly 0-50: v >= 0 && v <= 50
     ),
-
-    // 3: Saving Ratio (%)
     RatioDef(
       id: '3',
       title: 'Rasio Tabungan',
-      idealText: '>= 10% dan <= 100%', // Update ideal text
-      backendCode: 'SAVING_RATIO', // Add backend code here
+      idealText: '≥ 10%', // From seed, only lower bound
+      backendCode: 'SAVING_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        return s.income > 0 ? (s.savings / s.income) * 100 : 0.0;
+        if (s.income == 0)
+          return s.savings > 0
+              ? double.infinity
+              : 0.0; // Or -infinity if savings < 0
+        return (s.savings / s.income) * 100;
       },
-      isIdeal: (v) => v >= 10 && v <= 100, // Updated ideal check
+      isIdeal: (v) =>
+          v >=
+          10, // Assuming implicit upper bound of 100. If strictly 10-100: v >= 10 && v <= 100
     ),
-
-    // 4: Debt Service Ratio (%)
     RatioDef(
       id: '4',
-      title:
-          'Rasio kemampuan pelunasan hutang', // Update title to match dashboard exactly
-      idealText: '>= 0% dan <= 45%', // Update ideal text
-      backendCode: 'DEBT_SERVICE_RATIO', // Add backend code here
+      title: 'Rasio kemampuan pelunasan hutang',
+      idealText: '≤ 45%', // From seed
+      backendCode: 'DEBT_SERVICE_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        return s.netIncome > 0 ? (s.debtPayments / s.netIncome) * 100 : 0.0;
+        if (s.netIncome == 0) return s.debtPayments > 0 ? double.infinity : 0.0;
+        return (s.debtPayments / s.netIncome) * 100;
       },
-      isIdeal: (v) => v >= 0 && v <= 45, // Updated ideal check
+      isIdeal: (v) => v <= 45, // Assuming implicit lower bound of 0.
     ),
-
-    // 5: Investasi / Net Worth (%)
     RatioDef(
       id: '5',
-      title:
-          'Aset investasi terhadap nilai bersih kekayaan', // Update title to match dashboard exactly
-      idealText: '>= 50% dan <= 100%', // Update ideal text
-      backendCode:
-          'INVESTMENT_ASSETS_TO_NET_WORTH_RATIO', // Add backend code here
+      title: 'Aset investasi terhadap nilai bersih kekayaan',
+      idealText: '≥ 50%', // From seed
+      backendCode: 'INVESTMENT_ASSETS_TO_NET_WORTH_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        return s.netWorth > 0 ? (s.invested / s.netWorth) * 100 : 0.0;
+        if (s.netWorth == 0)
+          return s.invested == 0
+              ? 0.0
+              : (s.invested > 0 ? double.infinity : double.negativeInfinity);
+        return (s.invested / s.netWorth) * 100;
       },
-      isIdeal: (v) => v >= 50 && v <= 100, // Updated ideal check
+      isIdeal: (v) => v >= 50, // Assuming implicit upper bound of 100.
     ),
-
-    // 6: Solvability Ratio (%)
     RatioDef(
       id: '6',
-      title: 'Rasio solvabilitas', // Update title to match dashboard exactly
-      idealText: '>= 0.00001% dan <= 100%', // Update ideal text for consistency
-      backendCode: 'SOLVENCY_RATIO', // Add backend code here
+      title: 'Rasio solvabilitas',
+      idealText: '-',
+      backendCode: 'SOLVENCY_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        return s.totalAssets > 0 ? (s.netWorth / s.totalAssets) * 100 : 0.0;
+        if (s.totalAssets == 0)
+          return s.netWorth == 0
+              ? 0.0
+              : (s.netWorth > 0 ? double.infinity : double.negativeInfinity);
+        return (s.netWorth / s.totalAssets) * 100;
       },
-      isIdeal: (v) => v >= 0.00001 && v <= 100, // Updated ideal check
+      isIdeal: (v) => v > 0, // Ideal if positive
     ),
   ];
 }
@@ -261,7 +267,8 @@ List<RatioDef> evaluationDefinitions() {
 String? getClientRatioIdFromBackendCode(String backendCode) {
   final ratioDef = evaluationDefinitions().firstWhere(
     (def) => def.backendCode == backendCode,
-    orElse: () => null!, // Using null! for brevity assuming you handle null
+    orElse: () =>
+        throw Exception('No RatioDef found for backendCode: $backendCode'),
   );
   return ratioDef.id;
 }
@@ -270,7 +277,8 @@ String? getClientRatioIdFromBackendCode(String backendCode) {
 String? getBackendRatioCodeFromClientRatioId(String clientRatioId) {
   final ratioDef = evaluationDefinitions().firstWhere(
     (def) => def.id == clientRatioId,
-    orElse: () => null!, // Using null! for brevity assuming you handle null
+    orElse: () =>
+        throw Exception('No RatioDef found for clientRatioId: $clientRatioId'),
   );
   return ratioDef.backendCode;
 }

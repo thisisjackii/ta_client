@@ -308,6 +308,28 @@ class _TransactionFormState extends State<TransactionForm> {
     }
 
     final result = state.classifiedResult!;
+    final mlSuggestedSuccessfully = result['success'] as bool? ?? false;
+    final isKnownSubcategoryByMl =
+        result['isKnownSubcategory'] as bool? ?? false;
+
+    // If ML didn't succeed OR if it's not a known subcategory,
+    // do not automatically apply the suggestion.
+    if (!mlSuggestedSuccessfully || !isKnownSubcategoryByMl) {
+      // Optionally, if you want to clear any previous classification emoji when ML fails:
+      if (_isClassificationSuggestion) {
+        setState(() {
+          _pickerSelectedSubcategoryName = _pickerSelectedSubcategoryName
+              .replaceAll(' ✨', '');
+          _isClassificationSuggestion = false;
+        });
+      }
+      debugPrint(
+        '[TransactionForm] Classification not applied: success=$mlSuggestedSuccessfully, known=$isKnownSubcategoryByMl',
+      );
+      return; // Do not proceed to update pickers
+    }
+
+    // Proceed to apply if successful and known
     final classifiedSubcategoryId = result['subcategoryId'] as String?;
     final classifiedSubcategoryName = result['subcategoryName'] as String?;
     final classifiedCategoryId = result['categoryId'] as String?;
@@ -353,21 +375,29 @@ class _TransactionFormState extends State<TransactionForm> {
       final subNameWithEmoji = '$classifiedSubcategoryName ✨';
       if (_pickerSelectedSubcategoryName != subNameWithEmoji) {
         _pickerSelectedSubcategoryName = subNameWithEmoji;
-        _isClassificationSuggestion = true;
+        _isClassificationSuggestion =
+            true; // Mark that this is an ML suggestion
+        changed = true;
+      }
+    } else {
+      // If ML result doesn't have subcategory name (should not happen if successful and known)
+      // clear any existing emoji
+      if (_isClassificationSuggestion) {
+        _pickerSelectedSubcategoryName = _pickerSelectedSubcategoryName
+            .replaceAll(' ✨', '');
+        _isClassificationSuggestion = false;
         changed = true;
       }
     }
 
     if (changed) {
-      // If account type changed due to classification, reload categories for that new account type
       if (accountTypeChangedDueToClassification &&
           _selectedAccountTypeId != null) {
         context.read<TransactionBloc>().add(
           LoadCategoriesRequested(_selectedAccountTypeId!),
         );
       }
-      // setState(() {}); // Rebuild to show updated selections/picker text
-      // setState is already called in the listener that calls this.
+      // setState is called by the BlocListener that invokes this method
     }
   }
 

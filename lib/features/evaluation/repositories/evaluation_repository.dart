@@ -497,13 +497,13 @@ class EvaluationRepository {
       breakdown
         ..add(
           ConceptualComponentValue(
-            name: 'Total Aset Likuid (Numerator)',
+            name: 'Total Aset Likuid',
             value: conceptualSums.liquid,
           ),
         )
         ..add(
           ConceptualComponentValue(
-            name: 'Total Pengeluaran Bulanan (Denominator)',
+            name: 'Total Pengeluaran Bulanan',
             value: conceptualSums.expense,
           ),
         );
@@ -511,13 +511,13 @@ class EvaluationRepository {
       breakdown
         ..add(
           ConceptualComponentValue(
-            name: 'Total Aset Likuid (Numerator)',
+            name: 'Total Aset Likuid',
             value: conceptualSums.liquid,
           ),
         )
         ..add(
           ConceptualComponentValue(
-            name: 'Total Kekayaan Bersih (Denominator)',
+            name: 'Total Kekayaan Bersih',
             value: conceptualSums.netWorth,
           ),
         );
@@ -525,13 +525,13 @@ class EvaluationRepository {
       breakdown
         ..add(
           ConceptualComponentValue(
-            name: 'Total Utang (Numerator)',
+            name: 'Total Utang',
             value: conceptualSums.liabilities,
           ),
         )
         ..add(
           ConceptualComponentValue(
-            name: 'Total Aset (Denominator)',
+            name: 'Total Aset',
             value: conceptualSums.totalAssets,
           ),
         );
@@ -539,13 +539,13 @@ class EvaluationRepository {
       breakdown
         ..add(
           ConceptualComponentValue(
-            name: 'Total Tabungan (Numerator)',
+            name: 'Total Tabungan',
             value: conceptualSums.savings,
           ),
         )
         ..add(
           ConceptualComponentValue(
-            name: 'Penghasilan Kotor (Denominator)',
+            name: 'Penghasilan Kotor',
             value: conceptualSums.income,
           ),
         );
@@ -553,13 +553,13 @@ class EvaluationRepository {
       breakdown
         ..add(
           ConceptualComponentValue(
-            name: 'Total Pembayaran Utang Bulanan (Numerator)',
+            name: 'Total Pembayaran Utang Bulanan',
             value: conceptualSums.debtPayments,
           ),
         )
         ..add(
           ConceptualComponentValue(
-            name: 'Penghasilan Bersih (Denominator)',
+            name: 'Penghasilan Bersih',
             value: conceptualSums.netIncome,
           ),
         );
@@ -567,13 +567,13 @@ class EvaluationRepository {
       breakdown
         ..add(
           ConceptualComponentValue(
-            name: 'Total Aset Diinvestasikan (Numerator)',
+            name: 'Total Aset Diinvestasikan',
             value: conceptualSums.invested,
           ),
         )
         ..add(
           ConceptualComponentValue(
-            name: 'Total Kekayaan Bersih (Denominator)',
+            name: 'Total Kekayaan Bersih',
             value: conceptualSums.netWorth,
           ),
         );
@@ -581,13 +581,13 @@ class EvaluationRepository {
       breakdown
         ..add(
           ConceptualComponentValue(
-            name: 'Total Kekayaan Bersih (Numerator)',
+            name: 'Total Kekayaan Bersih',
             value: conceptualSums.netWorth,
           ),
         )
         ..add(
           ConceptualComponentValue(
-            name: 'Total Aset (Denominator)',
+            name: 'Total Aset',
             value: conceptualSums.totalAssets,
           ),
         );

@@ -6,9 +6,7 @@ import 'package:ta_client/core/constants/app_dimensions.dart';
 import 'package:ta_client/core/constants/app_strings.dart';
 import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
-// For SelectIncomeSubcategory
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
-// For typing
 
 class BudgetingExpandableAllocationCard extends StatelessWidget {
   const BudgetingExpandableAllocationCard({super.key});
@@ -16,59 +14,81 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<BudgetingBloc, BudgetingState>(
-      // Rebuild only if these relevant parts of the state change
       buildWhen: (prev, curr) =>
           prev.incomeSummary != curr.incomeSummary ||
           prev.selectedIncomeSubcategoryIds !=
-              curr.selectedIncomeSubcategoryIds,
+              curr.selectedIncomeSubcategoryIds ||
+          prev.currentBudgetPlan?.totalCalculatedIncome !=
+              curr.currentBudgetPlan?.totalCalculatedIncome ||
+          prev.totalCalculatedIncome !=
+              curr.totalCalculatedIncome || // For creation flow
+          prev.loading != curr.loading,
       builder: (context, state) {
-        // Calculate total selected income based on the new state structure
-        double totalSelectedIncome = 0;
-        final selectedIncomeWidgets = <Widget>[];
+        double displayTotalIncome = 0;
+        final List<Widget> incomeBreakdownWidgets = [];
 
-        if (state.incomeSummary.isNotEmpty) {
-          for (final categorySummary
-              in state.incomeSummary) {
+        // Determine the total income to display in the header
+        if (state.currentBudgetPlan != null) {
+          displayTotalIncome = state.currentBudgetPlan!.totalCalculatedIncome;
+        } else {
+          // In creation flow, use the interactively calculated total
+          displayTotalIncome = state.totalCalculatedIncome;
+        }
+
+        // Build the breakdown list if incomeSummary is available and selectedIncomeSubcategoryIds are set
+        // (which they will be if a plan is loaded and incomeSummary is fetched for its period)
+        if (state.incomeSummary.isNotEmpty &&
+            state.selectedIncomeSubcategoryIds.isNotEmpty) {
+          for (final categorySummary in state.incomeSummary) {
             var parentCategoryHasSelectedSub = false;
             final subcategoryTiles = <Widget>[];
 
-            for (final subIncome
-                in categorySummary.subcategories) {
+            for (final subIncome in categorySummary.subcategories) {
+              // Check if this subcategory ID is in the BLoC's selected list
               if (state.selectedIncomeSubcategoryIds.contains(
                 subIncome.subcategoryId,
               )) {
-                totalSelectedIncome += subIncome.totalAmount;
                 parentCategoryHasSelectedSub = true;
                 subcategoryTiles.add(
                   Padding(
                     padding: const EdgeInsets.only(
                       left: 16,
-                    ), // Indent subcategories
-                    child: CheckboxListTile(
-                      value: true, // Always true if it's in the selected list
-                      enabled:
-                          false, // Display only, selection happens on BudgetingIncomePage
+                      right: 8,
+                    ), // Added right padding
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 0,
+                        horizontal: 4,
+                      ),
+                      leading: Icon(
+                        Icons
+                            .check_box, // Show as checked because it's "selected" for display
+                        color: Colors
+                            .grey[400], // Greyed out to indicate display-only
+                        size: 18,
+                      ),
                       title: Text(
                         subIncome.subcategoryName,
                         style: const TextStyle(fontSize: 13),
                       ),
-                      secondary: Text(
+                      trailing: Text(
                         formatToRupiah(subIncome.totalAmount),
-                        style: const TextStyle(fontSize: 13),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black54,
+                        ),
                       ),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      dense: true,
-                      onChanged: null, // Not interactive here
                     ),
                   ),
                 );
               }
             }
-            // If any subcategory under this parent was selected, add the parent category header
             if (parentCategoryHasSelectedSub) {
-              selectedIncomeWidgets.add(
+              incomeBreakdownWidgets.add(
                 ListTile(
                   dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8.0),
                   title: Text(
                     categorySummary.categoryName,
                     style: const TextStyle(
@@ -76,36 +96,31 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
-                  // Optionally display category total if needed, though subcategories show individual amounts
-                  // trailing: Text(formatToRupiah(categorySummary.categoryTotalAmount), style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               );
-              selectedIncomeWidgets.addAll(subcategoryTiles);
-              selectedIncomeWidgets.add(
-                const SizedBox(height: 4),
-              ); // Spacer after a category group
+              incomeBreakdownWidgets.addAll(subcategoryTiles);
+              incomeBreakdownWidgets.add(const SizedBox(height: 4));
             }
           }
         }
 
-        if (selectedIncomeWidgets.isEmpty && state.incomeSummary.isNotEmpty) {
-          selectedIncomeWidgets.add(
-            const ListTile(
-              dense: true,
-              title: Center(
-                child: Text(
-                  'Tidak ada sumber pemasukan yang dipilih.',
-                  style: TextStyle(fontStyle: FontStyle.italic, fontSize: 13),
-                ),
-              ),
+        // Determine what to show in the expansion tile's children
+        List<Widget> childrenToShow;
+        if (state.loading && state.incomeSummary.isEmpty) {
+          // If loading initial income summary
+          childrenToShow = [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CircularProgressIndicator()),
             ),
-          );
-        } else if (state.incomeSummary.isEmpty &&
-            state.incomeDateConfirmed &&
-            !state.loading) {
-          selectedIncomeWidgets.add(
+          ];
+        } else if (incomeBreakdownWidgets.isNotEmpty) {
+          childrenToShow = incomeBreakdownWidgets;
+        } else if (state.incomeDateConfirmed &&
+            !state.loading &&
+            displayTotalIncome == 0) {
+          childrenToShow = [
             const ListTile(
-              dense: true,
               title: Center(
                 child: Text(
                   'Tidak ada data pemasukan untuk periode ini.',
@@ -113,7 +128,35 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
                 ),
               ),
             ),
-          );
+          ];
+        } else if (state.incomeDateConfirmed &&
+            !state.loading &&
+            displayTotalIncome > 0) {
+          // Has total income from plan, but breakdown couldn't be formed (e.g. incomeSummary fetch failed or empty)
+          childrenToShow = [
+            ListTile(
+              title: Center(
+                child: Text(
+                  'Rincian sumber pemasukan tidak tersedia (Total: ${formatToRupiah(displayTotalIncome)}).',
+                  style: const TextStyle(
+                    fontStyle: FontStyle.italic,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ];
+        } else {
+          childrenToShow = [
+            const ListTile(
+              title: Center(
+                child: Text(
+                  'Pilih periode pemasukan untuk melihat rincian.',
+                  style: TextStyle(fontStyle: FontStyle.italic, fontSize: 13),
+                ),
+              ),
+            ),
+          ];
         }
 
         return Card(
@@ -123,11 +166,10 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
           ),
           elevation: 2,
           child: ExpansionTile(
-            key: const PageStorageKey<String>(
-              'incomeAllocationSummary',
-            ), // Unique key
-            maintainState: true, // Keep state when collapsed/expanded
-            initiallyExpanded: true, // Start expanded
+            key: const PageStorageKey<String>('incomeAllocationSummary'),
+            maintainState: true,
+            initiallyExpanded:
+                displayTotalIncome > 0 || incomeBreakdownWidgets.isNotEmpty,
             tilePadding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.padding,
               vertical: AppDimensions.smallPadding / 2,
@@ -140,13 +182,12 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
                 ),
                 const SizedBox(width: AppDimensions.smallPadding),
                 const Text(
-                  AppStrings
-                      .expendableAllocationCardTitle, // "Alokasi Dana Pemasukan"
+                  AppStrings.expendableAllocationCardTitle,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const Spacer(),
                 Text(
-                  formatToRupiah(totalSelectedIncome),
+                  formatToRupiah(displayTotalIncome),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -155,21 +196,7 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
                 ),
               ],
             ),
-            children:
-                selectedIncomeWidgets.isEmpty &&
-                    !state.loading &&
-                    state.incomeDateConfirmed
-                ? [
-                    const ListTile(
-                      title: Center(
-                        child: Text(
-                          'Pilih sumber pemasukan pada langkah sebelumnya.',
-                        ),
-                      ),
-                    ),
-                  ]
-                : selectedIncomeWidgets,
-            // No "Save" button here as income selection is done on a previous page (BudgetingIncomePage)
+            children: childrenToShow,
           ),
         );
       },

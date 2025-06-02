@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/services/first_launch_service.dart';
 import 'package:ta_client/core/services/service_locator.dart';
 import 'package:ta_client/core/state/auth_state.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
+import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/repositories/budgeting_repository.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 
@@ -16,26 +19,24 @@ class CustomBottomNavbar extends StatelessWidget {
   final void Function(int) onTabSelected;
 
   // Helper function to check if user has any budget plans
-  Future<bool> _userHasBudgetPlans() async {
+  Future<bool> _userHasAnyBudgetPlans() async {
+    // Renamed for clarity
     final authState = sl<AuthState>();
     if (!authState.isAuthenticated || authState.currentUser == null) {
       return false;
     }
-    // Note: BudgetingRepository.getBudgetPlansForUser now needs to be accessible.
-    // It might not be directly registered in GetIt.
-    // For simplicity, let's assume we can get an instance or use a specific GetIt registration for it.
-    // If BudgetingRepository itself isn't in GetIt, but its service is, you might need to add a repo getter.
-    // OR, add a method to BudgetingService that the repo uses, and the service calls the backend.
-    // For now, assuming BudgetingRepository is in GetIt or can be easily fetched.
     try {
       final budgetingRepo = sl<BudgetingRepository>();
+      // Fetch ALL plans for the user. This method needs to be robust.
       final plans = await budgetingRepo.getBudgetPlansForUser(
         authState.currentUser!.id,
-      ); // Fetch ALL plans
+      );
       return plans.isNotEmpty;
     } catch (e) {
-      debugPrint('[CustomBottomNavbar] Error checking for budget plans: $e');
-      return false; // Assume no plans on error
+      debugPrint(
+        '[CustomBottomNavbar] Error checking for any budget plans: $e',
+      );
+      return false;
     }
   }
 
@@ -114,24 +115,39 @@ class CustomBottomNavbar extends StatelessWidget {
                 icon: Icons.attach_money_rounded,
                 isSelected: currentTab == 2,
                 onTap: () async {
+                  final hasPlans =
+                      await _userHasAnyBudgetPlans(); // Check for ANY plan
                   final introSeen = await firstLaunchService
                       .isBudgetingIntroSeen();
-                  final hasPlans = await _userHasBudgetPlans();
 
-                  if (!introSeen || !hasPlans) {
-                    // If intro not seen OR no plans exist
+                  if (hasPlans) {
+                    // User has existing plans, go directly to dashboard
+                    // BudgetingDashboard's initState will load the latest/default plan
                     if (context.mounted) {
-                      await Navigator.pushNamed(context, Routes.budgetingIntro);
-                    }
-                  } else {
-                    // User has seen intro AND has plans, go directly to budgeting dashboard
-                    // The BudgetingDashboard will need logic to load the latest/relevant plan
-                    // or prompt user if multiple plans exist.
-                    if (context.mounted) {
+                      // Ensure BLoC loads existing plans if navigating directly
+                      context.read<BudgetingBloc>().add(
+                        BudgetingLoadUserPlans(),
+                      );
                       await Navigator.pushNamed(
                         context,
                         Routes.budgetingDashboard,
                       );
+                    }
+                  } else if (introSeen) {
+                    // No plans, but intro has been seen, go to start of creation flow
+                    if (context.mounted) {
+                      context.read<BudgetingBloc>().add(
+                        BudgetingResetState(),
+                      ); // Reset for new plan
+                      await Navigator.pushNamed(
+                        context,
+                        Routes.budgetingIncomeDate,
+                      );
+                    }
+                  } else {
+                    // No plans, intro not seen, go to intro page
+                    if (context.mounted) {
+                      await Navigator.pushNamed(context, Routes.budgetingIntro);
                     }
                   }
                 },

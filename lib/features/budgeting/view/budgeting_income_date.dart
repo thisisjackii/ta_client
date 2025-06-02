@@ -8,155 +8,205 @@ import 'package:ta_client/core/constants/app_strings.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
-import 'package:ta_client/features/budgeting/view/widgets/budgeting_date_selection.dart'; // Assuming this widget is reused
+import 'package:ta_client/features/budgeting/view/widgets/budgeting_date_selection.dart';
+import 'package:ta_client/features/budgeting/view/widgets/budgeting_flow_navigation_guard.dart';
 
 class BudgetingIncomeDatePage extends StatefulWidget {
-  // Renamed for clarity
   const BudgetingIncomeDatePage({super.key});
-
   @override
   _BudgetingIncomeDatePageState createState() =>
       _BudgetingIncomeDatePageState();
 }
 
-class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage> {
+class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage>
+    with BudgetingFlowNavigationGuard {
   DateTime? _tempStartDate;
   DateTime? _tempEndDate;
+  bool _dialogIsOpen = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize temp dates from BLoC state if available (e.g., if user comes back)
     final initialState = context.read<BudgetingBloc>().state;
     _tempStartDate = initialState.incomeCalculationStartDate;
     _tempEndDate = initialState.incomeCalculationEndDate;
 
-    // Clear any previous date confirmation or errors related to income period
-    // context.read<BudgetingBloc>().add(BudgetingResetIncomePeriodConfirmation()); // You might need such an event
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showDateSelectionDialog();
-    });
+    if (!(initialState.isEditing &&
+        initialState.currentBudgetPlan != null &&
+        initialState.incomeDateConfirmed)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_dialogIsOpen) {
+          _showDateSelectionDialog();
+        }
+      });
+    } else if (initialState.isEditing &&
+        initialState.currentBudgetPlan != null &&
+        initialState.incomeDateConfirmed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, Routes.budgetingIncome);
+        }
+      });
+    }
   }
 
   Future<void> _showDateSelectionDialog() async {
-    final budgetingBloc = context
-        .read<BudgetingBloc>(); // Get BLoC instance once
+    if (_dialogIsOpen) return;
+    _dialogIsOpen = true;
+    final budgetingBloc = context.read<BudgetingBloc>();
+
+    // Sync temp dates with BLoC state if dialog is reopened
+    _tempStartDate =
+        budgetingBloc.state.incomeCalculationStartDate ?? _tempStartDate;
+    _tempEndDate = budgetingBloc.state.incomeCalculationEndDate ?? _tempEndDate;
 
     await showDialog<void>(
       context: context,
-      barrierDismissible: false, // User must confirm or cancel
+      barrierDismissible: false,
       builder: (dialogContext) {
-        // Use a local StatefulBuilder or a small StatefulWidget for the dialog's internal date state
-        // to avoid rebuilding the whole page on every dialog date change.
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setDialogState) {
-            return BlocListener<BudgetingBloc, BudgetingState>(
-              bloc: budgetingBloc, // Listen to the BLoC from the page
-              listenWhen: (prev, curr) =>
-                  prev.loading != curr.loading || // Listen for loading changes
-                  curr.incomeDateConfirmed || // Listen for confirmation
-                  curr.dateError != null || // Listen for date validation errors
-                  curr.error !=
-                      null, // Listen for general errors from ensureAndGetPeriod
-              listener: (listenerContext, state) {
-                if (state.dateError != null && !state.loading) {
-                  Navigator.pop(
-                    dialogContext,
-                  ); // Close the date picker dialog first
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(content: Text('Date Error: ${state.dateError}')),
-                  );
-                  budgetingBloc.add(BudgetingClearError()); // Clear the error
-                  _showDateSelectionDialog(); // Re-open dialog
-                } else if (state.error != null &&
-                    !state.loading &&
-                    !state.incomeDateConfirmed) {
-                  Navigator.pop(dialogContext);
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(content: Text('Period Error: ${state.error}')),
-                  );
-                  budgetingBloc.add(BudgetingClearError());
-                  _showDateSelectionDialog();
-                } else if (state.incomeDateConfirmed && !state.loading) {
-                  Navigator.pop(dialogContext); // Close this dialog
-                  Navigator.pushReplacementNamed(
-                    context,
-                    Routes.budgetingIncome,
-                  );
-                }
+            return PopScope(
+              // Guard the dialog itself from accidental dismiss without confirmation
+              canPop:
+                  false, // Initially false, meaning onPopInvokedWithResult will be called
+              onPopInvokedWithResult: (didPop, result) async {
+                if (didPop) return;
+                // User tried to dismiss dialog (e.g. system back), trigger main page's guard
+                Navigator.of(dialogContext).pop(); // Close this dialog first
+                _dialogIsOpen = false;
+                await handlePopAttempt(
+                  context: this.context,
+                  didPop: false,
+                ); // Use page context
               },
-              child: AlertDialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-                ),
-                title: const Text('Pilih Periode Pemasukan'),
-                contentPadding: const EdgeInsets.all(24),
-                content: BudgetingDateSelection(
-                  startDate:
-                      _tempStartDate ??
-                      budgetingBloc.state.incomeCalculationStartDate,
-                  endDate:
-                      _tempEndDate ??
-                      budgetingBloc.state.incomeCalculationEndDate,
-                  onStartDateChanged: (date) =>
-                      setDialogState(() => _tempStartDate = date),
-                  onEndDateChanged: (date) =>
-                      setDialogState(() => _tempEndDate = date),
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    child: const Text(AppStrings.cancel),
-                    onPressed: () {
-                      Navigator.pop(dialogContext); // Close dialog
-                      Navigator.pop(
-                        context,
-                      ); // Go back from BudgetingIncomeDatePage itself
-                    },
+              child: BlocListener<BudgetingBloc, BudgetingState>(
+                bloc: budgetingBloc,
+                listenWhen: (prev, curr) =>
+                    prev.loading != curr.loading ||
+                    curr.incomeDateConfirmed ||
+                    curr.dateError != null ||
+                    (curr.error != null && !curr.incomeDateConfirmed),
+                listener: (listenerContext, state) {
+                  if (state.dateError != null && !state.loading) {
+                    if (Navigator.canPop(dialogContext)) {
+                      Navigator.pop(dialogContext);
+                    }
+                    _dialogIsOpen = false;
+                    ScaffoldMessenger.of(listenerContext).showSnackBar(
+                      // Use listenerContext for SnackBar
+                      SnackBar(
+                        content: Text('Error Tanggal: ${state.dateError}'),
+                      ),
+                    );
+                    budgetingBloc.add(BudgetingClearError());
+                    if (mounted && !_dialogIsOpen) _showDateSelectionDialog();
+                  } else if (state.error != null &&
+                      !state.loading &&
+                      !state.incomeDateConfirmed) {
+                    if (Navigator.canPop(dialogContext)) {
+                      Navigator.pop(dialogContext);
+                    }
+                    _dialogIsOpen = false;
+                    ScaffoldMessenger.of(listenerContext).showSnackBar(
+                      SnackBar(content: Text('Error Periode: ${state.error}')),
+                    );
+                    budgetingBloc.add(BudgetingClearError());
+                    if (mounted && !_dialogIsOpen) _showDateSelectionDialog();
+                  } else if (state.incomeDateConfirmed && !state.loading) {
+                    if (Navigator.canPop(dialogContext)) {
+                      Navigator.pop(dialogContext);
+                    }
+                    _dialogIsOpen = false;
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(
+                        this.context,
+                        Routes.budgetingIncome,
+                      ); // Use page context
+                    }
+                  }
+                },
+                child: AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppDimensions.cardRadius,
+                    ),
                   ),
-                  ElevatedButton(
-                    child:
-                        budgetingBloc.state.loading &&
-                            !budgetingBloc.state.incomeDateConfirmed
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(AppStrings.ok),
-                    onPressed: () {
-                      if (_tempStartDate != null && _tempEndDate != null) {
-                        budgetingBloc.add(
-                          BudgetingIncomeDateRangeSelected(
-                            start: _tempStartDate!,
-                            end: _tempEndDate!,
-                            // periodId: budgetingBloc.state.incomePeriodId, // Pass if editing an existing period's dates
-                          ),
-                        );
-                        // Don't pop here, listener will handle it upon state.incomeDateConfirmed
-                      } else {
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Silakan pilih tanggal mulai dan akhir.',
+                  title: const Text('Pilih Periode Pemasukan'),
+                  contentPadding: const EdgeInsets.all(24),
+                  content: BudgetingDateSelection(
+                    startDate:
+                        _tempStartDate, // Use local temp vars for dialog UI
+                    endDate: _tempEndDate,
+                    onStartDateChanged: (date) =>
+                        setDialogState(() => _tempStartDate = date),
+                    onEndDateChanged: (date) =>
+                        setDialogState(() => _tempEndDate = date),
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text(AppStrings.cancel),
+                      onPressed: () {
+                        Navigator.pop(dialogContext); // Pop this AlertDialog
+                        _dialogIsOpen = false;
+                        handleAppBarOrButtonCancel(
+                          this.context,
+                        ); // Trigger page's pop sequence
+                      },
+                    ),
+                    ElevatedButton(
+                      child:
+                          budgetingBloc.state.loading &&
+                              !budgetingBloc.state.incomeDateConfirmed
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text(AppStrings.ok),
+                      onPressed: () {
+                        if (_tempStartDate != null && _tempEndDate != null) {
+                          budgetingBloc.add(
+                            BudgetingIncomeDateRangeSelected(
+                              start: _tempStartDate!,
+                              end: _tempEndDate!,
                             ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ],
+                          );
+                        } else {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Silakan pilih tanggal mulai dan akhir.',
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
             );
           },
         );
       },
-    ).then((_) {
-      // If dialog is dismissed by back button before confirmation, navigate back from page
-      if (!budgetingBloc.state.incomeDateConfirmed && mounted) {
-        // Check if mounted before popping, in case the page itself was disposed.
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context);
+    ).whenComplete(() {
+      if (mounted) {
+        // Ensure widget is still mounted
+        setState(() {
+          // Reflect that dialog is no longer open
+          _dialogIsOpen = false;
+        });
+        // If dialog was dismissed without confirming dates (e.g. if barrierDismissible was true)
+        // and the BLoC state doesn't reflect confirmed dates, trigger the page's pop guard.
+        // This handles cases where the user might tap outside a dismissible dialog.
+        // However, with barrierDismissible: false, this .whenComplete block primarily serves
+        // to reset _dialogIsOpen. The explicit cancel/ok buttons handle navigation.
+        final currentBlocState = context.read<BudgetingBloc>().state;
+        if (!currentBlocState.incomeDateConfirmed &&
+            !currentBlocState.isEditing) {
+          // If still not confirmed and not in an editing flow that might bypass this dialog
+          // handleAppBarOrButtonCancel(this.context); // Potentially trigger guard if flow was abandoned
         }
       }
     });
@@ -164,11 +214,43 @@ class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage> {
 
   @override
   Widget build(BuildContext context) {
-    // This page primarily shows a dialog. The Scaffold is a fallback or loading container.
-    return const Scaffold(
-      body: Center(
-        // Show a loading indicator if BLoC is busy from previous screen or initial dialog logic
-        child: CircularProgressIndicator(),
+    return PopScope(
+      canPop: canPopBudgetingFlow(context),
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        // Matched to onPopInvokedWithResult by ignoring result
+        if (didPop) return;
+        await handlePopAttempt(
+          context: context,
+          didPop: didPop,
+        ); // Pass null for result
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Pilih Periode Pemasukan'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => handleAppBarOrButtonCancel(context),
+          ),
+          automaticallyImplyLeading: false,
+        ),
+        body: Center(
+          child:
+              (context.watch<BudgetingBloc>().state.isEditing &&
+                  context.watch<BudgetingBloc>().state.currentBudgetPlan !=
+                      null &&
+                  context.watch<BudgetingBloc>().state.incomeDateConfirmed)
+              ? const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 10),
+                    Text('Memuat data pemasukan untuk diedit...'),
+                  ],
+                )
+              : (_dialogIsOpen // Show loading if dialog is supposed to be open but content is just a placeholder
+                    ? const CircularProgressIndicator()
+                    : const Text('Silakan pilih periode melalui dialog.')),
+        ),
       ),
     );
   }

@@ -3,9 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart'; // Keep for DateFormat
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/core/constants/app_colors.dart'; // Assuming you have this for colors
+import 'package:ta_client/core/services/service_locator.dart';
 import 'package:ta_client/features/profile/bloc/profile_bloc.dart';
 import 'package:ta_client/features/profile/bloc/profile_event.dart';
 import 'package:ta_client/features/profile/bloc/profile_state.dart';
+import 'package:ta_client/features/profile/models/user_model.dart';
+import 'package:ta_client/features/register/services/register_service.dart';
 
 class ProfileEditPage extends StatefulWidget {
   const ProfileEditPage({super.key});
@@ -17,53 +20,101 @@ class ProfileEditPage extends StatefulWidget {
 class _ProfileEditPageState extends State<ProfileEditPage> {
   final _formKey = GlobalKey<FormState>();
 
-  late TextEditingController
-  _nameController; // Retained for consistency with existing logic
+  late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _usernameController;
-  late TextEditingController
-  _addressController; // Not in image, but keep for existing logic
-  late TextEditingController _occupationController;
-  late TextEditingController
-  _dummyPasswordController; // For visual "Ubah Password"
+  late TextEditingController _addressController;
+  // late TextEditingController _occupationController; // Replaced by dropdown
+  late TextEditingController _dummyPasswordController;
   DateTime? _birthdate;
-  final bool _isPasswordVisible = false;
+  final bool _isPasswordVisible = false; // Kept for dummy field
+
+  List<Map<String, String>> _occupations = [];
+  String? _selectedOccupationIdForUpdate;
+  bool _isLoadingOccupations = true;
+  bool _wasSaving =
+      false; // To track if ProfileLoadSuccess is after an update attempt
 
   @override
   void initState() {
     super.initState();
-    final state = context.read<ProfileBloc>().state;
-    _dummyPasswordController = TextEditingController(
-      text: '********',
-    ); // Dummy password
+    final profileBlocState = context.read<ProfileBloc>().state;
+    _dummyPasswordController = TextEditingController(text: '********');
 
-    if (state is ProfileLoadSuccess) {
-      final user = state.user;
-      _nameController = TextEditingController(
-        text: user.name,
-      ); // Keep for logic
-      _emailController = TextEditingController(text: user.email);
-      _usernameController = TextEditingController(text: user.username);
-      _addressController = TextEditingController(
-        text: user.address,
-      ); // Keep for logic
-      _occupationController = TextEditingController(text: user.occupationName);
-      _birthdate = user.birthdate;
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
+    _usernameController = TextEditingController();
+    _addressController = TextEditingController();
+    // _occupationController = TextEditingController(); // No longer needed
+
+    if (profileBlocState is ProfileLoadSuccess) {
+      _updateControllersFromUser(profileBlocState.user);
     } else {
-      // Initialize with empty or placeholder if no data yet,
-      // but image shows pre-filled data.
-      // Assuming ProfileLoadSuccess will be the state when this page is normally reached.
-      _nameController = TextEditingController();
-      _emailController = TextEditingController();
-      _usernameController = TextEditingController();
-      _addressController = TextEditingController();
-      _occupationController = TextEditingController();
-      // If data isn't loaded, it might be better to show a loading state
-      // or an error rather than empty fields if the design expects data.
-      // For now, adhering to existing logic which might re-trigger load.
-      if (state is! ProfileLoadInProgress) {
-        // Avoid dispatching if already loading
+      if (profileBlocState is! ProfileLoadInProgress) {
         context.read<ProfileBloc>().add(ProfileLoadRequested());
+      }
+    }
+    _fetchOccupations();
+  }
+
+  void _updateControllersFromUser(User user) {
+    if (_nameController.text != user.name) _nameController.text = user.name;
+    if (_emailController.text != user.email) _emailController.text = user.email;
+    if (_usernameController.text != user.username) {
+      _usernameController.text = user.username;
+    }
+    if (_addressController.text != user.address) {
+      _addressController.text = user.address;
+    }
+
+    if (_birthdate != user.birthdate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Ensure setState is safe
+        if (mounted) setState(() => _birthdate = user.birthdate);
+      });
+    }
+
+    // Update selectedOccupationIdForUpdate based on user.occupationId
+    // This needs to happen AFTER _occupations list is populated by _fetchOccupations
+    // So, _fetchOccupations will handle setting _selectedOccupationIdForUpdate if user.occupationId matches.
+    if (user.occupationId != null &&
+        _occupations.any((o) => o['id'] == user.occupationId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _selectedOccupationIdForUpdate = user.occupationId);
+        }
+      });
+    }
+  }
+
+  Future<void> _fetchOccupations() async {
+    if (!mounted) return;
+    setState(() => _isLoadingOccupations = true);
+    try {
+      final registerService = sl<RegisterService>();
+      final occsData = await registerService.fetchOccupations();
+      if (mounted) {
+        setState(() {
+          _occupations = occsData;
+          _isLoadingOccupations = false;
+          // After occupations are loaded, try to set the selected one if profile data is available
+          final profileState = context.read<ProfileBloc>().state;
+          if (profileState is ProfileLoadSuccess &&
+              profileState.user.occupationId != null) {
+            if (_occupations.any(
+              (o) => o['id'] == profileState.user.occupationId,
+            )) {
+              _selectedOccupationIdForUpdate = profileState.user.occupationId;
+            }
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingOccupations = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat daftar profesi: $e')),
+        );
       }
     }
   }
@@ -74,21 +125,20 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     _emailController.dispose();
     _usernameController.dispose();
     _addressController.dispose();
-    _occupationController.dispose();
+    // _occupationController.dispose(); // Removed
     _dummyPasswordController.dispose();
     super.dispose();
   }
 
   void _onSave() {
-    // Existing save logic - NO CHANGES HERE
     if (!_formKey.currentState!.validate()) {
-      // Check _birthdate validity for the original logic if it was essential for validation
       if (_birthdate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tanggal lahir tidak boleh kosong.')),
         );
         return;
       }
+      // Occupation is validated by DropdownButtonFormField's validator
       return;
     }
 
@@ -97,37 +147,35 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
     final updated = state.user.copyWith(
       name: _nameController.text.trim(),
-      email: _emailController.text.trim(), // Email is not editable in UI image
       username: _usernameController.text.trim(),
-      address: _addressController.text.trim(), // Address not in UI image
-      occupationName: _occupationController.text.trim(),
+      address: _addressController.text.trim(),
       birthdate: _birthdate,
+      occupationId: _selectedOccupationIdForUpdate, // Use the ID
+      // occupationName will be derived by backend or not needed for update DTO
     );
 
+    setState(() {
+      _wasSaving = true;
+    }); // Set flag before dispatching
     context.read<ProfileBloc>().add(ProfileUpdateRequested(updated));
   }
 
   Future<void> _pickBirthdate() async {
-    // Existing date pick logic - NO CHANGES HERE
     final date = await showDatePicker(
       context: context,
       initialDate: _birthdate ?? DateTime(2000),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      // Optional: Add builder for theming date picker if needed
     );
-
     if (date != null) {
-      setState(() {
-        _birthdate = date;
-      });
+      setState(() => _birthdate = date);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Match image background
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'Ubah Profil',
@@ -146,95 +194,67 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       ),
       body: BlocConsumer<ProfileBloc, ProfileState>(
         listener: (context, state) {
-          // Existing listener logic - NO CHANGES HERE
-          if (state is ProfileLoadSuccess &&
-              ModalRoute.of(context)?.isCurrent == true) {
-            // Check if this page is still the current route before navigating
-            // This is important if _onSave triggers multiple ProfileLoadSuccess states quickly.
-            // For profile edit, usually after update success, we pop.
-            // If the UI shows success then auto-navigates, this is okay.
-            // If it's a specific "update success" state, better to listen for that.
-            // For now, assuming ProfileLoadSuccess after update means go back.
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context); // Go back to profile page after save
-            } else {
-              Navigator.pushReplacementNamed(context, Routes.profilePage);
+          if (state is ProfileLoadSuccess) {
+            // If data loaded (either initially or after update), sync controllers
+            _updateControllersFromUser(state.user); // Sync UI
+
+            if (_wasSaving) {
+              // Check if this success is after an update attempt
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Profil berhasil diubah!')),
+              );
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacementNamed(context, Routes.profilePage);
+              }
+              _wasSaving = false; // Reset flag
             }
           } else if (state is ProfileLoadFailure) {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(state.error)));
+            _wasSaving = false; // Reset flag on failure too
           }
         },
         builder: (context, state) {
           if (state is ProfileLoadInProgress &&
-              _usernameController.text.isEmpty) {
-            // Show loading only if initial data isn't there
+              _usernameController.text.isEmpty &&
+              !_wasSaving) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // If state is ProfileLoadSuccess, update controllers (handles case where data loads after initState)
-          if (state is ProfileLoadSuccess) {
-            // Only update if text is different to prevent cursor jump and redundant sets
-            if (_nameController.text != state.user.name) {
-              _nameController.text = state.user.name;
-            }
-            if (_emailController.text != state.user.email) {
-              _emailController.text = state.user.email;
-            }
-            if (_usernameController.text != state.user.username) {
-              _usernameController.text = state.user.username;
-            }
-            if (_addressController.text != state.user.address) {
-              _addressController.text = state.user.address;
-            }
-            if (_occupationController.text != state.user.occupationName) {
-              _occupationController.text = state.user.occupationName;
-            }
-            if (_birthdate != state.user.birthdate) {
-              _birthdate = state
-                  .user
-                  .birthdate; // Direct assignment, setState below if needed
-            }
-          }
-
           return Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 16,
-            ), // Adjusted padding
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Form(
               key: _formKey,
               child: Column(
-                // Changed to Column for better control over spacing and button
                 children: [
                   Expanded(
                     child: ListView(
                       children: [
-                        // Username
                         _buildStyledTextField(
                           controller: _usernameController,
                           label: 'Username',
                           icon: Icons.person_outline,
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? 'Username tidak boleh kosong.'
+                              : null,
                         ),
                         const SizedBox(height: 20),
-
-                        // Email (Display only as per image - not typically editable without verification)
                         _buildStyledTextField(
                           controller: _emailController,
                           label: 'Email',
                           icon: Icons.email_outlined,
-                          readOnly: true, // Email is not editable in image
+                          readOnly: true,
                         ),
                         const SizedBox(height: 20),
-
-                        // Ubah Password (Visual Only)
                         _buildStyledTextField(
                           controller: _dummyPasswordController,
                           label: 'Ubah Password',
                           icon: Icons.lock_outline,
                           obscureText: !_isPasswordVisible,
-                          readOnly: true, // This is a dummy field for display
+                          readOnly: true,
                           suffixIcon: IconButton(
                             icon: Icon(
                               _isPasswordVisible
@@ -243,8 +263,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               color: Colors.grey,
                             ),
                             onPressed: () {
-                              // This would toggle visibility if it were a real password field
-                              // For a dummy field, this action could navigate to a change password screen
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -252,64 +270,130 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   ),
                                 ),
                               );
-                              // setState(() {
-                              //   _isPasswordVisible = !_isPasswordVisible;
-                              // });
                             },
                           ),
                         ),
                         const SizedBox(height: 20),
-
-                        // Tanggal Lahir
                         _buildDateField(context),
                         const SizedBox(height: 20),
 
-                        // Profesi (Using TextFormField for similar styling, could be DropdownButtonFormField)
-                        _buildStyledTextField(
-                          controller: _occupationController,
-                          label: 'Profesi',
-                          icon: Icons
-                              .work_outline, // Using work_outline from image
-                          // For a real dropdown, you'd use DropdownButtonFormField
-                          // For now, just a text field to match appearance.
-                          suffixIcon: const Icon(
-                            Icons.arrow_drop_down,
-                            color: Colors.grey,
-                          ),
-                          onTap: () {
-                            // TODO: Implement occupation picker/dropdown if this becomes interactive
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Pemilihan profesi belum diimplementasi.',
-                                ),
+                        // Occupation Dropdown
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Profesi',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
                               ),
-                            );
-                          },
+                            ),
+                            const SizedBox(height: 4),
+                            if (_isLoadingOccupations)
+                              const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            else
+                              DropdownButtonFormField<String>(
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(
+                                    Icons.work_outline,
+                                    color: Colors.grey[400],
+                                    size: 20,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ), // Adjust horizontal if needed for prefixIcon
+                                  border: UnderlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  focusedBorder: UnderlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: AppColors.primary.withOpacity(0.7),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  enabledBorder: UnderlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                ),
+                                value: _selectedOccupationIdForUpdate,
+                                hint: const Text(
+                                  'Pilih Profesi',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                isExpanded: true,
+                                items: _occupations.map((
+                                  Map<String, String> occ,
+                                ) {
+                                  return DropdownMenuItem<String>(
+                                    value: occ['id'],
+                                    child: Text(
+                                      occ['name']!,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(
+                                    () =>
+                                        _selectedOccupationIdForUpdate = value,
+                                  );
+                                },
+                                validator: (value) =>
+                                    (value == null || value.isEmpty)
+                                    ? 'Profesi tidak boleh kosong.'
+                                    : null,
+                              ),
+                          ],
                         ),
-                        const SizedBox(
-                          height: 16,
-                        ), // Space before button if list scrolls
+                        const SizedBox(height: 16),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24), // Space above button
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            AppColors.primary, // Use your app's primary color
+                        backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: _onSave,
-                      child: const Text(
-                        'Simpan',
-                        style: TextStyle(fontSize: 16, color: Colors.white),
-                      ),
+                      onPressed: (state is ProfileLoadInProgress && _wasSaving)
+                          ? null
+                          : _onSave, // Disable button if saving
+                      child: (state is ProfileLoadInProgress && _wasSaving)
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
+                          : const Text(
+                              'Simpan',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
                 ],

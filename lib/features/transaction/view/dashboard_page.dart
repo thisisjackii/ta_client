@@ -225,12 +225,15 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   void updateFilterCriteria(Map<String, dynamic>? criteria) {
     setState(() {
       filterCriteria = criteria;
-      final startDate = criteria?['startDate'] as DateTime?;
-      // final endDate = criteria?['endDate'] as DateTime?; // Not directly used for selectedMonth here
-      if (startDate != null) {
-        selectedMonth = DateTime(startDate.year, startDate.month);
+      final startDateFromFilter = criteria?['startDate'] as DateTime?;
+      // Update selectedMonth based on filter's startDate if present
+      if (startDateFromFilter != null) {
+        selectedMonth = DateTime(
+          startDateFromFilter.year,
+          startDateFromFilter.month,
+        );
       }
-      // No explicit reload here, filtering happens in _filterAndSortTransactions
+      // The actual filtering will use the full criteria map in _filterAndSortTransactions
     });
   }
 
@@ -250,7 +253,6 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     return transactions.where((t) {
       var matches = true;
 
-      // Date Range from filterCriteria takes precedence
       final filterStartDate = filterCriteria?['startDate'] as DateTime?;
       final filterEndDate = filterCriteria?['endDate'] as DateTime?;
 
@@ -274,31 +276,29 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                   .subtract(const Duration(microseconds: 1)),
             );
       } else {
-        // Fallback to selectedMonth filter if no date range from filterCriteria
         matches =
             matches &&
             t.date.year == selectedMonth.year &&
             t.date.month == selectedMonth.month;
       }
+      if (!matches) return false;
 
-      if (!matches) return false; // Early exit if date doesn't match
-
-      final parentCategoryFilter = filterCriteria?['parent'] as String?;
-      if (parentCategoryFilter != null && parentCategoryFilter.isNotEmpty) {
-        matches =
-            matches &&
-            t.accountTypeName?.toLowerCase() ==
-                parentCategoryFilter.toLowerCase();
+      final filterAccountTypeId = filterCriteria?['accountTypeId'] as String?;
+      if (filterAccountTypeId != null && filterAccountTypeId.isNotEmpty) {
+        matches = matches && t.accountTypeId == filterAccountTypeId;
       }
       if (!matches) return false;
 
-      final childCategoryFilter = filterCriteria?['child'] as String?;
-      if (childCategoryFilter != null && childCategoryFilter.isNotEmpty) {
-        matches =
-            matches &&
-            t.categoryName?.toLowerCase() == childCategoryFilter.toLowerCase();
-        // Note: DFD shows 'child' as Kategori, but your code implies 'categoryName' is the Kategori,
-        // and 'accountTypeName' is the parent (Tipe Akun). This seems consistent.
+      final filterCategoryId = filterCriteria?['categoryId'] as String?;
+      if (filterCategoryId != null && filterCategoryId.isNotEmpty) {
+        matches = matches && t.categoryId == filterCategoryId;
+      }
+      if (!matches) return false;
+
+      // NEW: Filter by Subcategory ID
+      final filterSubcategoryId = filterCriteria?['subcategoryId'] as String?;
+      if (filterSubcategoryId != null && filterSubcategoryId.isNotEmpty) {
+        matches = matches && t.subcategoryId == filterSubcategoryId;
       }
       if (!matches) return false;
 
