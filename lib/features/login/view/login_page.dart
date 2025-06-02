@@ -120,70 +120,70 @@ class _LoginPageState extends State<LoginPage> with RouteAware {
                 child: const Text('Login'),
               ),
               const SizedBox(height: 20),
-              Column(
-                children: [
-                  const Text(
-                    'Atau login dengan',
-                    style: TextStyle(
-                      fontVariations: [FontVariation('wght', 500)],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Material(
-                    color: Colors
-                        .transparent, // Transparent Material to use custom decoration
-                    borderRadius: BorderRadius.circular(
-                      64,
-                    ), // Match decoration corners
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(
-                        64,
-                      ), // Match decoration corners
-                      onTap: () {
-                        // Your onPressed logic here
-                        debugPrint('Button clicked!');
-                      },
-                      onHover: (hovering) {
-                        // Debug hover effect if needed
-                        setState(() {
-                          _isHovered = hovering;
-                        });
-                      },
-                      hoverColor: Colors.grey[300], // Hover effect
-                      splashColor: Colors.grey[400], // Splash effect
-                      child: AnimatedContainer(
-                        duration: const Duration(
-                          milliseconds: 200,
-                        ), // Smooth transition
-                        padding: const EdgeInsets.all(
-                          16,
-                        ), // Adjust padding as needed
-                        decoration: BoxDecoration(
-                          color: _isHovered
-                              ? Colors.grey[300]
-                              : Colors.white, // Dynamic background
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black12,
-                              offset: Offset(2, 2),
-                              blurRadius: 2,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                          borderRadius: BorderRadius.circular(
-                            64,
-                          ), // Rounded corners
-                        ),
-                        child: SvgPicture.asset(
-                          'assets/icons/devicon_google.svg',
-                          width: 24,
-                          height: 24,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // Column(
+              //   children: [
+              //     const Text(
+              //       'Atau login dengan',
+              //       style: TextStyle(
+              //         fontVariations: [FontVariation('wght', 500)],
+              //       ),
+              //     ),
+              //     const SizedBox(height: 10),
+              //     Material(
+              //       color: Colors
+              //           .transparent, // Transparent Material to use custom decoration
+              //       borderRadius: BorderRadius.circular(
+              //         64,
+              //       ), // Match decoration corners
+              //       child: InkWell(
+              //         borderRadius: BorderRadius.circular(
+              //           64,
+              //         ), // Match decoration corners
+              //         onTap: () {
+              //           // Your onPressed logic here
+              //           debugPrint('Button clicked!');
+              //         },
+              //         onHover: (hovering) {
+              //           // Debug hover effect if needed
+              //           setState(() {
+              //             _isHovered = hovering;
+              //           });
+              //         },
+              //         hoverColor: Colors.grey[300], // Hover effect
+              //         splashColor: Colors.grey[400], // Splash effect
+              //         child: AnimatedContainer(
+              //           duration: const Duration(
+              //             milliseconds: 200,
+              //           ), // Smooth transition
+              //           padding: const EdgeInsets.all(
+              //             16,
+              //           ), // Adjust padding as needed
+              //           decoration: BoxDecoration(
+              //             color: _isHovered
+              //                 ? Colors.grey[300]
+              //                 : Colors.white, // Dynamic background
+              //             boxShadow: const [
+              //               BoxShadow(
+              //                 color: Colors.black12,
+              //                 offset: Offset(2, 2),
+              //                 blurRadius: 2,
+              //                 spreadRadius: 1,
+              //               ),
+              //             ],
+              //             borderRadius: BorderRadius.circular(
+              //               64,
+              //             ), // Rounded corners
+              //           ),
+              //           child: SvgPicture.asset(
+              //             'assets/icons/devicon_google.svg',
+              //             width: 24,
+              //             height: 24,
+              //           ),
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
               const SizedBox(height: 10),
               Column(
                 children: [

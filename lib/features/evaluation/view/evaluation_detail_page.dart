@@ -52,9 +52,12 @@ class EvaluationDetailPage extends StatelessWidget {
           );
         }
 
-        final String displayValueString;
+        // This string is now PRIMARILY for the StatExpandableCard if needed,
+        // or any text OTHER than the one inside CustomSliderSingleRange.
+        // CustomSliderSingleRange will format its own display.
+        final String displayValueStringForCardOrOtherText;
         if (isLiquidityRatio) {
-          displayValueString = formatMonths(item.yourValue);
+          displayValueStringForCardOrOtherText = formatMonths(item.yourValue);
         } else {
           String formattedPercentage = item.yourValue.toStringAsFixed(
             item.yourValue.truncateToDouble() == item.yourValue ? 0 : 2,
@@ -70,7 +73,7 @@ class EvaluationDetailPage extends StatelessWidget {
               formattedPercentage.length - 2,
             );
           }
-          displayValueString = '$formattedPercentage%';
+          displayValueStringForCardOrOtherText = '$formattedPercentage%';
         }
 
         List<Map<String, String>> getSingleBreakdownEntry(
@@ -91,7 +94,6 @@ class EvaluationDetailPage extends StatelessWidget {
               : [];
         }
 
-        // Determine conceptual keys for the current ratio
         final List<String> currentRatioInputKeys = _getRatioInputKeys(
           clientRatioDef?.id ?? item.id,
         );
@@ -235,16 +237,19 @@ class EvaluationDetailPage extends StatelessWidget {
                     ),
                   )
                 else if (clientRatioDef != null) ...[
+                  // Pass item.yourValue and item.idealText to CustomSliderSingleRange
                   if (isLiquidityRatio) ...[
-                    const CustomSliderSingleRange(
-                      limit: 3,
-                      limitType: SliderLimitType.moreThanEqual,
+                    CustomSliderSingleRange(
+                      currentValue: item.yourValue,
+                      idealText:
+                          item.idealText ?? clientRatioDef.idealText ?? "N/A",
+                      limit: 3, // Specific for Liquidity
+                      limitType: SliderLimitType
+                          .moreThanEqual, // Specific for Liquidity
+                      isMonthValue:
+                          true, // Indicate this slider value is in months
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Nilai ideal adalah ${item.idealText ?? clientRatioDef.idealText}. Rasio kamu saat ini adalah $displayValueString.',
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                    // REMOVE the redundant Text widget that was here
                     const SizedBox(height: 24),
                     StatExpandableCard(
                       title: _getRatioTitleForCard(clientRatioDef.id),
@@ -258,14 +263,14 @@ class EvaluationDetailPage extends StatelessWidget {
                     ),
                   ] else if (!isSolvencyRatio) ...[
                     CustomSliderSingleRange(
+                      currentValue: item.yourValue,
+                      idealText:
+                          item.idealText ?? clientRatioDef.idealText ?? "N/A",
                       limit: _getLimitFromRatioDef(clientRatioDef),
                       limitType: _getLimitTypeFromRatioDef(clientRatioDef),
+                      isMonthValue: false, // Default is percentage
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Nilai ideal adalah ${item.idealText ?? clientRatioDef.idealText}. Rasio kamu saat ini adalah $displayValueString.',
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                    // REMOVE the redundant Text widget that was here
                     const SizedBox(height: 24),
                     StatExpandableCard(
                       title: _getRatioTitleForCard(clientRatioDef.id),
