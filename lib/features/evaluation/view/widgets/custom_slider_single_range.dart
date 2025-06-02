@@ -107,10 +107,10 @@ class CustomSliderSingleRange extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppDimensions.padding),
-                Text(
-                  'Nilai ideal adalah ${_label(limitType)} $limit%. Rasio kamu saat ini adalah $v%.',
-                  style: const TextStyle(fontSize: 14),
-                ),
+                // Text(
+                //   'Nilai ideal adalah ${_label(limitType)} $limit%. Rasio kamu saat ini adalah $v%.',
+                //   style: const TextStyle(fontSize: 14),
+                // ),
               ],
             );
           },

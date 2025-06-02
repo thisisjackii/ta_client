@@ -1,5 +1,4 @@
-// lib/features/evaluation/view/evaluation_detail_page.dart
-
+// C:\Users\PONGO\RemoteProjects\ta_client\lib\features\evaluation\view\evaluation_detail_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/core/constants/app_colors.dart';
@@ -9,7 +8,7 @@ import 'package:ta_client/core/utils/calculations.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
 import 'package:ta_client/features/evaluation/models/evaluation.dart';
-import 'package:ta_client/features/evaluation/view/widgets/custom_slider_double_range.dart';
+import 'package:ta_client/features/evaluation/utils/evaluation_calculator.dart';
 import 'package:ta_client/features/evaluation/view/widgets/custom_slider_single_range.dart';
 import 'package:ta_client/features/evaluation/view/widgets/evaluation_detail_card.dart';
 import 'package:ta_client/features/evaluation/view/widgets/formula_explanation_dialog.dart';
@@ -29,38 +28,100 @@ class EvaluationDetailPage extends StatelessWidget {
           );
         }
         final item = state.detailItem!;
+        final String ratioIdentifierForLogic = item.backendRatioCode ?? item.id;
 
-        // helper to pull breakdown entries by key
-        List<Map<String, String>> entries(String key) {
-          return item.breakdown
-                  ?.where((e) => e.name == key)
-                  .map(
-                    (e) => {'label': e.name, 'value': formatToRupiah(e.value)},
-                  )
-                  .toList() ??
-              [];
+        final isLiquidityRatio = ratioIdentifierForLogic == 'LIQUIDITY_RATIO';
+        final isSolvencyRatio = ratioIdentifierForLogic == 'SOLVENCY_RATIO';
+
+        bool isDataEffectivelyEmpty =
+            item.status == EvaluationStatusModel.incomplete &&
+            item.yourValue == 0.0 &&
+            (item.breakdown == null ||
+                item.breakdown!.every((b) => b.value == 0.0));
+
+        RatioDef? clientRatioDef;
+        try {
+          clientRatioDef = evaluationDefinitions().firstWhere(
+            (def) =>
+                def.backendCode == ratioIdentifierForLogic ||
+                def.id == ratioIdentifierForLogic,
+          );
+        } catch (_) {
+          debugPrint(
+            "Could not find client RatioDef for identifier: $ratioIdentifierForLogic for detail page logic.",
+          );
         }
+
+        final String displayValueString;
+        if (isLiquidityRatio) {
+          displayValueString = formatMonths(item.yourValue);
+        } else {
+          String formattedPercentage = item.yourValue.toStringAsFixed(
+            item.yourValue.truncateToDouble() == item.yourValue ? 0 : 2,
+          );
+          if (formattedPercentage.endsWith(".00")) {
+            formattedPercentage = formattedPercentage.substring(
+              0,
+              formattedPercentage.length - 3,
+            );
+          } else if (formattedPercentage.endsWith(".0")) {
+            formattedPercentage = formattedPercentage.substring(
+              0,
+              formattedPercentage.length - 2,
+            );
+          }
+          displayValueString = '$formattedPercentage%';
+        }
+
+        List<Map<String, String>> getSingleBreakdownEntry(
+          String conceptualNameKey,
+        ) {
+          final entryValueObj = item.breakdown?.firstWhere(
+            (e) => e.name == conceptualNameKey,
+            orElse: () =>
+                ConceptualComponentValue(name: conceptualNameKey, value: 0.0),
+          );
+          return entryValueObj != null
+              ? [
+                  {
+                    'label': conceptualNameKey,
+                    'value': formatToRupiah(entryValueObj.value),
+                  },
+                ]
+              : [];
+        }
+
+        // Determine conceptual keys for the current ratio
+        final List<String> currentRatioInputKeys = _getRatioInputKeys(
+          clientRatioDef?.id ?? item.id,
+        );
+        final String numeratorConceptualKey = currentRatioInputKeys.isNotEmpty
+            ? currentRatioInputKeys[0]
+            : "Numerator N/A";
+        final String denominatorConceptualKey = currentRatioInputKeys.length > 1
+            ? currentRatioInputKeys[1]
+            : "Denominator N/A";
 
         return Scaffold(
           appBar: AppBar(
+            /* ... Same AppBar ... */
             title: const Text(
               AppStrings.ratioSummaryTitle,
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             backgroundColor: AppColors.greyBackground,
-            actions: item.id == '6'
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            actions: isSolvencyRatio
                 ? []
                 : [
                     IconButton(
                       icon: const Icon(Icons.info_rounded),
                       onPressed: () {
-                        final keys = _ratioInputs[item.id] ?? [];
-
-                        final breakdownMap =
-                            (item.breakdown ?? {}) as Map<String, double>;
-
-                        final numerator = breakdownMap[keys[0]] ?? 0.0;
-                        final denominator = breakdownMap[keys[1]] ?? 1.0;
+                        final numForFormula = item.calculatedNumerator ?? 0.0;
+                        final denForFormula = item.calculatedDenominator ?? 1.0;
 
                         showDialog<void>(
                           context: context,
@@ -72,9 +133,9 @@ class EvaluationDetailPage extends StatelessWidget {
                             ),
                             title: const Text('Penjelasan Rasio'),
                             content: FormulaExplanationDialog(
-                              id: item.id,
-                              numerator: numerator,
-                              denominator: denominator,
+                              id: clientRatioDef?.id ?? item.id,
+                              numerator: numForFormula,
+                              denominator: denForFormula,
                             ),
                             actions: [
                               TextButton(
@@ -93,8 +154,8 @@ class EvaluationDetailPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title + Status
                 Row(
+                  /* ... Status Badge ... */
                   children: [
                     Expanded(
                       child: Text(
@@ -102,7 +163,11 @@ class EvaluationDetailPage extends StatelessWidget {
                         style: const TextStyle(fontSize: 16),
                       ),
                     ),
-                    if (item.id != '6')
+                    if (!isSolvencyRatio ||
+                        (isSolvencyRatio &&
+                            item.status != EvaluationStatusModel.ideal &&
+                            item.status != EvaluationStatusModel.incomplete &&
+                            item.yourValue != 0))
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -111,11 +176,15 @@ class EvaluationDetailPage extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: item.status == EvaluationStatusModel.ideal
                               ? Colors.green[50]
-                              : Colors.red[50],
+                              : (item.status == EvaluationStatusModel.notIdeal
+                                    ? Colors.red[50]
+                                    : Colors.grey[200]),
                           border: Border.all(
                             color: item.status == EvaluationStatusModel.ideal
                                 ? Colors.green
-                                : Colors.red,
+                                : (item.status == EvaluationStatusModel.notIdeal
+                                      ? Colors.red
+                                      : Colors.grey),
                           ),
                           borderRadius: BorderRadius.circular(
                             AppDimensions.cardRadius,
@@ -131,13 +200,17 @@ class EvaluationDetailPage extends StatelessWidget {
                         child: Text(
                           item.status == EvaluationStatusModel.ideal
                               ? 'Ideal'
-                              : 'Tidak Ideal',
+                              : item.status == EvaluationStatusModel.notIdeal
+                              ? 'Tidak Ideal'
+                              : 'Tidak Lengkap',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: item.status == EvaluationStatusModel.ideal
                                 ? Colors.green[800]
-                                : Colors.red[800],
+                                : item.status == EvaluationStatusModel.notIdeal
+                                ? Colors.red[800]
+                                : Colors.grey[700],
                           ),
                         ),
                       ),
@@ -145,56 +218,96 @@ class EvaluationDetailPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
 
-                // ID == 0: double‐range slider
-                if (item.id == '0') ...[
-                  const CustomSliderDoubleRange(),
-                  const SizedBox(height: 32),
-
-                  // Aset Likuid vs Pengeluaran Bulanan
-                  StatExpandableCard(
-                    title: 'Aset Likuid',
-                    icon: Icons.bar_chart,
-                    valuesAboveDivider: entries('Aset Likuid'),
-                    valuesBelowDivider: entries('Pengeluaran Bulanan'),
-                  ),
-
-                  // other IDs (1–5): single‐range slider + breakdown
-                ] else if (item.id != '6') ...[
-                  CustomSliderSingleRange(
-                    limit: _getLimit(item.id),
-                    limitType: _getLimitType(item.id),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // for each ratio we show its two inputs + total/net
-                  // e.g. for id '1': Aset Likuid / Net Worth
-                  StatExpandableCard(
-                    title: _ratioTitles[item.id]!,
-                    icon: Icons.bar_chart,
-                    valuesAboveDivider: entries(_ratioInputs[item.id]![0]),
-                    valuesBelowDivider: entries(_ratioInputs[item.id]![1]),
-                  ),
-
-                  // ID == 6: solvency ratio
+                if (isDataEffectivelyEmpty && !isSolvencyRatio)
+                  Padding(
+                    /* ... existing empty data message ... */
+                    padding: const EdgeInsets.symmetric(vertical: 32.0),
+                    child: Center(
+                      child: Text(
+                        'Data tidak cukup untuk menghitung rasio "${item.title}". Pastikan ada transaksi yang relevan pada periode terpilih.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.orange[700],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  )
+                else if (clientRatioDef != null) ...[
+                  if (isLiquidityRatio) ...[
+                    const CustomSliderSingleRange(
+                      limit: 3,
+                      limitType: SliderLimitType.moreThanEqual,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Nilai ideal adalah ${item.idealText ?? clientRatioDef.idealText}. Rasio kamu saat ini adalah $displayValueString.',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 24),
+                    StatExpandableCard(
+                      title: _getRatioTitleForCard(clientRatioDef.id),
+                      icon: Icons.bar_chart,
+                      valuesAboveDivider: getSingleBreakdownEntry(
+                        numeratorConceptualKey,
+                      ),
+                      valuesBelowDivider: getSingleBreakdownEntry(
+                        denominatorConceptualKey,
+                      ),
+                    ),
+                  ] else if (!isSolvencyRatio) ...[
+                    CustomSliderSingleRange(
+                      limit: _getLimitFromRatioDef(clientRatioDef),
+                      limitType: _getLimitTypeFromRatioDef(clientRatioDef),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Nilai ideal adalah ${item.idealText ?? clientRatioDef.idealText}. Rasio kamu saat ini adalah $displayValueString.',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 24),
+                    StatExpandableCard(
+                      title: _getRatioTitleForCard(clientRatioDef.id),
+                      icon: Icons.bar_chart,
+                      valuesAboveDivider: getSingleBreakdownEntry(
+                        numeratorConceptualKey,
+                      ),
+                      valuesBelowDivider: getSingleBreakdownEntry(
+                        denominatorConceptualKey,
+                      ),
+                    ),
+                  ] else ...[
+                    // Solvency Ratio
+                    const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Rasio solvabilitas ini menunjukkan (dalam persentase) seberapa rentan terhadap risiko kebangkrutan.',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    StatExpandableCard(
+                      title: _getRatioTitleForCard(clientRatioDef.id),
+                      icon: Icons.bar_chart,
+                      valuesAboveDivider: getSingleBreakdownEntry(
+                        numeratorConceptualKey,
+                      ),
+                      valuesBelowDivider: getSingleBreakdownEntry(
+                        denominatorConceptualKey,
+                      ),
+                    ),
+                  ],
                 ] else ...[
                   const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Rasio solvabilitas ini menunjukkan (dalam persentase) seberapa rentan terhadap risiko kebangkrutan.',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        SizedBox(height: 16),
-                      ],
+                    child: Text(
+                      "Detail rasio tidak dapat ditampilkan (definisi tidak ditemukan).",
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  StatExpandableCard(
-                    title: 'Total Kekayaan Bersih',
-                    icon: Icons.bar_chart,
-                    valuesAboveDivider: entries('Total Kekayaan Bersih'),
-                    valuesBelowDivider: entries('Total Aset'),
                   ),
                 ],
               ],
@@ -205,33 +318,64 @@ class EvaluationDetailPage extends StatelessWidget {
     );
   }
 
-  static const Map<String, String> _ratioTitles = {
+  // Updated keys to NOT include (Numerator)/(Denominator)
+  static const Map<String, String> _ratioCardTitles = {
+    '0': 'Aset Likuid vs Pengeluaran Bulanan',
     '1': 'Aset Lancar vs Kekayaan Bersih',
     '2': 'Utang vs Aset',
     '3': 'Total Tabungan vs Penghasilan Kotor',
     '4': 'Pembayaran Utang vs Penghasilan Bersih',
-    '5': 'Investasi vs Kekayaan Bersih',
+    '5': 'Aset Investasi vs Kekayaan Bersih',
+    '6': 'Total Kekayaan Bersih vs Total Aset',
   };
 
-  static const Map<String, List<String>> _ratioInputs = {
-    '1': ['Aset Likuid', 'Total Kekayaan Bersih'],
+  static const Map<String, List<String>> _ratioInputKeysMap = {
+    '0': ['Total Aset Likuid', 'Total Pengeluaran Bulanan'],
+    '1': ['Total Aset Likuid', 'Total Kekayaan Bersih'],
     '2': ['Total Utang', 'Total Aset'],
     '3': ['Total Tabungan', 'Penghasilan Kotor'],
-    '4': ['Total Pembayaran Utang', 'Penghasilan Bersih'],
+    '4': ['Total Pembayaran Utang Bulanan', 'Penghasilan Bersih'],
     '5': ['Total Aset Diinvestasikan', 'Total Kekayaan Bersih'],
+    '6': ['Total Kekayaan Bersih', 'Total Aset'],
   };
 
-  double _getLimit(String id) {
-    return <String, double>{'1': 15, '2': 50, '3': 10, '4': 45, '5': 50}[id]!;
+  String _getRatioTitleForCard(String clientRatioDefId) {
+    return _ratioCardTitles[clientRatioDefId] ?? 'Detail Rasio Tidak Diketahui';
   }
 
-  SliderLimitType _getLimitType(String id) {
-    return <String, SliderLimitType>{
-      '1': SliderLimitType.moreThanEqual,
-      '2': SliderLimitType.lessThanEqual,
-      '3': SliderLimitType.moreThanEqual,
-      '4': SliderLimitType.lessThan,
-      '5': SliderLimitType.moreThanEqual,
-    }[id]!;
+  List<String> _getRatioInputKeys(String clientRatioDefId) {
+    return _ratioInputKeysMap[clientRatioDefId] ?? ['Data N/A', 'Data N/A'];
+  }
+
+  double _getLimitFromRatioDef(RatioDef def) {
+    final textToParse = def.idealText ?? "";
+    if (textToParse.startsWith("≥") ||
+        textToParse.startsWith("≤") ||
+        textToParse.startsWith(">") ||
+        textToParse.startsWith("<")) {
+      final match = RegExp(
+        r'(\d+(\.\d+)?)',
+      ).firstMatch(textToParse.substring(1));
+      return match != null ? (double.tryParse(match.group(1)!) ?? 0) : 0;
+    }
+    final rangeMatch = RegExp(
+      r'(\d+(\.\d+)?)%? - (\d+(\.\d+)?)%?',
+    ).firstMatch(textToParse);
+    if (rangeMatch != null) {
+      return double.tryParse(rangeMatch.group(1)!) ?? 0;
+    }
+    return 0;
+  }
+
+  SliderLimitType _getLimitTypeFromRatioDef(RatioDef def) {
+    final textToParse = def.idealText ?? "";
+    if (textToParse.contains(" - ")) {
+      return SliderLimitType.moreThanEqual;
+    }
+    if (textToParse.startsWith("≥")) return SliderLimitType.moreThanEqual;
+    if (textToParse.startsWith("≤")) return SliderLimitType.lessThanEqual;
+    if (textToParse.startsWith(">")) return SliderLimitType.moreThan;
+    if (textToParse.startsWith("<")) return SliderLimitType.lessThan;
+    return SliderLimitType.moreThanEqual;
   }
 }

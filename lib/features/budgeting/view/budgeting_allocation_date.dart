@@ -143,14 +143,14 @@ class _BudgetingAllocationDatePageState
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextField(
-                        // USE IT HERE
-                        controller: _planDescriptionController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nama Rencana (Opsional)',
-                          hintText: 'cth: Anggaran April',
-                        ),
-                      ),
+                      // TextField(
+                      //   // USE IT HERE
+                      //   controller: _planDescriptionController,
+                      //   decoration: const InputDecoration(
+                      //     labelText: 'Nama Rencana (Opsional)',
+                      //     hintText: 'cth: Anggaran April',
+                      //   ),
+                      // ),
                       const SizedBox(height: 16),
                       BudgetingDateSelection(
                         startDate: _tempStartDate,
