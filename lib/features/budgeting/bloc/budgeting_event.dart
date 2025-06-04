@@ -25,13 +25,11 @@ class BudgetingPlanDateRangeSelected extends BudgetingEvent {
   const BudgetingPlanDateRangeSelected({
     required this.start,
     required this.end,
-    this.planDescription, // Optional description for the plan
   });
   final DateTime start;
   final DateTime end;
-  final String? planDescription;
   @override
-  List<Object?> get props => [start, end, planDescription];
+  List<Object?> get props => [start, end];
 }
 
 // --- Data Loading Triggers ---

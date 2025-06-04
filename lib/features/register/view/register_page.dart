@@ -8,9 +8,6 @@ import 'package:ta_client/core/services/service_locator.dart';
 import 'package:ta_client/core/widgets/custom_button.dart';
 import 'package:ta_client/core/widgets/custom_date_selector.dart';
 import 'package:ta_client/core/widgets/custom_text_field.dart';
-import 'package:ta_client/features/otp/bloc/otp_bloc.dart';
-import 'package:ta_client/features/otp/bloc/otp_state.dart' as OtpStateClass;
-import 'package:ta_client/features/otp/view/otp_verification_page.dart';
 import 'package:ta_client/features/register/bloc/register_bloc.dart';
 import 'package:ta_client/features/register/bloc/register_event.dart';
 import 'package:ta_client/features/register/bloc/register_state.dart';
@@ -248,58 +245,6 @@ class _RegisterPageState extends State<RegisterPage> {
               }
             },
           ),
-          BlocListener<OtpBloc, OtpStateClass.OtpState>(
-            listenWhen: (prev, currOtpState) {
-              final currentRegisterStatus = context
-                  .read<RegisterBloc>()
-                  .state
-                  .status;
-              return currentRegisterStatus ==
-                      RegisterStatus.awaitingOtpVerification ||
-                  (currentRegisterStatus == RegisterStatus.submitting &&
-                      currOtpState is! OtpStateClass.OtpInitial &&
-                      prev is OtpStateClass.OtpInitial);
-            },
-            listener: (context, otpState) {
-              final registerBloc = context.read<RegisterBloc>();
-              final currentRegisterStatus = registerBloc.state.status;
-
-              if (currentRegisterStatus ==
-                  RegisterStatus.awaitingOtpVerification) {
-                if (otpState is OtpStateClass.OtpSuccess) {
-                  Navigator.pushNamed(
-                    context,
-                    Routes.otpVerification,
-                    arguments: OtpVerificationPageArguments(
-                      email: otpState.email,
-                      flow: OtpFlow.registration,
-                    ),
-                  ).then((otpVerifiedSuccessfully) {
-                    if (mounted) {
-                      if (otpVerifiedSuccessfully == true) {
-                        registerBloc.add(const RegisterOtpVerified());
-                      } else {
-                        registerBloc.add(const RegisterClearError());
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Verifikasi OTP dibatalkan atau gagal.',
-                            ),
-                          ),
-                        );
-                      }
-                    }
-                  });
-                } else if (otpState is OtpStateClass.OtpFailure) {
-                  registerBloc.add(
-                    RegisterFailure(
-                      'Gagal meminta OTP: ${otpState.errorMessage}',
-                    ),
-                  );
-                }
-              }
-            },
-          ),
         ],
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -499,8 +444,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   builder: (context, state) {
                     final isLoadingButton =
                         state.status == RegisterStatus.submitting ||
-                        state.status ==
-                            RegisterStatus.awaitingOtpVerification ||
                         state.status == RegisterStatus.finalizing;
                     return CustomButton(
                       label: isLoadingButton ? 'Memproses…' : 'Daftar Akun',
@@ -520,8 +463,8 @@ class _RegisterPageState extends State<RegisterPage> {
                               if ((_formKey.currentState?.validate() ??
                                       false) &&
                                   currentBlocState.birthdate != null) {
-                                // Check canRequestOtp from the BLoC state which is now synced
-                                if (currentBlocState.canRequestOtp) {
+                                // Check isReadyToRegister from the BLoC state which is now synced
+                                if (currentBlocState.isReadyToRegister) {
                                   context.read<RegisterBloc>().add(
                                     const RegisterFormSubmitted(),
                                   );

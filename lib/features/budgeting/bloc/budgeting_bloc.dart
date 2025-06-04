@@ -121,7 +121,6 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
         state.copyWith(
           planStartDate: event.start,
           planEndDate: event.end,
-          planDescription: event.planDescription,
           planDateConfirmed: true,
           loading: false,
         ),
@@ -450,7 +449,6 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
     }
 
     final dto = SaveExpenseAllocationsRequestDto(
-      planDescription: state.planDescription,
       planStartDate: state.planStartDate!,
       planEndDate: state.planEndDate!,
       incomeCalculationStartDate: state.incomeCalculationStartDate!,
@@ -597,7 +595,6 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
             currentBudgetPlan: latestPlan,
             planStartDate: latestPlan.planStartDate,
             planEndDate: latestPlan.planEndDate,
-            planDescription: latestPlan.description,
             planDateConfirmed: true,
             incomeCalculationStartDate: latestPlan.incomeCalculationStartDate,
             incomeCalculationEndDate: latestPlan.incomeCalculationEndDate,
@@ -646,7 +643,6 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
             currentBudgetPlan: plan,
             planStartDate: plan.planStartDate,
             planEndDate: plan.planEndDate,
-            planDescription: plan.description,
             planDateConfirmed: true,
             incomeCalculationStartDate: plan.incomeCalculationStartDate,
             incomeCalculationEndDate: plan.incomeCalculationEndDate,
@@ -777,7 +773,6 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
           currentBudgetPlan: planToEdit,
           planStartDate: planToEdit.planStartDate,
           planEndDate: planToEdit.planEndDate,
-          planDescription: planToEdit.description,
           planDateConfirmed: true,
           incomeCalculationStartDate: planToEdit.incomeCalculationStartDate,
           incomeCalculationEndDate: planToEdit.incomeCalculationEndDate,
@@ -1039,7 +1034,6 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
     }
 
     return SaveExpenseAllocationsRequestDto(
-      planDescription: plan.description,
       planStartDate: plan.planStartDate,
       planEndDate: plan.planEndDate,
       incomeCalculationStartDate: plan.incomeCalculationStartDate,

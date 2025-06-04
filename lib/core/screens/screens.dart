@@ -13,7 +13,6 @@ export '../../features/evaluation/view/evaluation_history_page.dart';
 export '../../features/evaluation/view/evaluation_intro_page.dart';
 export '../../features/filter/view/filter_page.dart';
 export '../../features/login/view/login_page.dart';
-export '../../features/otp/view/otp_verification_page.dart';
 export '../../features/profile/view/profile_edit_page.dart';
 export '../../features/profile/view/profile_page.dart';
 export '../../features/register/view/register_page.dart';

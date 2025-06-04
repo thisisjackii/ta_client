@@ -55,17 +55,23 @@ class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage>
     _dialogIsOpen = true;
     final budgetingBloc = context.read<BudgetingBloc>();
 
-    // Sync temp dates with BLoC state if dialog is reopened
+    // Sync page-level temp dates with BLoC state if dialog is reopened
+    // These are what BudgetingDateSelection will initially display.
     _tempStartDate =
-        budgetingBloc.state.incomeCalculationStartDate ?? _tempStartDate;
-    _tempEndDate = budgetingBloc.state.incomeCalculationEndDate ?? _tempEndDate;
+        budgetingBloc.state.incomeCalculationStartDate ??
+        _tempStartDate; // For income page
+    _tempEndDate =
+        budgetingBloc.state.incomeCalculationEndDate ??
+        _tempEndDate; // For income page
 
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setDialogState) {
+          // This StatefulBuilder is for the AlertDialog content
+          builder: (BuildContext alertContext, StateSetter setDialogState) {
+            // Use alertContext
             return PopScope(
               // Guard the dialog itself from accidental dismiss without confirmation
               canPop:
@@ -76,7 +82,7 @@ class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage>
                 Navigator.of(dialogContext).pop(); // Close this dialog first
                 _dialogIsOpen = false;
                 await handlePopAttempt(
-                  context: this.context,
+                  context: context,
                   didPop: false,
                 ); // Use page context
               },
@@ -120,7 +126,7 @@ class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage>
                     _dialogIsOpen = false;
                     if (mounted) {
                       Navigator.pushReplacementNamed(
-                        this.context,
+                        context,
                         Routes.budgetingIncome,
                       ); // Use page context
                     }
@@ -135,29 +141,50 @@ class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage>
                   title: const Text('Pilih Periode Pemasukan'),
                   contentPadding: const EdgeInsets.all(24),
                   content: BudgetingDateSelection(
-                    startDate:
-                        _tempStartDate, // Use local temp vars for dialog UI
-                    endDate: _tempEndDate,
-                    onStartDateChanged: (date) =>
-                        setDialogState(() => _tempStartDate = date),
-                    onEndDateChanged: (date) =>
-                        setDialogState(() => _tempEndDate = date),
+                    initialStartDate: _tempStartDate, // Pass page's temp date
+                    initialEndDate: _tempEndDate, // Pass page's temp date
+                    onStartDateChanged: (date) {
+                      // This callback is from BudgetingDateSelection
+                      // It updates the page's _tempStartDate,
+                      // which then rebuilds the AlertDialog via setDialogState
+                      setDialogState(() {
+                        _tempStartDate = date;
+                        // If the new start date makes the end date invalid, adjust end date
+                        if (_tempEndDate != null &&
+                            date != null &&
+                            date.isAfter(_tempEndDate!)) {
+                          _tempEndDate = date;
+                        }
+                      });
+                    },
+                    onEndDateChanged: (date) {
+                      setDialogState(() {
+                        _tempEndDate = date;
+                        // If the new end date makes the start date invalid, adjust start date
+                        if (_tempStartDate != null &&
+                            date != null &&
+                            date.isBefore(_tempStartDate!)) {
+                          _tempStartDate = date;
+                        }
+                      });
+                    },
                   ),
                   actions: <Widget>[
                     TextButton(
                       child: const Text(AppStrings.cancel),
                       onPressed: () {
-                        Navigator.pop(dialogContext); // Pop this AlertDialog
+                        Navigator.pop(dialogContext);
                         _dialogIsOpen = false;
-                        handleAppBarOrButtonCancel(
-                          this.context,
-                        ); // Trigger page's pop sequence
+                        handleAppBarOrButtonCancel(context);
                       },
                     ),
                     ElevatedButton(
                       child:
                           budgetingBloc.state.loading &&
-                              !budgetingBloc.state.incomeDateConfirmed
+                              !(budgetingBloc.state.incomeDateConfirmed ||
+                                  budgetingBloc
+                                      .state
+                                      .planDateConfirmed) // Check correct confirmed flag
                           ? const SizedBox(
                               height: 20,
                               width: 20,
@@ -165,7 +192,22 @@ class _BudgetingIncomeDatePageState extends State<BudgetingIncomeDatePage>
                             )
                           : const Text(AppStrings.ok),
                       onPressed: () {
+                        // Validation still happens here using the page's _tempStartDate and _tempEndDate
                         if (_tempStartDate != null && _tempEndDate != null) {
+                          if (_tempEndDate!.isBefore(_tempStartDate!)) {
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Tanggal akhir tidak boleh sebelum tanggal mulai.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          // Add other page-specific validations (e.g., 1-month rule for evaluation)
+
+                          // Dispatch to BLoC
+                          // Check page type
                           budgetingBloc.add(
                             BudgetingIncomeDateRangeSelected(
                               start: _tempStartDate!,

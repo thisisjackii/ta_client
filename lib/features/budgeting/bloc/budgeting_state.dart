@@ -16,7 +16,6 @@ class BudgetingState extends Equatable {
     // Dates for the expense plan itself
     this.planStartDate,
     this.planEndDate,
-    this.planDescription,
     this.planDateConfirmed = false, // True if valid plan dates are set
 
     this.dateError, // For UI feedback on date validation
@@ -51,8 +50,6 @@ class BudgetingState extends Equatable {
   // Expense (Budget Plan) period related
   final DateTime? planStartDate;
   final DateTime? planEndDate;
-  final String?
-  planDescription; // Optional name/description for the budget plan
   final bool planDateConfirmed;
 
   final String? dateError;
@@ -86,7 +83,6 @@ class BudgetingState extends Equatable {
     bool? incomeDateConfirmed,
     DateTime? planStartDate,
     DateTime? planEndDate,
-    String? planDescription,
     bool? planDateConfirmed,
     String? dateError,
     bool clearDateError = false,
@@ -117,7 +113,6 @@ class BudgetingState extends Equatable {
       incomeDateConfirmed: incomeDateConfirmed ?? this.incomeDateConfirmed,
       planStartDate: planStartDate ?? this.planStartDate,
       planEndDate: planEndDate ?? this.planEndDate,
-      planDescription: planDescription ?? this.planDescription,
       planDateConfirmed: planDateConfirmed ?? this.planDateConfirmed,
       dateError: clearDateError ? null : dateError ?? this.dateError,
       incomeSummary: incomeSummary ?? this.incomeSummary,
@@ -154,7 +149,6 @@ class BudgetingState extends Equatable {
     incomeDateConfirmed,
     planStartDate,
     planEndDate,
-    planDescription,
     planDateConfirmed,
     dateError,
     incomeSummary,

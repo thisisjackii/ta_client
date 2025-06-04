@@ -5,14 +5,7 @@ import 'package:equatable/equatable.dart';
 // The 'occupation' string might be the name, and you resolve to ID before sending.
 
 // New Status
-enum RegisterStatus {
-  initial,
-  submitting,
-  awaitingOtpVerification,
-  finalizing,
-  success,
-  failure,
-}
+enum RegisterStatus { initial, submitting, finalizing, success, failure }
 
 class RegisterState extends Equatable {
   const RegisterState({
@@ -39,8 +32,8 @@ class RegisterState extends Equatable {
   final RegisterStatus status;
   final String? errorMessage;
 
-  // Helper to check if all required fields for OTP request are present
-  bool get canRequestOtp =>
+  // Helper to check if all required fields for register are present
+  bool get isReadyToRegister =>
       name.isNotEmpty &&
       username.isNotEmpty &&
       email.isNotEmpty &&

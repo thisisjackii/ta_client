@@ -69,10 +69,6 @@ class RegisterFormSubmitted extends RegisterEvent {
   const RegisterFormSubmitted();
 }
 
-class RegisterOtpVerified extends RegisterEvent {
-  const RegisterOtpVerified();
-}
-
 class RegisterFailure extends RegisterEvent {
   const RegisterFailure(this.errorMessage);
   final String errorMessage;

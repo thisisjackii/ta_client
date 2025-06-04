@@ -345,7 +345,6 @@ class BudgetingRepository {
     return FrontendBudgetPlan(
       id: planId, // This ID is the key for the pending DTO or the backend ID
       userId: userId,
-      description: dto.planDescription,
       planStartDate: dto.planStartDate,
       planEndDate: dto.planEndDate,
       incomeCalculationStartDate: dto.incomeCalculationStartDate,

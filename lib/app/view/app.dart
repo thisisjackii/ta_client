@@ -13,8 +13,6 @@ import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/login/bloc/login_bloc.dart';
 import 'package:ta_client/features/login/services/login_service.dart';
-import 'package:ta_client/features/otp/bloc/otp_bloc.dart';
-import 'package:ta_client/features/otp/services/otp_service.dart';
 import 'package:ta_client/features/profile/bloc/profile_bloc.dart';
 import 'package:ta_client/features/profile/repositories/profile_repository.dart';
 import 'package:ta_client/features/register/bloc/register_bloc.dart';
@@ -31,16 +29,12 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<OtpBloc>(create: (context) => sl<OtpBloc>()),
         BlocProvider<RegisterBloc>(
           create: (context) =>
-              sl<RegisterBloc>(), // Now gets its OtpBloc dep from GetIt
+              sl<RegisterBloc>(),
         ),
         BlocProvider<LoginBloc>(
           create: (context) => LoginBloc(loginService: sl<LoginService>()),
-        ),
-        BlocProvider<OtpBloc>(
-          create: (context) => OtpBloc(otpService: sl<OtpService>()),
         ),
         BlocProvider<DashboardBloc>(
           create: (context) => DashboardBloc(

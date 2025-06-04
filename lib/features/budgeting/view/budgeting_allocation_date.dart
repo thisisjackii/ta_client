@@ -23,8 +23,6 @@ class _BudgetingAllocationDatePageState
     with BudgetingFlowNavigationGuard {
   DateTime? _tempStartDate;
   DateTime? _tempEndDate;
-  final TextEditingController _planDescriptionController =
-      TextEditingController(); // DECLARED
   bool _dialogIsOpen = false;
 
   @override
@@ -33,7 +31,6 @@ class _BudgetingAllocationDatePageState
     final initialState = context.read<BudgetingBloc>().state;
     _tempStartDate = initialState.planStartDate;
     _tempEndDate = initialState.planEndDate;
-    _planDescriptionController.text = initialState.planDescription ?? '';
 
     if (!(initialState.isEditing &&
         initialState.currentBudgetPlan != null &&
@@ -59,7 +56,6 @@ class _BudgetingAllocationDatePageState
 
   @override
   void dispose() {
-    _planDescriptionController.dispose(); // DISPOSED
     super.dispose();
   }
 
@@ -68,8 +64,6 @@ class _BudgetingAllocationDatePageState
     _dialogIsOpen = true;
     final budgetingBloc = context.read<BudgetingBloc>();
 
-    _planDescriptionController.text =
-        budgetingBloc.state.planDescription ?? _planDescriptionController.text;
     _tempStartDate = budgetingBloc.state.planStartDate ?? _tempStartDate;
     _tempEndDate = budgetingBloc.state.planEndDate ?? _tempEndDate;
 
@@ -140,27 +134,34 @@ class _BudgetingAllocationDatePageState
                   ),
                   title: const Text('Pilih Periode Alokasi Pengeluaran'),
                   contentPadding: const EdgeInsets.all(24),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // TextField(
-                      //   // USE IT HERE
-                      //   controller: _planDescriptionController,
-                      //   decoration: const InputDecoration(
-                      //     labelText: 'Nama Rencana (Opsional)',
-                      //     hintText: 'cth: Anggaran April',
-                      //   ),
-                      // ),
-                      const SizedBox(height: 16),
-                      BudgetingDateSelection(
-                        startDate: _tempStartDate,
-                        endDate: _tempEndDate,
-                        onStartDateChanged: (date) =>
-                            setDialogState(() => _tempStartDate = date),
-                        onEndDateChanged: (date) =>
-                            setDialogState(() => _tempEndDate = date),
-                      ),
-                    ],
+                  content: BudgetingDateSelection(
+                    initialStartDate: _tempStartDate, // Pass page's temp date
+                    initialEndDate: _tempEndDate, // Pass page's temp date
+                    onStartDateChanged: (date) {
+                      // This callback is from BudgetingDateSelection
+                      // It updates the page's _tempStartDate,
+                      // which then rebuilds the AlertDialog via setDialogState
+                      setDialogState(() {
+                        _tempStartDate = date;
+                        // If the new start date makes the end date invalid, adjust end date
+                        if (_tempEndDate != null &&
+                            date != null &&
+                            date.isAfter(_tempEndDate!)) {
+                          _tempEndDate = date;
+                        }
+                      });
+                    },
+                    onEndDateChanged: (date) {
+                      setDialogState(() {
+                        _tempEndDate = date;
+                        // If the new end date makes the start date invalid, adjust start date
+                        if (_tempStartDate != null &&
+                            date != null &&
+                            date.isBefore(_tempStartDate!)) {
+                          _tempStartDate = date;
+                        }
+                      });
+                    },
                   ),
                   actions: <Widget>[
                     TextButton(
@@ -174,7 +175,10 @@ class _BudgetingAllocationDatePageState
                     ElevatedButton(
                       child:
                           budgetingBloc.state.loading &&
-                              !budgetingBloc.state.planDateConfirmed
+                              !(budgetingBloc.state.incomeDateConfirmed ||
+                                  budgetingBloc
+                                      .state
+                                      .planDateConfirmed) // Check correct confirmed flag
                           ? const SizedBox(
                               height: 20,
                               width: 20,
@@ -182,17 +186,28 @@ class _BudgetingAllocationDatePageState
                             )
                           : const Text(AppStrings.ok),
                       onPressed: () {
+                        // Validation still happens here using the page's _tempStartDate and _tempEndDate
                         if (_tempStartDate != null && _tempEndDate != null) {
+                          if (_tempEndDate!.isBefore(_tempStartDate!)) {
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Tanggal akhir tidak boleh sebelum tanggal mulai.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          // Add other page-specific validations (e.g., 1-month rule for evaluation)
+
+                          // Dispatch to BLoC
                           budgetingBloc.add(
                             BudgetingPlanDateRangeSelected(
                               start: _tempStartDate!,
                               end: _tempEndDate!,
-                              planDescription:
-                                  _planDescriptionController.text.trim().isEmpty
-                                  ? null
-                                  : _planDescriptionController.text.trim(),
                             ),
                           );
+                          // For EvaluationDatePage, the dispatch would be to EvaluationBloc
                         } else {
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
                             const SnackBar(

@@ -8,7 +8,6 @@ class Routes {
   static const welcome = '/';
   static const login = '/login';
   static const register = '/register';
-  static const otpVerification = '/otp-verification';
   static const dashboard = '/dashboard';
   static const createTransaction = '/create-transaction';
   // static const editTransaction = '/edit-transaction';
@@ -49,11 +48,6 @@ class Routes {
       case register:
         return MaterialPageRoute(
           builder: (_) => const RegisterPage(),
-          settings: settings,
-        );
-      case otpVerification:
-        return MaterialPageRoute(
-          builder: OtpVerificationPage.create, // Use the static create method
           settings: settings,
         );
       case dashboard:

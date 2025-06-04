@@ -11,8 +11,6 @@ import 'package:ta_client/features/budgeting/services/budgeting_service.dart';
 import 'package:ta_client/features/evaluation/repositories/evaluation_repository.dart';
 import 'package:ta_client/features/evaluation/services/evaluation_service.dart';
 import 'package:ta_client/features/login/services/login_service.dart';
-import 'package:ta_client/features/otp/bloc/otp_bloc.dart';
-import 'package:ta_client/features/otp/services/otp_service.dart';
 import 'package:ta_client/features/profile/repositories/profile_repository.dart';
 import 'package:ta_client/features/profile/services/profile_service.dart';
 import 'package:ta_client/features/register/bloc/register_bloc.dart';
@@ -40,7 +38,6 @@ void setupServiceLocator() {
       () => RegisterService(dio: sl<Dio>()),
     )
     ..registerLazySingleton<LoginService>(() => LoginService(dio: sl<Dio>()))
-    ..registerLazySingleton<OtpService>(() => OtpService(dio: sl<Dio>()))
     ..registerLazySingleton<ProfileService>(
       () => ProfileService(dio: sl<Dio>()),
     )
@@ -92,13 +89,7 @@ void setupServiceLocator() {
         budgetingRepository: sl<BudgetingRepository>(),
       ),
     )
-    ..registerFactory<OtpBloc>(
-      () => OtpBloc(otpService: sl<OtpService>()),
-    ) // Use registerFactory for BLoCs
     ..registerFactory<RegisterBloc>(
-      () => RegisterBloc(
-        registerService: sl<RegisterService>(),
-        otpBloc: sl<OtpBloc>(), // Get OtpBloc from GetIt
-      ),
+      () => RegisterBloc(registerService: sl<RegisterService>()),
     );
 }

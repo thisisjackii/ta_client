@@ -1,20 +1,13 @@
 // lib/features/register/bloc/register_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:intl/intl.dart'; // Not needed here if event carries DateTime
-import 'package:ta_client/features/otp/bloc/otp_bloc.dart';
-import 'package:ta_client/features/otp/bloc/otp_event.dart'
-    as OtpEventClass; // Alias
-import 'package:ta_client/features/otp/services/otp_service.dart'; // For OtpException
 import 'package:ta_client/features/register/bloc/register_event.dart';
 import 'package:ta_client/features/register/bloc/register_state.dart';
 import 'package:ta_client/features/register/services/register_service.dart';
 
 class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
-  RegisterBloc({
-    required RegisterService registerService,
-    required this.otpBloc,
-  }) : _service = registerService,
-       super(const RegisterState()) {
+  RegisterBloc({required RegisterService registerService})
+    : _service = registerService,
+      super(const RegisterState()) {
     on<RegisterNameChanged>(
       (event, emit) => emit(
         state.copyWith(
@@ -81,7 +74,6 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       ),
     );
     on<RegisterFormSubmitted>(_onFormSubmitted);
-    on<RegisterOtpVerified>(_onOtpVerifiedAndFinalizeRegistration);
     on<RegisterClearError>(
       (_, emit) => emit(
         state.copyWith(clearErrorMessage: true, status: RegisterStatus.initial),
@@ -90,13 +82,12 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   }
 
   final RegisterService _service;
-  final OtpBloc otpBloc;
 
   Future<void> _onFormSubmitted(
     RegisterFormSubmitted event,
     Emitter<RegisterState> emit,
   ) async {
-    if (!state.canRequestOtp) {
+    if (!state.isReadyToRegister) {
       emit(
         state.copyWith(
           status: RegisterStatus.failure,
@@ -112,62 +103,13 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       ),
     );
     try {
-      otpBloc.add(OtpEventClass.OtpRequestSubmitted(state.email));
-      emit(state.copyWith(status: RegisterStatus.awaitingOtpVerification));
-    } on OtpException catch (e) {
-      emit(
-        state.copyWith(
-          status: RegisterStatus.failure,
-          errorMessage: 'Gagal meminta OTP: ${e.message}',
-        ),
-      );
-    } catch (err) {
-      emit(
-        state.copyWith(
-          status: RegisterStatus.failure,
-          errorMessage: 'Terjadi kesalahan saat meminta OTP: $err',
-        ),
-      );
-    }
-  }
-
-  Future<void> _onOtpVerifiedAndFinalizeRegistration(
-    RegisterOtpVerified event,
-    Emitter<RegisterState> emit,
-  ) async {
-    if (state.status != RegisterStatus.awaitingOtpVerification) {
-      emit(
-        state.copyWith(
-          status: RegisterStatus.failure,
-          errorMessage: 'Proses registrasi tidak valid.',
-        ),
-      );
-      return;
-    }
-    if (!state.canRequestOtp) {
-      emit(
-        state.copyWith(
-          status: RegisterStatus.failure,
-          errorMessage: 'Data registrasi tidak lengkap setelah verifikasi OTP.',
-        ),
-      );
-      return;
-    }
-
-    emit(
-      state.copyWith(
-        status: RegisterStatus.finalizing,
-        clearErrorMessage: true,
-      ),
-    );
-    try {
       await _service.register(
         name: state.name,
         username: state.username,
         email: state.email,
         password: state.password,
         address: state.address,
-        birthdate: state.birthdate!, // Not null due to canRequestOtp check
+        birthdate: state.birthdate!, // Not null due to isReadyToRegister check
         occupationId: state.occupationId,
       );
       emit(state.copyWith(status: RegisterStatus.success));
@@ -179,7 +121,7 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
       emit(
         state.copyWith(
           status: RegisterStatus.failure,
-          errorMessage: 'Registrasi akhir gagal: $err',
+          errorMessage: 'Terjadi kesalahan saat registrasi: $err',
         ),
       );
     }

@@ -120,7 +120,6 @@ class SaveExpenseAllocationsRequestDto extends Equatable {
     required this.incomeCalculationEndDate,
     required this.totalCalculatedIncome,
     required this.allocations,
-    this.planDescription,
     this.budgetPeriodId, // Keep for backward compatibility during DTO parsing if old data exists
   });
 
@@ -128,7 +127,6 @@ class SaveExpenseAllocationsRequestDto extends Equatable {
   factory SaveExpenseAllocationsRequestDto.fromJson(Map<String, dynamic> json) {
     final allocList = json['allocations'] as List<dynamic>? ?? [];
     return SaveExpenseAllocationsRequestDto(
-      planDescription: json['planDescription'] as String?,
       planStartDate: DateTime.parse(json['planStartDate'] as String).toLocal(),
       planEndDate: DateTime.parse(json['planEndDate'] as String).toLocal(),
       incomeCalculationStartDate: DateTime.parse(
@@ -149,7 +147,6 @@ class SaveExpenseAllocationsRequestDto extends Equatable {
     );
   }
 
-  final String? planDescription;
   final DateTime planStartDate;
   final DateTime planEndDate;
   final DateTime incomeCalculationStartDate;
@@ -159,8 +156,6 @@ class SaveExpenseAllocationsRequestDto extends Equatable {
   final String? budgetPeriodId; // For parsing old pending data, not sent to API
 
   Map<String, dynamic> toJson() => {
-    if (planDescription != null && planDescription!.isNotEmpty)
-      'planDescription': planDescription,
     'planStartDate': planStartDate.toUtc().toIso8601String(),
     'planEndDate': planEndDate.toUtc().toIso8601String(),
     'incomeCalculationStartDate': incomeCalculationStartDate
@@ -174,7 +169,6 @@ class SaveExpenseAllocationsRequestDto extends Equatable {
   };
 
   SaveExpenseAllocationsRequestDto copyWith({
-    String? planDescription,
     DateTime? planStartDate,
     DateTime? planEndDate,
     DateTime? incomeCalculationStartDate,
@@ -184,7 +178,6 @@ class SaveExpenseAllocationsRequestDto extends Equatable {
     String? budgetPeriodId, // Added for internal DTO state update
   }) {
     return SaveExpenseAllocationsRequestDto(
-      planDescription: planDescription ?? this.planDescription,
       planStartDate: planStartDate ?? this.planStartDate,
       planEndDate: planEndDate ?? this.planEndDate,
       incomeCalculationStartDate:
@@ -200,7 +193,6 @@ class SaveExpenseAllocationsRequestDto extends Equatable {
 
   @override
   List<Object?> get props => [
-    planDescription,
     planStartDate,
     planEndDate,
     incomeCalculationStartDate,
@@ -249,7 +241,6 @@ class FrontendBudgetPlan extends Equatable {
     required this.incomeCalculationStartDate,
     required this.incomeCalculationEndDate,
     required this.totalCalculatedIncome,
-    this.description,
     this.allocations = const [],
     this.isLocal = false,
   });
@@ -273,7 +264,6 @@ class FrontendBudgetPlan extends Equatable {
     return FrontendBudgetPlan(
       id: json['id'] as String,
       userId: json['userId'] as String? ?? '',
-      description: json['description'] as String?,
       planStartDate: DateTime.parse(json['planStartDate'] as String).toLocal(),
       planEndDate: DateTime.parse(json['planEndDate'] as String).toLocal(),
       incomeCalculationStartDate: DateTime.parse(
@@ -294,7 +284,6 @@ class FrontendBudgetPlan extends Equatable {
 
   final String id;
   final String userId;
-  final String? description;
   final DateTime planStartDate;
   final DateTime planEndDate;
   final DateTime incomeCalculationStartDate;
@@ -306,8 +295,6 @@ class FrontendBudgetPlan extends Equatable {
   Map<String, dynamic> toJson() => {
     'id': id,
     'userId': userId,
-    if (description != null && description!.isNotEmpty)
-      'description': description,
     'planStartDate': planStartDate.toUtc().toIso8601String(),
     'planEndDate': planEndDate.toUtc().toIso8601String(),
     'incomeCalculationStartDate': incomeCalculationStartDate
@@ -324,7 +311,6 @@ class FrontendBudgetPlan extends Equatable {
   FrontendBudgetPlan copyWith({
     String? id,
     String? userId,
-    ValueGetter<String?>? description, // Allow setting to null
     DateTime? planStartDate,
     DateTime? planEndDate,
     DateTime? incomeCalculationStartDate,
@@ -336,7 +322,6 @@ class FrontendBudgetPlan extends Equatable {
     return FrontendBudgetPlan(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      description: description != null ? description() : this.description,
       planStartDate: planStartDate ?? this.planStartDate,
       planEndDate: planEndDate ?? this.planEndDate,
       incomeCalculationStartDate:
@@ -354,7 +339,6 @@ class FrontendBudgetPlan extends Equatable {
   List<Object?> get props => [
     id,
     userId,
-    description,
     planStartDate,
     planEndDate,
     incomeCalculationStartDate,

@@ -215,9 +215,6 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                 '${dateFormat.format(currentPlan.planStartDate)} - ${dateFormat.format(currentPlan.planEndDate)}';
             final incomeCalcDateRange =
                 '${dateFormat.format(currentPlan.incomeCalculationStartDate)} - ${dateFormat.format(currentPlan.incomeCalculationEndDate)}';
-            final planDescription = currentPlan.description?.isNotEmpty ?? false
-                ? currentPlan.description!
-                : 'Rencana Anggaran';
 
             return Scaffold(
               appBar: AppBar(
