@@ -43,7 +43,7 @@ class _TransactionFormState extends State<TransactionForm> {
   AccountType? _selectedAccountTypeObject; // For display name and color
   String? _selectedCategoryId; // For submission
   String? _selectedSubcategoryId; // For submission
-
+  String? _displaySelectedAccountTypeName;
   // State variables to drive the UI of CustomCategoryPicker (uses names)
   String _pickerSelectedCategoryName = '';
   String _pickerSelectedSubcategoryName = '';
@@ -304,100 +304,227 @@ class _TransactionFormState extends State<TransactionForm> {
   ) {
     if (state.classifiedResult == null ||
         _currentMode == TransactionFormMode.view) {
+      debugPrint(
+        "[TransactionForm._handleClassificationResult] No classified result or in view mode. Skipping.",
+      );
       return;
     }
 
-    final result = state.classifiedResult!;
-    final mlSuggestedSuccessfully = result['success'] as bool? ?? false;
-    final isKnownSubcategoryByMl =
-        result['isKnownSubcategory'] as bool? ?? false;
+    final Map<String, dynamic> classificationData = state.classifiedResult!;
 
-    // If ML didn't succeed OR if it's not a known subcategory,
-    // do not automatically apply the suggestion.
-    if (!mlSuggestedSuccessfully || !isKnownSubcategoryByMl) {
-      // Optionally, if you want to clear any previous classification emoji when ML fails:
-      if (_isClassificationSuggestion) {
-        setState(() {
-          _pickerSelectedSubcategoryName = _pickerSelectedSubcategoryName
-              .replaceAll(' ✨', '');
-          _isClassificationSuggestion = false;
-        });
-      }
-      debugPrint(
-        '[TransactionForm] Classification not applied: success=$mlSuggestedSuccessfully, known=$isKnownSubcategoryByMl',
-      );
-      return; // Do not proceed to update pickers
-    }
+    final bool isKnownSubcategoryByMl =
+        classificationData['isKnownSubcategory'] as bool? ?? false;
+    final double confidence =
+        (classificationData['confidence'] as num?)?.toDouble() ?? 0.0;
 
-    // Proceed to apply if successful and known
-    final classifiedSubcategoryId = result['subcategoryId'] as String?;
-    final classifiedSubcategoryName = result['subcategoryName'] as String?;
-    final classifiedCategoryId = result['categoryId'] as String?;
-    final classifiedCategoryName = result['categoryName'] as String?;
-    final classifiedAccountTypeId = result['accountTypeId'] as String?;
+    debugPrint(
+      "[TransactionForm._handleClassificationResult] Received classificationData: $classificationData",
+    );
+    debugPrint(
+      "[TransactionForm._handleClassificationResult] Parsed: isKnownSubcategoryByMl=$isKnownSubcategoryByMl, confidence=$confidence",
+    );
 
-    var changed = false;
-    var accountTypeChangedDueToClassification = false;
-
-    if (classifiedAccountTypeId != null &&
-        _selectedAccountTypeId != classifiedAccountTypeId) {
-      try {
-        final accType = state.accountTypes.firstWhere(
-          (at) => at.id == classifiedAccountTypeId,
-        );
-        _selectedAccountTypeId = accType.id;
-        _selectedAccountTypeObject = accType;
-        submitButtonColor = _colorForAccountType(accType.name);
-        changed = true;
-        accountTypeChangedDueToClassification = true;
-      } catch (e) {
-        /* ignore if not found */
-      }
-    }
-
-    if (classifiedCategoryId != null &&
-        _selectedCategoryId != classifiedCategoryId) {
-      _selectedCategoryId = classifiedCategoryId;
-      changed = true;
-    }
-    if (classifiedSubcategoryId != null &&
-        _selectedSubcategoryId != classifiedSubcategoryId) {
-      _selectedSubcategoryId = classifiedSubcategoryId;
-      changed = true;
-    }
-
-    if (classifiedCategoryName != null &&
-        _pickerSelectedCategoryName != classifiedCategoryName) {
-      _pickerSelectedCategoryName = classifiedCategoryName;
-      changed = true;
-    }
-    if (classifiedSubcategoryName != null) {
-      final subNameWithEmoji = '$classifiedSubcategoryName ✨';
-      if (_pickerSelectedSubcategoryName != subNameWithEmoji) {
-        _pickerSelectedSubcategoryName = subNameWithEmoji;
-        _isClassificationSuggestion =
-            true; // Mark that this is an ML suggestion
-        changed = true;
-      }
-    } else {
-      // If ML result doesn't have subcategory name (should not happen if successful and known)
-      // clear any existing emoji
+    // Only check isKnownSubcategoryByMl from the data object
+    if (!isKnownSubcategoryByMl) {
       if (_isClassificationSuggestion) {
         _pickerSelectedSubcategoryName = _pickerSelectedSubcategoryName
             .replaceAll(' ✨', '');
         _isClassificationSuggestion = false;
-        changed = true;
+      }
+      debugPrint(
+        '[TransactionForm] Classification not applied: isKnownSubcategoryByMl=false',
+      );
+      return;
+    }
+
+    debugPrint(
+      "[TransactionForm._handleClassificationResult] Applying known classification...",
+    );
+
+    // ... THE REST OF YOUR FIELD EXTRACTION AND LOGIC FROM LINE 327 of your screenshot onwards should now execute correctly ...
+    // (i.e., final classifiedSubcategoryId = classificationData['subcategoryId'] as String?; etc.)
+    // Make sure this logic correctly uses `context.read<TransactionBloc>().state.accountTypes` etc.
+    // if it needs to look up names from IDs, as `classificationData` already provides names.
+
+    // --- Re-integrating your existing logic for updating form state ---
+    final classifiedSubcategoryId =
+        classificationData['subcategoryId'] as String?;
+    final classifiedSubcategoryName =
+        classificationData['subcategoryName'] as String?;
+    final classifiedCategoryId = classificationData['categoryId'] as String?;
+    final classifiedCategoryName =
+        classificationData['categoryName'] as String?;
+    final classifiedAccountTypeId =
+        classificationData['accountTypeId'] as String?;
+    final classifiedAccountTypeName =
+        classificationData['accountTypeName'] as String?;
+
+    bool accountTypeActuallyChangedByThisClassification = false;
+    bool categoryActuallyChangedByThisClassification = false;
+
+    // 1. Process Account Type
+    if (classifiedAccountTypeId != null &&
+        _selectedAccountTypeId != classifiedAccountTypeId) {
+      try {
+        final accType = context
+            .read<TransactionBloc>()
+            .state
+            .accountTypes
+            .firstWhere((at) => at.id == classifiedAccountTypeId);
+        _selectedAccountTypeId = accType.id;
+        _selectedAccountTypeObject = accType;
+        _displaySelectedAccountTypeName = accType.name;
+        submitButtonColor = _colorForAccountType(accType.name);
+
+        _selectedCategoryId = null;
+        _pickerSelectedCategoryName = '';
+        _selectedSubcategoryId = null;
+        _pickerSelectedSubcategoryName = '';
+        _isClassificationSuggestion = false;
+
+        accountTypeActuallyChangedByThisClassification = true;
+        debugPrint(
+          "[TransactionForm] Classification updated AccountType to: ${accType.name}. Requesting categories.",
+        );
+        context.read<TransactionBloc>().add(
+          LoadCategoriesRequested(accType.id),
+        );
+        return;
+      } catch (e) {
+        debugPrint(
+          "[TransactionForm] Error finding classified AccountType ID $classifiedAccountTypeId in BLoC state: $e",
+        );
+        return;
+      }
+    } else if (classifiedAccountTypeName != null &&
+        _displaySelectedAccountTypeName != classifiedAccountTypeName &&
+        _selectedAccountTypeId != null) {
+      _displaySelectedAccountTypeName = classifiedAccountTypeName;
+      try {
+        _selectedAccountTypeObject = context
+            .read<TransactionBloc>()
+            .state
+            .accountTypes
+            .firstWhere((at) => at.id == _selectedAccountTypeId);
+        submitButtonColor = _colorForAccountType(
+          _selectedAccountTypeObject!.name,
+        );
+      } catch (_) {}
+    }
+
+    // 2. Process Category
+    if (!accountTypeActuallyChangedByThisClassification &&
+        classifiedCategoryId != null &&
+        _selectedCategoryId != classifiedCategoryId) {
+      try {
+        final cat = context.read<TransactionBloc>().state.categories.firstWhere(
+          (c) =>
+              c.id == classifiedCategoryId &&
+              c.accountTypeId == _selectedAccountTypeId,
+        );
+        _selectedCategoryId = cat.id;
+        _pickerSelectedCategoryName = cat.name;
+
+        _selectedSubcategoryId = null;
+        _pickerSelectedSubcategoryName = '';
+        _isClassificationSuggestion = false;
+
+        categoryActuallyChangedByThisClassification = true;
+        debugPrint(
+          "[TransactionForm] Classification updated CategoryId to: $classifiedCategoryId. Requesting subcategories.",
+        );
+        context.read<TransactionBloc>().add(LoadSubcategoriesRequested(cat.id));
+        return;
+      } catch (e) {
+        debugPrint(
+          "[TransactionForm] Error finding/validating classified Category ID $classifiedCategoryId: $e",
+        );
+        return;
+      }
+    } else if (!accountTypeActuallyChangedByThisClassification &&
+        classifiedCategoryName != null &&
+        _pickerSelectedCategoryName != classifiedCategoryName) {
+      _pickerSelectedCategoryName = classifiedCategoryName;
+      if (_selectedCategoryId == null && _selectedAccountTypeId != null) {
+        try {
+          final catByName = context
+              .read<TransactionBloc>()
+              .state
+              .categories
+              .firstWhere(
+                (c) =>
+                    c.name == classifiedCategoryName &&
+                    c.accountTypeId == _selectedAccountTypeId,
+              );
+          _selectedCategoryId = catByName.id;
+        } catch (_) {}
       }
     }
 
-    if (changed) {
-      if (accountTypeChangedDueToClassification &&
-          _selectedAccountTypeId != null) {
-        context.read<TransactionBloc>().add(
-          LoadCategoriesRequested(_selectedAccountTypeId!),
+    // 3. Process Subcategory
+    if (!accountTypeActuallyChangedByThisClassification &&
+        !categoryActuallyChangedByThisClassification &&
+        classifiedSubcategoryId != null &&
+        _selectedSubcategoryId != classifiedSubcategoryId) {
+      try {
+        // Ensure the suggested subcategory belongs to the currently selected category
+        final subcat = context
+            .read<TransactionBloc>()
+            .state
+            .subcategories
+            .firstWhere(
+              (s) =>
+                  s.id == classifiedSubcategoryId &&
+                  s.categoryId == _selectedCategoryId,
+            );
+        _selectedSubcategoryId = subcat.id;
+        _pickerSelectedSubcategoryName =
+            '${subcat.name} ✨'; // Use name from loaded data + emoji
+        _isClassificationSuggestion = true;
+        debugPrint(
+          "[TransactionForm] Classification updated SubcategoryId to: $classifiedSubcategoryId",
         );
+      } catch (e) {
+        debugPrint(
+          "[TransactionForm] Error finding/validating classified Subcategory ID $classifiedSubcategoryId: $e",
+        );
+        if (classifiedSubcategoryName != null) {
+          _pickerSelectedSubcategoryName = '$classifiedSubcategoryName ✨';
+          _isClassificationSuggestion = true;
+        } else {
+          _pickerSelectedSubcategoryName = _pickerSelectedSubcategoryName
+              .replaceAll(' ✨', '');
+          _isClassificationSuggestion = false;
+        }
+        _selectedSubcategoryId = null; // Could not confirm ID
       }
-      // setState is called by the BlocListener that invokes this method
+    } else if (!accountTypeActuallyChangedByThisClassification &&
+        !categoryActuallyChangedByThisClassification &&
+        classifiedSubcategoryName != null) {
+      final subNameWithEmoji = '$classifiedSubcategoryName ✨';
+      if (_pickerSelectedSubcategoryName != subNameWithEmoji) {
+        _pickerSelectedSubcategoryName = subNameWithEmoji;
+        _isClassificationSuggestion = true;
+      }
+      if (_selectedSubcategoryId == null && _selectedCategoryId != null) {
+        try {
+          final subByName = context
+              .read<TransactionBloc>()
+              .state
+              .subcategories
+              .firstWhere(
+                (s) =>
+                    s.name == classifiedSubcategoryName &&
+                    s.categoryId == _selectedCategoryId,
+              );
+          _selectedSubcategoryId = subByName.id;
+        } catch (_) {}
+      }
+    } else if (classifiedSubcategoryName == null &&
+        _isClassificationSuggestion) {
+      _pickerSelectedSubcategoryName = _pickerSelectedSubcategoryName
+          .replaceAll(' ✨', '');
+      _isClassificationSuggestion = false;
     }
   }
 
@@ -407,32 +534,47 @@ class _TransactionFormState extends State<TransactionForm> {
 
     return BlocConsumer<TransactionBloc, TransactionState>(
       listenWhen: (prev, curr) {
+        // Always listen if initializing for edit/view to load hierarchy
         if (_isInitializingForEditOrView) {
           return prev.accountTypes != curr.accountTypes ||
               prev.categories != curr.categories ||
               prev.subcategories != curr.subcategories ||
               prev.isLoadingHierarchy != curr.isLoadingHierarchy;
         }
-        return (prev.classifiedResult != curr.classifiedResult &&
-                curr.operation == TransactionOperation.classify) ||
+        // Listen for classification results
+        return (prev.classifiedResult !=
+                    curr.classifiedResult && // Result changed
+                curr.classifiedResult != null && // New result is not null
+                curr.operation ==
+                    TransactionOperation.classify) || // Operation was classify
+            // Listen for bookmark updates if in view mode
             (widget.mode == TransactionFormMode.view &&
                 curr.operation == TransactionOperation.bookmark &&
                 curr.isSuccess) ||
-            // Listen for category/subcategory changes if account type was changed by user/classification
+            // Listen for hierarchy changes if they happen for other reasons (e.g. background refresh)
+            prev.accountTypes != curr.accountTypes ||
             prev.categories != curr.categories ||
             prev.subcategories != curr.subcategories;
       },
       listener: (ctx, state) {
         if (_isInitializingForEditOrView) {
+          // Call setState directly here because _handleInitialLoadForEditView
+          // might dispatch new BLoC events (LoadCategoriesRequested), and we want
+          // the UI to reflect the current state of loading/data before those complete.
+          // The subsequent BLoC state updates from those events will be caught
+          // by this listener again.
           setState(() {
             _handleInitialLoadForEditView(state, ctx);
           });
         } else if (state.classifiedResult != null &&
             state.operation == TransactionOperation.classify) {
+          // Apply classification result
           setState(() {
+            // Ensure UI updates after applying classification
             _handleClassificationResult(state, ctx);
           });
         }
+        // Potentially handle bookmark success if needed, though often just a visual change handled by BlocBuilder
       },
       buildWhen: (prev, curr) =>
           prev.accountTypes != curr.accountTypes ||

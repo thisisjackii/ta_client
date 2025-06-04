@@ -20,6 +20,9 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
     on<EvaluationClearDateError>(
       (_, emit) => emit(state.copyWith(clearDateError: true)),
     );
+    on<EvaluationProceedWithDuplicate>(_onProceedWithDuplicate);
+    on<EvaluationNavigateToExisting>(_onNavigateToExisting);
+    on<EvaluationCancelDuplicateWarning>(_onCancelDuplicateWarning);
   }
   final EvaluationRepository _repo;
 
@@ -47,17 +50,74 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
       return;
     }
 
+    // If basic validations pass, then check for duplicates:
+    if (event.showDuplicateWarning) {
+      emit(
+        state.copyWith(loading: true, clearError: true, clearDateError: true),
+      );
+      CheckExistingEvaluationResponse existingCheck;
+      try {
+        existingCheck = await _repo.checkExistingEvaluationForDates(
+          event.start,
+          event.end,
+        );
+        debugPrint(
+          "[EvaluationBloc] Check existing result: exists=${existingCheck.exists}, dataCount=${existingCheck.data.length}",
+        );
+      } catch (e) {
+        debugPrint(
+          "[EvaluationBloc] Error checking for duplicate evaluation dates: $e",
+        );
+        existingCheck = CheckExistingEvaluationResponse(exists: false);
+        // Emit a failure state or proceed as if no duplicate?
+        // For now, let's emit an error and let UI decide to re-open date picker.
+        emit(
+          state.copyWith(
+            loading: false,
+            error: "Gagal memeriksa duplikasi data. Coba lagi.",
+          ),
+        );
+        return;
+      }
+
+      if (existingCheck.exists) {
+        debugPrint(
+          "[EvaluationBloc] Conflict detected! Emitting dateConflictExists: true",
+        );
+        emit(
+          state.copyWith(
+            loading: false,
+            dateConflictExists: true, // <<<< THIS IS THE TRIGGER
+            tempSelectedStartDate: event.start,
+            tempSelectedEndDate: event.end,
+            conflictingEvaluationData: existingCheck.data, // <<<< POPULATE THIS
+            clearConflictingEvaluationData:
+                true, // Ensure dashboard is cleared if we are showing conflict
+          ),
+        );
+        return;
+      }
+    }
+
+    // If no duplicate or warning was bypassed/not requested, proceed to load/calculate
+    debugPrint(
+      "[EvaluationBloc] No conflict or warning bypassed. Proceeding to set dates and load dashboard.",
+    );
     emit(
       state.copyWith(
-        loading: true, // Indicate loading for the date setting part
+        loading: true,
         evaluationStartDate: event.start,
         evaluationEndDate: event.end,
         dashboardItems: [],
+        dateConflictExists: false, // Ensure conflict flag is false here
+        clearTempSelectedStartDate:
+            true, // Clear temps as main dates are now set
+        clearTempSelectedEndDate: true,
+        clearConflictingEvaluationData: true,
         clearError: true,
         clearDateError: true,
       ),
     );
-    // Dates are set, now trigger calculation and dashboard load
     add(const EvaluationCalculateAndLoadDashboard());
     // emit(state.copyWith(loading: false)); // Loading for calculation will be handled by the next event
   }
@@ -164,5 +224,83 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
         ),
       );
     }
+  }
+
+  Future<void> _onProceedWithDuplicate(
+    EvaluationProceedWithDuplicate event,
+    Emitter<EvaluationState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        loading: true,
+        evaluationStartDate: event.start,
+        evaluationEndDate: event.end,
+        dashboardItems: [],
+        dateConflictExists: false, // Reset flag
+        clearTempSelectedStartDate: true,
+        clearTempSelectedEndDate: true,
+        clearConflictingEvaluationData: true,
+        clearError: true,
+        clearDateError: true,
+      ),
+    );
+    add(
+      const EvaluationCalculateAndLoadDashboard(),
+    ); // This will now re-evaluate/upsert
+  }
+
+  Future<void> _onNavigateToExisting(
+    EvaluationNavigateToExisting event,
+    Emitter<EvaluationState> emit,
+  ) async {
+    // We need to load the dashboard for these specific existing dates.
+    // The checkExistingEvaluationForDates might have returned the data,
+    // or we refetch it ensuring it's not a "re-calculation" but a load.
+    // The `EvaluationCalculateAndLoadDashboard` event, due to backend `upsert`,
+    // will effectively load existing if no transactions changed, or re-calculate
+    // and update if transactions did change for that period.
+    emit(
+      state.copyWith(
+        loading: true,
+        evaluationStartDate: event.start,
+        evaluationEndDate: event.end,
+        dashboardItems:
+            state.conflictingEvaluationData ??
+            [], // Use prefetched data if available
+        dateConflictExists: false,
+        clearTempSelectedStartDate: true,
+        clearTempSelectedEndDate: true,
+        clearConflictingEvaluationData: true, // Clear it after use
+        clearError: true,
+        clearDateError: true,
+      ),
+    );
+    // If conflictingEvaluationData was populated, the UI can directly use it.
+    // Otherwise, trigger a load (which might be a re-calculation/upsert).
+    if (state.conflictingEvaluationData == null ||
+        state.conflictingEvaluationData!.isEmpty) {
+      add(const EvaluationCalculateAndLoadDashboard());
+    } else {
+      // Data is already in state.dashboardItems, set loading to false.
+      // UI will navigate to dashboard.
+      emit(state.copyWith(loading: false));
+    }
+  }
+
+  void _onCancelDuplicateWarning(
+    EvaluationCancelDuplicateWarning event,
+    Emitter<EvaluationState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        dateConflictExists: false, // Reset flag
+        // Keep tempSelectedDates so dialog can repopulate with them if re-opened
+        // clearTempSelectedStartDate: true, // Or keep them if dialog should repopulate
+        // clearTempSelectedEndDate: true,
+        clearConflictingEvaluationData: true,
+        loading: false, // Ensure loading is false
+      ),
+    );
+    // UI remains on EvaluationDatePage, dialog is closed.
   }
 }

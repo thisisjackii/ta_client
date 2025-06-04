@@ -8,11 +8,16 @@ abstract class EvaluationEvent extends Equatable {
 }
 
 class EvaluationDateRangeSelected extends EvaluationEvent {
-  const EvaluationDateRangeSelected(this.start, this.end);
+  const EvaluationDateRangeSelected(
+    this.start,
+    this.end, {
+    this.showDuplicateWarning = true,
+  });
   final DateTime start;
   final DateTime end;
+  final bool showDuplicateWarning;
   @override
-  List<Object?> get props => [start, end];
+  List<Object?> get props => [start, end, showDuplicateWarning];
 }
 
 // This event now directly uses dates from BLoC state if backend /calculate takes dates
@@ -47,3 +52,24 @@ class EvaluationLoadHistoryRequested extends EvaluationEvent {
 class EvaluationClearError extends EvaluationEvent {}
 
 class EvaluationClearDateError extends EvaluationEvent {}
+
+class EvaluationProceedWithDuplicate extends EvaluationEvent {
+  const EvaluationProceedWithDuplicate({
+    required this.start,
+    required this.end,
+  });
+  final DateTime start;
+  final DateTime end;
+  @override
+  List<Object?> get props => [start, end];
+}
+
+class EvaluationNavigateToExisting extends EvaluationEvent {
+  const EvaluationNavigateToExisting({required this.start, required this.end});
+  final DateTime start;
+  final DateTime end;
+  @override
+  List<Object?> get props => [start, end];
+}
+
+class EvaluationCancelDuplicateWarning extends EvaluationEvent {}

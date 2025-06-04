@@ -10,7 +10,7 @@ import 'package:ta_client/features/evaluation/bloc/evaluation_bloc.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_event.dart';
 import 'package:ta_client/features/evaluation/bloc/evaluation_state.dart';
 import 'package:ta_client/features/evaluation/models/evaluation.dart';
-import 'package:ta_client/features/evaluation/utils/evaluation_calculator.dart'; // Import the new helpers
+import 'package:ta_client/features/evaluation/utils/evaluation_calculator.dart';
 
 class EvaluationDashboardPage extends StatefulWidget {
   const EvaluationDashboardPage({super.key});
@@ -25,9 +25,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
   @override
   void initState() {
     super.initState();
-    // Data should be loaded by the time we reach this page,
-    // or a redirect should have happened from EvaluationDatePage if dates are missing.
-    // We can add a safety check here, though ideally EvaluationDatePage handles all prerequisites.
     final blocState = context.read<EvaluationBloc>().state;
     if (blocState.evaluationStartDate == null ||
         blocState.evaluationEndDate == null) {
@@ -43,17 +40,17 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
         }
       });
     } else if (blocState.dashboardItems.isEmpty && !blocState.loading) {
-      // This case should ideally be caught by EvaluationDatePage showing a SnackBar and keeping user there.
-      // But as a fallback, if we reach here with empty items, redirect.
+      // This might happen if user proceeded with a date range that had no data,
+      // or if coming from history to a period that now has no data (e.g. tx deleted)
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
           debugPrint(
-            '[EvaluationDashboardPage] Critical: Dashboard items empty. Redirecting to date selection.',
+            '[EvaluationDashboardPage] Warning: Dashboard items empty. User might need to re-select dates or data changed.',
           );
-          Navigator.pushReplacementNamed(
-            context,
-            Routes.evaluationDateSelection,
-          );
+          // Optionally show a snackbar or just let it display empty state.
+          // Forcing back to date selection might be too aggressive if it's a valid empty state.
+          // For now, let it display. If this is undesirable, redirect:
+          // Navigator.pushReplacementNamed(context, Routes.evaluationDateSelection);
         }
       });
     }
@@ -61,12 +58,21 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<EvaluationBloc, EvaluationState>(
-      builder: (c, s) {
-        // Check if dates are somehow null - this is a safeguard.
-        // Primary guard is in EvaluationDatePage and initState of this page.
-        if (s.evaluationStartDate == null || s.evaluationEndDate == null) {
-          // This should ideally not be hit if routing is correct.
+    return BlocConsumer<EvaluationBloc, EvaluationState>(
+      // Changed to BlocConsumer for SnackBar
+      listener: (context, state) {
+        // Handle any general errors or info messages that might pop up on the dashboard
+        if (state.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.error!), backgroundColor: Colors.red),
+          );
+          context.read<EvaluationBloc>().add(EvaluationClearError());
+        }
+      },
+      builder: (context, state) {
+        // Renamed context to builderContext for clarity
+        if (state.evaluationStartDate == null ||
+            state.evaluationEndDate == null) {
           return Scaffold(
             appBar: AppBar(
               title: const Text(AppStrings.evaluationDashboardTitle),
@@ -78,7 +84,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                   const Text('Periode evaluasi belum diatur.'),
                   ElevatedButton(
                     onPressed: () => Navigator.pushReplacementNamed(
-                      context,
+                      context, // Use builderContext here
                       Routes.evaluationDateSelection,
                     ),
                     child: const Text('Pilih Periode'),
@@ -89,8 +95,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
           );
         }
 
-        // If loading AND dashboard items are empty (initial load for this period)
-        if (s.loading && s.dashboardItems.isEmpty) {
+        if (state.loading && state.dashboardItems.isEmpty) {
           return Scaffold(
             appBar: AppBar(
               title: const Text(AppStrings.evaluationDashboardTitle),
@@ -99,22 +104,75 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
           );
         }
 
-        // If NOT loading AND dashboard items are STILL empty after attempting to load
-        // This case is now primarily handled by EvaluationDatePage showing a SnackBar
-        // and keeping the user there. This block becomes a fallback or for edge cases
-        // if the user somehow lands here.
-        // For robustness, we can keep a simpler message or redirect.
-        // However, the prompt explicitly said to revert it, assuming EvaluationDatePage handles it.
-        // So, we assume s.dashboardItems will NOT be empty here due to prior page logic.
-
-        // THE "Oops! Belum ada data..." UI BLOCK IS REMOVED FROM HERE.
-        // We now expect dashboardItems to be populated if we reach this point without loading.
-
-        debugPrint('📊 Dashboard items (${s.dashboardItems.length}):');
-        for (final item in s.dashboardItems) {
-          debugPrint(
-            '  • [${item.id}] ${item.title}: value=${item.yourValue} '
-            '${item.idealText != null ? "(ideal ${item.idealText})" : ""}',
+        // If not loading AND dashboard items are empty (e.g., after calculation or from history)
+        if (!state.loading && state.dashboardItems.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text(
+                AppStrings.evaluationDashboardTitle,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: AppColors.greyBackground,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.pushReplacementNamed(
+                    context,
+                    Routes.evaluationDateSelection,
+                  );
+                },
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.history),
+                  onPressed: () {
+                    context.read<EvaluationBloc>().add(
+                      const EvaluationLoadHistoryRequested(),
+                    );
+                    Navigator.pushNamed(context, Routes.evaluationHistory);
+                  },
+                ),
+              ],
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.info_outline,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      AppStrings.noDataTitle, // "Oops! Belum ada data..."
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      AppStrings
+                          .noDataSubtitle, // "Pastikan Anda sudah mencatat transaksi..."
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pushReplacementNamed(
+                        context,
+                        Routes.evaluationDateSelection,
+                      ),
+                      child: const Text('Pilih Periode Lain'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           );
         }
 
@@ -128,7 +186,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
-                // When going back, go to date selection to allow changing period
                 Navigator.pushReplacementNamed(
                   context,
                   Routes.evaluationDateSelection,
@@ -139,7 +196,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
               IconButton(
                 icon: const Icon(Icons.history),
                 onPressed: () {
-                  debugPrint('🔄 tapping history button, dispatch LoadHistory');
                   context.read<EvaluationBloc>().add(
                     const EvaluationLoadHistoryRequested(),
                   );
@@ -173,29 +229,21 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                       ),
                       const SizedBox(width: AppDimensions.smallPadding),
                       Text(
-                        // Added null checks for safety, though they should be set
-                        '${s.evaluationStartDate?.day ?? '-'}/${s.evaluationStartDate?.month ?? '-'}/${s.evaluationStartDate?.year ?? '-'} - ${s.evaluationEndDate?.day ?? '-'}/${s.evaluationEndDate?.month ?? '-'}/${s.evaluationEndDate?.year ?? '-'}',
+                        '${state.evaluationStartDate?.day ?? '-'}/${state.evaluationStartDate?.month ?? '-'}/${state.evaluationStartDate?.year ?? '-'} - ${state.evaluationEndDate?.day ?? '-'}/${state.evaluationEndDate?.month ?? '-'}/${state.evaluationEndDate?.year ?? '-'}',
                       ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: AppDimensions.padding),
-              // Show loading indicator if we are reloading/recalculating but already have some items
-              if (s.loading && s.dashboardItems.isNotEmpty)
+              if (state.loading && state.dashboardItems.isNotEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Center(child: CircularProgressIndicator()),
                 ),
-              ...s.dashboardItems.map((item) {
-                debugPrint('🔹 rendering tile for [${item.id}] ${item.title}');
+              ...state.dashboardItems.map((item) {
                 return GestureDetector(
                   onTap: () {
-                    debugPrint(
-                      '➡️ tapped item [${item.id}] ${item.title}, '
-                      'dispatching LoadDetail',
-                    );
-
                     String? detailClientRatioId;
                     if (item.backendEvaluationResultId == null &&
                         item.backendRatioCode != null) {
@@ -203,9 +251,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                         item.backendRatioCode!,
                       );
                       if (detailClientRatioId == null) {
-                        debugPrint(
-                          'ERROR: Could not map backendRatioCode ${item.backendRatioCode} to a clientRatioId.',
-                        );
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
@@ -217,7 +262,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                       }
                     } else if (item.backendEvaluationResultId == null &&
                         item.backendRatioCode == null) {
-                      // This case indicates a client-side only item where its 'id' IS the clientRatioId
                       detailClientRatioId = item.id;
                     }
 
@@ -276,8 +320,6 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            // OLD: '${item.id == '0' ? formatMonths(item.yourValue) : formatPercent(item.yourValue)} ${item.id != '6' ? (item.status == EvaluationStatusModel.ideal ? '(Ideal)' : '(Tidak Ideal)') : ''}',
-                                            // NEW:
                                             '${item.backendRatioCode == 'LIQUIDITY_RATIO' ? formatMonths(item.yourValue) : formatPercent(item.yourValue)} ${item.backendRatioCode != 'SOLVENCY_RATIO' ? (item.status == EvaluationStatusModel.ideal ? '(Ideal)' : '(Tidak Ideal)') : ''}',
                                             style: TextStyle(
                                               fontSize: 14,
@@ -286,14 +328,23 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                                                   item.status ==
                                                       EvaluationStatusModel
                                                           .ideal
-                                                  ? Colors.green[700]
-                                                  : Colors.red[700],
+                                                  ? AppColors
+                                                        .ideal // Use AppColors
+                                                  : item.status ==
+                                                        EvaluationStatusModel
+                                                            .incomplete
+                                                  ? AppColors
+                                                        .notIdeal // Use AppColors
+                                                  : AppColors
+                                                        .notIdeal, // Use AppColors
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                    if (item.idealText != null)
+                                    if (item.idealText != null &&
+                                        item.idealText !=
+                                            "-") // Hide for Solvency
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:

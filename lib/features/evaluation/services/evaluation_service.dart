@@ -13,6 +13,26 @@ class EvaluationApiException implements Exception {
   String toString() => 'EvaluationApiException: $message (Status: $statusCode)';
 }
 
+class CheckExistingEvaluationResponse {
+  final bool exists;
+  final List<Evaluation> data; // The actual evaluation results if they exist
+
+  CheckExistingEvaluationResponse({required this.exists, this.data = const []});
+
+  factory CheckExistingEvaluationResponse.fromJson(Map<String, dynamic> json) {
+    List<Evaluation> evaluations = [];
+    if (json['exists'] == true && json['data'] is List) {
+      evaluations = (json['data'] as List)
+          .map((item) => Evaluation.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    return CheckExistingEvaluationResponse(
+      exists: json['exists'] as bool? ?? false,
+      data: evaluations,
+    );
+  }
+}
+
 class EvaluationService {
   EvaluationService({required Dio dio}) : _dio = dio;
   final Dio _dio;
@@ -186,6 +206,49 @@ class EvaluationService {
       if (e is EvaluationApiException) rethrow;
       throw EvaluationApiException(
         'An unexpected error occurred fetching raw history: $e',
+      );
+    }
+  }
+
+  Future<CheckExistingEvaluationResponse> checkExistingEvaluationForDates(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    const endpoint = '/evaluations/check-existence';
+    final queryParams = {
+      'startDate': startDate.toUtc().toIso8601String(),
+      'endDate': endDate.toUtc().toIso8601String(),
+    };
+    debugPrint(
+      '[EvaluationService-DIO] GET $endpoint with query: $queryParams',
+    );
+    try {
+      final response = await _dio.get<dynamic>(
+        endpoint,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return CheckExistingEvaluationResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      } else {
+        throw EvaluationApiException(
+          response.data?['message']?.toString() ??
+              'Failed to check existing evaluation.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
+      throw EvaluationApiException(
+        e.response?.data?['message']?.toString() ??
+            e.message ??
+            'Network error checking existing evaluation.',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      if (e is EvaluationApiException) rethrow;
+      throw EvaluationApiException(
+        'Unexpected error checking existing evaluation: $e',
       );
     }
   }

@@ -725,4 +725,35 @@ class EvaluationRepository {
     historySummaries.sort((a, b) => b.start.compareTo(a.start));
     return historySummaries;
   }
+
+  Future<CheckExistingEvaluationResponse> checkExistingEvaluationForDates(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final isOnline = await _connectivityService.isOnline;
+    if (isOnline) {
+      try {
+        return await _service.checkExistingEvaluationForDates(
+          startDate,
+          endDate,
+        );
+      } catch (e) {
+        // Fallback or specific error handling if needed
+        debugPrint("Error checking existing evaluation online: $e");
+        return CheckExistingEvaluationResponse(
+          exists: false,
+        ); // Assume not exists on error
+      }
+    } else {
+      // Offline check (more complex, might be simpler to just allow proceeding offline)
+      // For an offline check, you'd iterate through cached `evaluationResultsCacheBoxName`
+      // and see if any entry matches the startDate and endDate.
+      debugPrint(
+        "Offline: Cannot check for existing evaluation dates with server.",
+      );
+      return CheckExistingEvaluationResponse(
+        exists: false,
+      ); // Default to not exists when offline
+    }
+  }
 }

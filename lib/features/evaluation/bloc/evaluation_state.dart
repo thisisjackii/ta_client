@@ -13,6 +13,10 @@ class EvaluationState extends Equatable {
     this.loading = false,
     this.error,
     this.dateError, // For specific date validation errors
+    this.dateConflictExists = false,
+    this.tempSelectedStartDate,
+    this.tempSelectedEndDate,
+    this.conflictingEvaluationData,
   });
 
   factory EvaluationState.initial() => const EvaluationState();
@@ -25,6 +29,11 @@ class EvaluationState extends Equatable {
   final bool loading;
   final String? error;
   final String? dateError;
+  final bool dateConflictExists; // True if user needs to make a choice
+  final DateTime? tempSelectedStartDate; // To hold dates while dialog is shown
+  final DateTime? tempSelectedEndDate;
+  final List<Evaluation>?
+  conflictingEvaluationData; // To pre-fill dashboard if user navigates
 
   EvaluationState copyWith({
     DateTime? evaluationStartDate,
@@ -38,6 +47,13 @@ class EvaluationState extends Equatable {
     bool clearError = false,
     String? dateError,
     bool clearDateError = false,
+    bool? dateConflictExists,
+    DateTime? tempSelectedStartDate,
+    bool clearTempSelectedStartDate = false,
+    DateTime? tempSelectedEndDate,
+    bool clearTempSelectedEndDate = false,
+    List<Evaluation>? conflictingEvaluationData,
+    bool clearConflictingEvaluationData = false,
   }) {
     return EvaluationState(
       evaluationStartDate: evaluationStartDate ?? this.evaluationStartDate,
@@ -48,6 +64,16 @@ class EvaluationState extends Equatable {
       loading: loading ?? this.loading,
       error: clearError ? null : error ?? this.error,
       dateError: clearDateError ? null : dateError ?? this.dateError,
+      dateConflictExists: dateConflictExists ?? this.dateConflictExists,
+      tempSelectedStartDate: clearTempSelectedStartDate
+          ? null
+          : tempSelectedStartDate ?? this.tempSelectedStartDate,
+      tempSelectedEndDate: clearTempSelectedEndDate
+          ? null
+          : tempSelectedEndDate ?? this.tempSelectedEndDate,
+      conflictingEvaluationData: clearConflictingEvaluationData
+          ? null
+          : conflictingEvaluationData ?? this.conflictingEvaluationData,
     );
   }
 
@@ -61,5 +87,9 @@ class EvaluationState extends Equatable {
     loading,
     error,
     dateError,
+    dateConflictExists,
+    tempSelectedStartDate,
+    tempSelectedEndDate,
+    conflictingEvaluationData,
   ];
 }
