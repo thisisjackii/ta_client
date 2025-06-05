@@ -123,7 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Gagal memuat daftar profesi: $e')),
+              SnackBar(content: Text('Gagal memuat daftar pekerjaan: $e')),
             );
           }
         });
@@ -390,7 +390,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 12),
 
                 const Text(
-                  'Profesi',
+                  'Pekerjaan',
                   style: TextStyle(
                     fontSize: 12,
                     fontVariations: [FontVariation('wght', 600)],
@@ -408,7 +408,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.work),
-                      hintText: 'Pilih Profesi',
+                      hintText: 'Pilih Pekerjaan',
                     ),
                     value: _selectedOccupationId,
                     items: _occupations.map((Map<String, String> occMap) {
@@ -435,7 +435,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       }
                     },
                     validator: (value) => (value == null || value.isEmpty)
-                        ? 'Profesi harus dipilih'
+                        ? 'Pekerjaan harus dipilih'
                         : null,
                   ),
                 const SizedBox(height: 24),

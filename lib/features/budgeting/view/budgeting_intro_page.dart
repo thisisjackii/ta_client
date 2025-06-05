@@ -59,7 +59,7 @@ class BudgetingIntro extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const Text(
-                    'Kelola anggaran sesuai dengan profesimu. Atur pengeluaran berdasarkan kategori yang benar-benar kamu butuhkan.',
+                    'Kelola anggaran sesuai dengan pekerjaanmu. Atur pengeluaran berdasarkan kategori yang benar-benar kamu butuhkan.',
                     style: TextStyle(fontSize: 16),
                     textAlign: TextAlign.center,
                   ),

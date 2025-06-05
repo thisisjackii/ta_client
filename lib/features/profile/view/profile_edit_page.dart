@@ -113,7 +113,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       if (mounted) {
         setState(() => _isLoadingOccupations = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memuat daftar profesi: $e')),
+          SnackBar(content: Text('Gagal memuat daftar pekerjaan: $e')),
         );
       }
     }
@@ -282,7 +282,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Profesi',
+                              'Pekerjaan',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
@@ -326,7 +326,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 ),
                                 value: _selectedOccupationIdForUpdate,
                                 hint: const Text(
-                                  'Pilih Profesi',
+                                  'Pilih Pekerjaan',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey,
@@ -355,7 +355,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 },
                                 validator: (value) =>
                                     (value == null || value.isEmpty)
-                                    ? 'Profesi tidak boleh kosong.'
+                                    ? 'Pekerjaan tidak boleh kosong.'
                                     : null,
                               ),
                           ],

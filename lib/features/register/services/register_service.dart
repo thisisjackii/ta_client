@@ -103,22 +103,55 @@ class RegisterService {
         );
       }
     } on DioException catch (e) {
+      String extractedMessage = 'An unknown registration error occurred.';
+      int? responseStatusCode = e.response?.statusCode;
+
+      if (e.response?.data != null) {
+        debugPrint(
+          '[RegisterService-DIO] Error Response Data Type: ${e.response!.data.runtimeType}',
+        );
+        debugPrint(
+          '[RegisterService-DIO] Error Response Data: ${e.response!.data}',
+        );
+        if (e.response!.data is Map<String, dynamic>) {
+          extractedMessage =
+              (e.response!.data as Map<String, dynamic>)['message']
+                  ?.toString() ??
+              extractedMessage;
+        } else if (e.response!.data is String) {
+          // If backend sometimes sends plain string error, try to use it.
+          // This is less ideal than consistent JSON.
+          extractedMessage = e.response!.data as String;
+          // Attempt to parse HTML for the core message (very hacky, backend should be fixed)
+          if (extractedMessage.contains('<pre>')) {
+            try {
+              // Basic extraction, might need to be more robust
+              final preMatch = RegExp(
+                r'<pre>Error: (.*?)<br>',
+              ).firstMatch(extractedMessage);
+              if (preMatch != null && preMatch.group(1) != null) {
+                extractedMessage = preMatch.group(1)!;
+              }
+            } catch (_) {
+              /* ignore parsing error, use full HTML string */
+            }
+          }
+        }
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        extractedMessage = e.message!;
+      }
+
       debugPrint(
-        '[RegisterService-DIO] DioException during registration: ${e.response?.data ?? e.message}',
+        '[RegisterService-DIO] Throwing RegisterException with message: "$extractedMessage", statusCode: $responseStatusCode',
+      );
+      throw RegisterException(extractedMessage, statusCode: responseStatusCode);
+    } catch (error) {
+      // Catch-all for non-Dio errors during the process
+      debugPrint(
+        '[RegisterService-DIO] Unexpected non-Dio error during registration: $error',
       );
       throw RegisterException(
-        e.response?.data?['message']?.toString() ??
-            e.message ??
-            'Network error during registration.',
-        statusCode: e.response?.statusCode,
-      );
-    } catch (e) {
-      debugPrint(
-        '[RegisterService-DIO] Unexpected error during registration: $e',
-      );
-      if (e is RegisterException) rethrow;
-      throw RegisterException(
-        'An unexpected error occurred during registration: $e',
+        'An unexpected local error occurred during registration.',
       );
     }
   }
