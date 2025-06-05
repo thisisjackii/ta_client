@@ -385,6 +385,50 @@ class _BudgetingDashboardState extends State<BudgetingDashboard> {
                             );
                             return false; // Prevent dismissal
                           }
+
+                          // *** NEW VALIDATION STEP ***
+                          final budgetState = context
+                              .read<BudgetingBloc>()
+                              .state;
+                          if (budgetState.currentBudgetPlan == null ||
+                              budgetState
+                                      .currentBudgetPlan!
+                                      .totalCalculatedIncome ==
+                                  0) {
+                            // If no plan or no income, 100% rule doesn't strictly apply or is trivially met.
+                            // Proceed with normal QuickAlert confirmation.
+                          } else {
+                            final currentAllocations =
+                                budgetState.expenseAllocationPercentages;
+                            final percentageOfItemToDelete =
+                                currentAllocations[categoryId] ?? 0.0;
+                            final currentTotalPercentage = currentAllocations
+                                .values
+                                .fold<double>(0, (sum, p) => sum + p);
+                            final totalAfterDelete =
+                                currentTotalPercentage -
+                                percentageOfItemToDelete;
+
+                            // If deleting this item makes the total non-100 (and not 0 if all are deleted)
+                            if (totalAfterDelete != 100.0 &&
+                                totalAfterDelete != 0.0) {
+                              await QuickAlert.show(
+                                context: context,
+                                type: QuickAlertType.warning,
+                                title: 'Tidak Dapat Menghapus',
+                                text:
+                                    'Menghapus alokasi untuk "$parentCategoryName" akan membuat total alokasi tidak 100%. Harap sesuaikan alokasi lain terlebih dahulu atau hapus semua alokasi jika ingin memulai dari 0%.',
+                                confirmBtnText: 'Mengerti',
+                                onConfirmBtnTap: () => Navigator.of(
+                                  context,
+                                  rootNavigator: true,
+                                ).pop(),
+                              );
+                              return false; // Prevent dismissal
+                            }
+                          }
+                          // *** END OF NEW VALIDATION STEP ***
+
                           final result = await QuickAlert.show(
                             context: context,
                             type: QuickAlertType.confirm,
