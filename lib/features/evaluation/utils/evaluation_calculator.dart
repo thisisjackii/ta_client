@@ -178,10 +178,11 @@ List<RatioDef> evaluationDefinitions() {
       backendCode: 'LIQUID_ASSETS_TO_NET_WORTH_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        if (s.netWorth == 0)
+        if (s.netWorth == 0) {
           return s.liquid == 0
               ? 0.0
               : (s.liquid > 0 ? double.infinity : double.negativeInfinity);
+        }
         return (s.liquid / s.netWorth) * 100;
       },
       isIdeal: (v) => v >= 15 && v <= 100,
@@ -193,8 +194,9 @@ List<RatioDef> evaluationDefinitions() {
       backendCode: 'DEBT_TO_ASSET_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        if (s.totalAssets == 0)
+        if (s.totalAssets == 0) {
           return s.liabilities > 0 ? double.infinity : 0.0;
+        }
         return (s.liabilities / s.totalAssets) * 100;
       },
       isIdeal: (v) =>
@@ -208,10 +210,11 @@ List<RatioDef> evaluationDefinitions() {
       backendCode: 'SAVING_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        if (s.income == 0)
+        if (s.income == 0) {
           return s.savings > 0
               ? double.infinity
               : 0.0; // Or -infinity if savings < 0
+        }
         return (s.savings / s.income) * 100;
       },
       isIdeal: (v) =>
@@ -237,10 +240,11 @@ List<RatioDef> evaluationDefinitions() {
       backendCode: 'INVESTMENT_ASSETS_TO_NET_WORTH_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        if (s.netWorth == 0)
+        if (s.netWorth == 0) {
           return s.invested == 0
               ? 0.0
               : (s.invested > 0 ? double.infinity : double.negativeInfinity);
+        }
         return (s.invested / s.netWorth) * 100;
       },
       isIdeal: (v) => v >= 50, // Assuming implicit upper bound of 100.
@@ -252,10 +256,11 @@ List<RatioDef> evaluationDefinitions() {
       backendCode: 'SOLVENCY_RATIO',
       compute: (txs) {
         final s = _computeSums(txs);
-        if (s.totalAssets == 0)
+        if (s.totalAssets == 0) {
           return s.netWorth == 0
               ? 0.0
               : (s.netWorth > 0 ? double.infinity : double.negativeInfinity);
+        }
         return (s.netWorth / s.totalAssets) * 100;
       },
       isIdeal: (v) => v > 0, // Ideal if positive

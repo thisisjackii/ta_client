@@ -25,7 +25,7 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
           prev.loading != curr.loading,
       builder: (context, state) {
         double displayTotalIncome = 0;
-        final List<Widget> incomeBreakdownWidgets = [];
+        final incomeBreakdownWidgets = <Widget>[];
 
         // Determine the total income to display in the header
         if (state.currentBudgetPlan != null) {
@@ -58,7 +58,6 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
                     child: ListTile(
                       dense: true,
                       contentPadding: const EdgeInsets.symmetric(
-                        vertical: 0,
                         horizontal: 4,
                       ),
                       leading: Icon(
@@ -88,7 +87,7 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
               incomeBreakdownWidgets.add(
                 ListTile(
                   dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                   title: Text(
                     categorySummary.categoryName,
                     style: const TextStyle(
@@ -110,7 +109,7 @@ class BudgetingExpandableAllocationCard extends StatelessWidget {
           // If loading initial income summary
           childrenToShow = [
             const Padding(
-              padding: EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16),
               child: Center(child: CircularProgressIndicator()),
             ),
           ];

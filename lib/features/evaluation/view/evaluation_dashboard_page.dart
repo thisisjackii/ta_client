@@ -136,7 +136,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
             ),
             body: Center(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -344,7 +344,7 @@ class _EvaluationDashboardPageState extends State<EvaluationDashboardPage>
                                     ),
                                     if (item.idealText != null &&
                                         item.idealText !=
-                                            "-") // Hide for Solvency
+                                            '-') // Hide for Solvency
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:

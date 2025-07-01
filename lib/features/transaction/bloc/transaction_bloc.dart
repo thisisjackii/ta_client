@@ -46,7 +46,6 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     if (event.description.trim().isEmpty) {
       emit(
         state.copyWith(
-          classifiedResult: null, // Clear any previous classification
           clearErrorMessage: true, // Clear any previous error
           operation: TransactionOperation
               .classify, // To ensure any listeners know what happened
@@ -59,21 +58,20 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         isLoading: true,
         operation: TransactionOperation.classify,
         clearErrorMessage: true,
-        classifiedResult: null, // Clear previous result while loading new one
       ),
     );
     try {
-      final Map<String, dynamic> rawApiResponse = await transactionService
+      final rawApiResponse = await transactionService
           .classifyTransaction(event.description);
 
       // Check the 'success' field of the raw API response
       if (rawApiResponse['success'] == true &&
           rawApiResponse['data'] is Map<String, dynamic>) {
         // If successful, store ONLY the 'data' part in the BLoC state's classifiedResult
-        final Map<String, dynamic> classificationData =
+        final classificationData =
             rawApiResponse['data'] as Map<String, dynamic>;
         debugPrint(
-          "[TransactionBloc] Classification successful. Data to store in state: $classificationData",
+          '[TransactionBloc] Classification successful. Data to store in state: $classificationData',
         );
         emit(
           state.copyWith(
@@ -86,12 +84,11 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       } else {
         // API indicated failure or unexpected data structure
         debugPrint(
-          "[TransactionBloc] Classification API reported failure or bad data: $rawApiResponse",
+          '[TransactionBloc] Classification API reported failure or bad data: $rawApiResponse',
         );
         emit(
           state.copyWith(
             isLoading: false,
-            classifiedResult: null,
             errorMessage:
                 rawApiResponse['message'] as String? ?? 'Klasifikasi gagal.',
             operation: TransactionOperation.classify,
@@ -100,24 +97,22 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       }
     } on TransactionApiException catch (e) {
       debugPrint(
-        "[TransactionBloc] TransactionApiException during classification: ${e.message}",
+        '[TransactionBloc] TransactionApiException during classification: ${e.message}',
       );
       emit(
         state.copyWith(
           isLoading: false,
-          classifiedResult: null,
           errorMessage: e.message,
           operation: TransactionOperation.classify,
         ),
       );
     } catch (error) {
       debugPrint(
-        "[TransactionBloc] Unexpected error during classification: $error",
+        '[TransactionBloc] Unexpected error during classification: $error',
       );
       emit(
         state.copyWith(
           isLoading: false,
-          classifiedResult: null,
           errorMessage: 'Gagal mengklasifikasikan: $error',
           operation: TransactionOperation.classify,
         ),

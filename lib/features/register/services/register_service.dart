@@ -103,8 +103,8 @@ class RegisterService {
         );
       }
     } on DioException catch (e) {
-      String extractedMessage = 'An unknown registration error occurred.';
-      int? responseStatusCode = e.response?.statusCode;
+      var extractedMessage = 'An unknown registration error occurred.';
+      final responseStatusCode = e.response?.statusCode;
 
       if (e.response?.data != null) {
         debugPrint(
@@ -127,7 +127,7 @@ class RegisterService {
             try {
               // Basic extraction, might need to be more robust
               final preMatch = RegExp(
-                r'<pre>Error: (.*?)<br>',
+                '<pre>Error: (.*?)<br>',
               ).firstMatch(extractedMessage);
               if (preMatch != null && preMatch.group(1) != null) {
                 extractedMessage = preMatch.group(1)!;

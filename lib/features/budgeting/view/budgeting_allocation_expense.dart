@@ -136,7 +136,7 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
                       state.expenseAllocationPercentages[categoryId] ?? 0.0;
 
                   if (allocatedPercentage == 0) return const SizedBox.shrink();
-                  final bool parentCategoryHasSpending =
+                  final parentCategoryHasSpending =
                       state.isEditing &&
                       (state.initialSpendingForEditedPlan[categoryId] ?? 0.0) >
                           0;
@@ -200,7 +200,7 @@ class _BudgetingAllocationExpenseState extends State<BudgetingAllocationExpense>
                                   state.selectedExpenseSubItems[catId] ?? [];
                               if (percentage > 0 && selectedSubs.isEmpty) {
                                 allAllocatedCategoriesHaveSubcategories = false;
-                                String catNameForMessage = "Kategori";
+                                var catNameForMessage = 'Kategori';
                                 try {
                                   catNameForMessage = state
                                       .expenseCategorySuggestions

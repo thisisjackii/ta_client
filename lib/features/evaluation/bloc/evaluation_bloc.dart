@@ -62,11 +62,11 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
           event.end,
         );
         debugPrint(
-          "[EvaluationBloc] Check existing result: exists=${existingCheck.exists}, dataCount=${existingCheck.data.length}",
+          '[EvaluationBloc] Check existing result: exists=${existingCheck.exists}, dataCount=${existingCheck.data.length}',
         );
       } catch (e) {
         debugPrint(
-          "[EvaluationBloc] Error checking for duplicate evaluation dates: $e",
+          '[EvaluationBloc] Error checking for duplicate evaluation dates: $e',
         );
         existingCheck = CheckExistingEvaluationResponse(exists: false);
         // Emit a failure state or proceed as if no duplicate?
@@ -74,7 +74,7 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
         emit(
           state.copyWith(
             loading: false,
-            error: "Gagal memeriksa duplikasi data. Coba lagi.",
+            error: 'Gagal memeriksa duplikasi data. Coba lagi.',
           ),
         );
         return;
@@ -82,7 +82,7 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
 
       if (existingCheck.exists) {
         debugPrint(
-          "[EvaluationBloc] Conflict detected! Emitting dateConflictExists: true",
+          '[EvaluationBloc] Conflict detected! Emitting dateConflictExists: true',
         );
         emit(
           state.copyWith(
@@ -101,7 +101,7 @@ class EvaluationBloc extends Bloc<EvaluationEvent, EvaluationState> {
 
     // If no duplicate or warning was bypassed/not requested, proceed to load/calculate
     debugPrint(
-      "[EvaluationBloc] No conflict or warning bypassed. Proceeding to set dates and load dashboard.",
+      '[EvaluationBloc] No conflict or warning bypassed. Proceeding to set dates and load dashboard.',
     );
     emit(
       state.copyWith(

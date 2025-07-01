@@ -174,7 +174,7 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
         endDate: state.incomeCalculationEndDate!,
       );
 
-      List<String> newSelectedIncomeSubcategoryIds = [];
+      var newSelectedIncomeSubcategoryIds = <String>[];
 
       if (state.currentBudgetPlan != null) {
         // For a loaded plan, assume all income items fetched for its income calculation period
@@ -187,7 +187,7 @@ class BudgetingBloc extends Bloc<BudgetingEvent, BudgetingState> {
               )
               .toList();
           debugPrint(
-            "[BudgetingBloc] For loaded plan, setting selectedIncomeSubcategoryIds to all ${newSelectedIncomeSubcategoryIds.length} fetched income items for display breakdown.",
+            '[BudgetingBloc] For loaded plan, setting selectedIncomeSubcategoryIds to all ${newSelectedIncomeSubcategoryIds.length} fetched income items for display breakdown.',
           );
         }
       } else {

@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ta_client/app/routes/routes.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_bloc.dart';
 import 'package:ta_client/features/budgeting/bloc/budgeting_event.dart';
-import 'package:ta_client/features/budgeting/bloc/budgeting_state.dart';
 
 mixin BudgetingFlowNavigationGuard<T extends StatefulWidget> on State<T> {
   bool canPopBudgetingFlow(BuildContext context) {

@@ -205,7 +205,7 @@ class _BudgetingAllocationPageState extends State<BudgetingAllocationPage>
                       );
                   final maxPercentageForThisCategory =
                       (100.0 - sumOfOtherSelectedPercentages).clamp(0.0, 100.0);
-                  final bool hasSpendingForThisCategory =
+                  final hasSpendingForThisCategory =
                       state.isEditing &&
                       (state.initialSpendingForEditedPlan[categoryId] ?? 0.0) >
                           0;

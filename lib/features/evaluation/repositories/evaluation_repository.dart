@@ -739,7 +739,7 @@ class EvaluationRepository {
         );
       } catch (e) {
         // Fallback or specific error handling if needed
-        debugPrint("Error checking existing evaluation online: $e");
+        debugPrint('Error checking existing evaluation online: $e');
         return CheckExistingEvaluationResponse(
           exists: false,
         ); // Assume not exists on error
@@ -749,7 +749,7 @@ class EvaluationRepository {
       // For an offline check, you'd iterate through cached `evaluationResultsCacheBoxName`
       // and see if any entry matches the startDate and endDate.
       debugPrint(
-        "Offline: Cannot check for existing evaluation dates with server.",
+        'Offline: Cannot check for existing evaluation dates with server.',
       );
       return CheckExistingEvaluationResponse(
         exists: false,

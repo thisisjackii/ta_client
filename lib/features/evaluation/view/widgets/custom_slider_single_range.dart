@@ -1,5 +1,5 @@
 // C:\Users\PONGO\RemoteProjects\ta_client\lib\features\evaluation\view\widgets\custom_slider_single_range.dart
-import 'dart:math' as math; // For min/max
+// For min/max
 import 'package:another_xlider/another_xlider.dart';
 import 'package:another_xlider/enums/hatch_mark_alignment_enum.dart';
 import 'package:another_xlider/models/handler.dart';
@@ -38,7 +38,7 @@ class CustomSliderSingleRange extends StatelessWidget {
     // --- Define the VISIBLE fixed track and its labels ---
     double visibleTrackMin;
     double visibleTrackMax;
-    List<FlutterSliderHatchMarkLabel> hatchMarkLabels = [];
+    final hatchMarkLabels = <FlutterSliderHatchMarkLabel>[];
 
     if (isMonthValue) {
       visibleTrackMin = 0.0;
@@ -122,8 +122,8 @@ class CustomSliderSingleRange extends StatelessWidget {
     // --- Determine the SLIDER's actual min/max to accommodate the thumb for currentValue ---
     // The slider's track will be drawn from sliderMin to sliderMax.
     // The hatchMarkLabels percent is relative to THIS sliderMin/Max.
-    double internalSliderMin = visibleTrackMin;
-    double internalSliderMax = visibleTrackMax;
+    var internalSliderMin = visibleTrackMin;
+    var internalSliderMax = visibleTrackMax;
     const tailPadding =
         5.0; // How much "tail" to show visually if value is outside visible track
 
@@ -139,7 +139,7 @@ class CustomSliderSingleRange extends StatelessWidget {
     }
 
     // Recalculate hatch mark label percentages based on the new internalSliderMin/Max
-    List<FlutterSliderHatchMarkLabel> finalHatchMarkLabels = [];
+    final finalHatchMarkLabels = <FlutterSliderHatchMarkLabel>[];
     if (isMonthValue) {
       // 0 Months Label
       if (visibleTrackMin >= internalSliderMin &&
@@ -248,7 +248,7 @@ class CustomSliderSingleRange extends StatelessWidget {
     // The value for the slider thumb position. Must be within internalSliderMin/Max.
     final clampedValueForThumb = v.clamp(internalSliderMin, internalSliderMax);
 
-    final bool isValueIdeal = switch (limitType) {
+    final isValueIdeal = switch (limitType) {
       SliderLimitType.lessThan => v < limit,
       SliderLimitType.lessThanEqual => v <= limit,
       SliderLimitType.moreThan => v > limit,
@@ -266,7 +266,7 @@ class CustomSliderSingleRange extends StatelessWidget {
         Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: FlutterSlider(
                 values: [clampedValueForThumb],
                 min: internalSliderMin,
@@ -317,7 +317,7 @@ class CustomSliderSingleRange extends StatelessWidget {
                 ),
                 tooltip: FlutterSliderTooltip(
                   alwaysShowTooltip: true,
-                  format: (valStr_from_slider_position) {
+                  format: (valstrFromSliderPosition) {
                     return isMonthValue
                         ? formatMonths(v)
                         : formatPercent(v); // Always show original 'v'

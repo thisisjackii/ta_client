@@ -13,14 +13,12 @@ class EvaluationApiException implements Exception {
   String toString() => 'EvaluationApiException: $message (Status: $statusCode)';
 }
 
-class CheckExistingEvaluationResponse {
-  final bool exists;
-  final List<Evaluation> data; // The actual evaluation results if they exist
+class CheckExistingEvaluationResponse { // The actual evaluation results if they exist
 
   CheckExistingEvaluationResponse({required this.exists, this.data = const []});
 
   factory CheckExistingEvaluationResponse.fromJson(Map<String, dynamic> json) {
-    List<Evaluation> evaluations = [];
+    var evaluations = <Evaluation>[];
     if (json['exists'] == true && json['data'] is List) {
       evaluations = (json['data'] as List)
           .map((item) => Evaluation.fromJson(item as Map<String, dynamic>))
@@ -31,6 +29,8 @@ class CheckExistingEvaluationResponse {
       data: evaluations,
     );
   }
+  final bool exists;
+  final List<Evaluation> data;
 }
 
 class EvaluationService {

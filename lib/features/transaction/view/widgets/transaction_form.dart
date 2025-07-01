@@ -305,23 +305,23 @@ class _TransactionFormState extends State<TransactionForm> {
     if (state.classifiedResult == null ||
         _currentMode == TransactionFormMode.view) {
       debugPrint(
-        "[TransactionForm._handleClassificationResult] No classified result or in view mode. Skipping.",
+        '[TransactionForm._handleClassificationResult] No classified result or in view mode. Skipping.',
       );
       return;
     }
 
-    final Map<String, dynamic> classificationData = state.classifiedResult!;
+    final classificationData = state.classifiedResult!;
 
-    final bool isKnownSubcategoryByMl =
+    final isKnownSubcategoryByMl =
         classificationData['isKnownSubcategory'] as bool? ?? false;
-    final double confidence =
+    final confidence =
         (classificationData['confidence'] as num?)?.toDouble() ?? 0.0;
 
     debugPrint(
-      "[TransactionForm._handleClassificationResult] Received classificationData: $classificationData",
+      '[TransactionForm._handleClassificationResult] Received classificationData: $classificationData',
     );
     debugPrint(
-      "[TransactionForm._handleClassificationResult] Parsed: isKnownSubcategoryByMl=$isKnownSubcategoryByMl, confidence=$confidence",
+      '[TransactionForm._handleClassificationResult] Parsed: isKnownSubcategoryByMl=$isKnownSubcategoryByMl, confidence=$confidence',
     );
 
     // Only check isKnownSubcategoryByMl from the data object
@@ -338,7 +338,7 @@ class _TransactionFormState extends State<TransactionForm> {
     }
 
     debugPrint(
-      "[TransactionForm._handleClassificationResult] Applying known classification...",
+      '[TransactionForm._handleClassificationResult] Applying known classification...',
     );
 
     // ... THE REST OF YOUR FIELD EXTRACTION AND LOGIC FROM LINE 327 of your screenshot onwards should now execute correctly ...
@@ -359,8 +359,8 @@ class _TransactionFormState extends State<TransactionForm> {
     final classifiedAccountTypeName =
         classificationData['accountTypeName'] as String?;
 
-    bool accountTypeActuallyChangedByThisClassification = false;
-    bool categoryActuallyChangedByThisClassification = false;
+    var accountTypeActuallyChangedByThisClassification = false;
+    var categoryActuallyChangedByThisClassification = false;
 
     // 1. Process Account Type
     if (classifiedAccountTypeId != null &&
@@ -384,7 +384,7 @@ class _TransactionFormState extends State<TransactionForm> {
 
         accountTypeActuallyChangedByThisClassification = true;
         debugPrint(
-          "[TransactionForm] Classification updated AccountType to: ${accType.name}. Requesting categories.",
+          '[TransactionForm] Classification updated AccountType to: ${accType.name}. Requesting categories.',
         );
         context.read<TransactionBloc>().add(
           LoadCategoriesRequested(accType.id),
@@ -392,7 +392,7 @@ class _TransactionFormState extends State<TransactionForm> {
         return;
       } catch (e) {
         debugPrint(
-          "[TransactionForm] Error finding classified AccountType ID $classifiedAccountTypeId in BLoC state: $e",
+          '[TransactionForm] Error finding classified AccountType ID $classifiedAccountTypeId in BLoC state: $e',
         );
         return;
       }
@@ -431,13 +431,13 @@ class _TransactionFormState extends State<TransactionForm> {
 
         categoryActuallyChangedByThisClassification = true;
         debugPrint(
-          "[TransactionForm] Classification updated CategoryId to: $classifiedCategoryId. Requesting subcategories.",
+          '[TransactionForm] Classification updated CategoryId to: $classifiedCategoryId. Requesting subcategories.',
         );
         context.read<TransactionBloc>().add(LoadSubcategoriesRequested(cat.id));
         return;
       } catch (e) {
         debugPrint(
-          "[TransactionForm] Error finding/validating classified Category ID $classifiedCategoryId: $e",
+          '[TransactionForm] Error finding/validating classified Category ID $classifiedCategoryId: $e',
         );
         return;
       }
@@ -482,11 +482,11 @@ class _TransactionFormState extends State<TransactionForm> {
             '${subcat.name} ✨'; // Use name from loaded data + emoji
         _isClassificationSuggestion = true;
         debugPrint(
-          "[TransactionForm] Classification updated SubcategoryId to: $classifiedSubcategoryId",
+          '[TransactionForm] Classification updated SubcategoryId to: $classifiedSubcategoryId',
         );
       } catch (e) {
         debugPrint(
-          "[TransactionForm] Error finding/validating classified Subcategory ID $classifiedSubcategoryId: $e",
+          '[TransactionForm] Error finding/validating classified Subcategory ID $classifiedSubcategoryId: $e',
         );
         if (classifiedSubcategoryName != null) {
           _pickerSelectedSubcategoryName = '$classifiedSubcategoryName ✨';

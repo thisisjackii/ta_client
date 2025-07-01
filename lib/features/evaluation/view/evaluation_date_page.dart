@@ -86,8 +86,9 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
   }
 
   Future<void> _openDateDialog() async {
-    if (_isDatePickerDialogOpen || _isChoiceDialogOpen)
+    if (_isDatePickerDialogOpen || _isChoiceDialogOpen) {
       return; // Prevent re-entry if any dialog is open
+    }
     _isDatePickerDialogOpen = true;
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
     final evaluationBloc = context.read<EvaluationBloc>();
@@ -112,10 +113,10 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
               if (didPop) return;
               Navigator.of(datePickerDialogContext).pop();
               // _isDatePickerDialogOpen set to false in whenComplete
-              if (Navigator.canPop(this.context)) {
-                Navigator.pop(this.context);
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
               } else {
-                Navigator.pushReplacementNamed(this.context, Routes.dashboard);
+                Navigator.pushReplacementNamed(context, Routes.dashboard);
               }
             },
             child: AlertDialog(
@@ -133,7 +134,6 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
                       setDialogState(() {
                         _tempStartDateDialog = date;
                         if (_tempEndDateDialog != null &&
-                            date != null &&
                             date.isAfter(_tempEndDateDialog!)) {
                           _tempEndDateDialog = date;
                         }
@@ -150,7 +150,6 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
                       setDialogState(() {
                         _tempEndDateDialog = date;
                         if (_tempStartDateDialog != null &&
-                            date != null &&
                             date.isBefore(_tempStartDateDialog!)) {
                           _tempStartDateDialog = date;
                         }
@@ -164,11 +163,11 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
                   onPressed: () {
                     Navigator.pop(datePickerDialogContext);
                     // _isDatePickerDialogOpen set to false in whenComplete
-                    if (Navigator.canPop(this.context)) {
-                      Navigator.pop(this.context);
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
                     } else {
                       Navigator.pushReplacementNamed(
-                        this.context,
+                        context,
                         Routes.dashboard,
                       );
                     }
@@ -208,7 +207,6 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
                       EvaluationDateRangeSelected(
                         _tempStartDateDialog!,
                         _tempEndDateDialog!,
-                        showDuplicateWarning: true,
                       ),
                     );
                   },
@@ -231,8 +229,9 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
     DateTime conflictedStart,
     DateTime conflictedEnd,
   ) async {
-    if (_isChoiceDialogOpen || _isDatePickerDialogOpen)
+    if (_isChoiceDialogOpen || _isDatePickerDialogOpen) {
       return; // Prevent if any dialog is already up
+    }
     _isChoiceDialogOpen = true;
 
     await showDialog<void>(
@@ -302,7 +301,7 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
       body: BlocListener<EvaluationBloc, EvaluationState>(
         listener: (context, state) {
           debugPrint(
-            "[EvaluationDatePage Listener] New state: loading=${state.loading}, conflict=${state.dateConflictExists}, error=${state.error}, dateError=${state.dateError}, items=${state.dashboardItems.length}",
+            '[EvaluationDatePage Listener] New state: loading=${state.loading}, conflict=${state.dateConflictExists}, error=${state.error}, dateError=${state.dateError}, items=${state.dashboardItems.length}',
           );
 
           ScaffoldMessenger.of(
@@ -312,7 +311,7 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
 
           if (state.dateConflictExists) {
             debugPrint(
-              "[EvaluationDatePage Listener] Conflict detected. Attempting to show choice dialog.",
+              '[EvaluationDatePage Listener] Conflict detected. Attempting to show choice dialog.',
             );
             // Ensure no other dialog from this page is active.
             // The date picker dialog should have been popped by its "OK" button
@@ -323,7 +322,7 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
               // dialog's OK button pops itself before dispatching the event.
               if (_isDatePickerDialogOpen) {
                 debugPrint(
-                  "[EvaluationDatePage Listener] Warning: Date picker dialog was unexpectedly still marked open when conflict detected.",
+                  '[EvaluationDatePage Listener] Warning: Date picker dialog was unexpectedly still marked open when conflict detected.',
                 );
                 // Potentially try to close it, but this indicates a flow issue in _openDateDialog's OK button.
               }
@@ -334,7 +333,7 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
               );
             } else {
               debugPrint(
-                "[EvaluationDatePage Listener] Choice dialog already open or being opened. Skipping.",
+                '[EvaluationDatePage Listener] Choice dialog already open or being opened. Skipping.',
               );
             }
             return; // IMPORTANT: Stop further processing in this listener pass
@@ -342,11 +341,11 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
 
           // If no date conflict, or a choice from conflict dialog led to a non-conflict state (e.g., after "Cancel" or "Proceed")
           if (!state.loading) {
-            bool shouldReopenDatePickerDueToError = false;
+            var shouldReopenDatePickerDueToError = false;
 
             if (state.dateError != null) {
               debugPrint(
-                "[EvaluationDatePage Listener] Date error: ${state.dateError}",
+                '[EvaluationDatePage Listener] Date error: ${state.dateError}',
               );
               _snackBarController = ScaffoldMessenger.of(
                 context,
@@ -355,7 +354,7 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
               shouldReopenDatePickerDueToError = true;
             } else if (state.error != null) {
               debugPrint(
-                "[EvaluationDatePage Listener] General error: ${state.error}",
+                '[EvaluationDatePage Listener] General error: ${state.error}',
               );
               _snackBarController = ScaffoldMessenger.of(
                 context,
@@ -369,12 +368,12 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
               // - User chose "Proceed with Duplicate" -> BLoC re-evaluated -> data loaded.
               // - User chose "Navigate to Existing" -> BLoC set dates & items -> data available.
               debugPrint(
-                "[EvaluationDatePage Listener] Dates set, no errors/conflict. Dashboard items count: ${state.dashboardItems.length}",
+                '[EvaluationDatePage Listener] Dates set, no errors/conflict. Dashboard items count: ${state.dashboardItems.length}',
               );
               if (state.dashboardItems.isNotEmpty) {
                 if (ModalRoute.of(context)?.isCurrent ?? false) {
                   debugPrint(
-                    "[EvaluationDatePage Listener] Navigating to dashboard.",
+                    '[EvaluationDatePage Listener] Navigating to dashboard.',
                   );
                   Navigator.pushReplacementNamed(
                     context,
@@ -385,7 +384,7 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
               } else {
                 // Dates are valid, no conflict, but no data found for this period.
                 debugPrint(
-                  "[EvaluationDatePage Listener] No dashboard items for the selected period.",
+                  '[EvaluationDatePage Listener] No dashboard items for the selected period.',
                 );
                 _snackBarController = ScaffoldMessenger.of(context)
                     .showSnackBar(
@@ -398,13 +397,13 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
               }
             } else {
               debugPrint(
-                "[EvaluationDatePage Listener] Dates not set, no error/conflict. Idle or waiting for initial dialog.",
+                '[EvaluationDatePage Listener] Dates not set, no error/conflict. Idle or waiting for initial dialog.',
               );
             }
 
             if (shouldReopenDatePickerDueToError) {
               debugPrint(
-                "[EvaluationDatePage Listener] Reopening date dialog due to error/no data.",
+                '[EvaluationDatePage Listener] Reopening date dialog due to error/no data.',
               );
               _snackBarController?.closed.then((_) {
                 _snackBarController = null;
@@ -417,7 +416,7 @@ class _EvaluationDatePageState extends State<EvaluationDatePage>
             }
           } else {
             debugPrint(
-              "[EvaluationDatePage Listener] State is loading. Waiting for load to complete.",
+              '[EvaluationDatePage Listener] State is loading. Waiting for load to complete.',
             );
           }
         },

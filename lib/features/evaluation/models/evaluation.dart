@@ -55,12 +55,12 @@ class Evaluation extends Equatable {
     }
     final isIdealResult = parsedStatus == EvaluationStatusModel.ideal;
 
-    String? finalIdealText =
+    var finalIdealText =
         ratioData?['idealText'] as String? ??
         json['idealRangeDisplay'] as String?;
     if (finalIdealText == null ||
-        finalIdealText == "Rentang ideal tidak ditentukan" ||
-        finalIdealText == "N/A") {
+        finalIdealText == 'Rentang ideal tidak ditentukan' ||
+        finalIdealText == 'N/A') {
       finalIdealText = _constructIdealTextFromRatioData(ratioData);
     }
 
@@ -113,16 +113,18 @@ class Evaluation extends Equatable {
     final lower = (ratioData['lowerBound'] as num?)?.toDouble();
     final upper = (ratioData['upperBound'] as num?)?.toDouble();
     final multiplier = (ratioData['multiplier'] as num?)?.toDouble() ?? 1.0;
-    final String unit = multiplier == 100.0
+    final unit = multiplier == 100.0
         ? '%'
         : (code == 'LIQUIDITY_RATIO' ? ' Bulan' : '');
     String? formatB(double? v) => v != null ? v.toStringAsFixed(0) : '';
 
-    if (code == 'LIQUIDITY_RATIO')
+    if (code == 'LIQUIDITY_RATIO') {
       return lower != null ? '≥ ${formatB(lower)}$unit' : '≥ 3 Bulan';
+    }
     if (code == 'SOLVENCY_RATIO') return '-';
-    if (lower != null && upper != null)
+    if (lower != null && upper != null) {
       return '${formatB(lower)}$unit - ${formatB(upper)}$unit';
+    }
     if (lower != null) return '≥ ${formatB(lower)}$unit';
     if (upper != null) return '≤ ${formatB(upper)}$unit';
     return 'N/A';

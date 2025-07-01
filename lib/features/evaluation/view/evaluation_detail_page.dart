@@ -28,12 +28,12 @@ class EvaluationDetailPage extends StatelessWidget {
           );
         }
         final item = state.detailItem!;
-        final String ratioIdentifierForLogic = item.backendRatioCode ?? item.id;
+        final ratioIdentifierForLogic = item.backendRatioCode ?? item.id;
 
         final isLiquidityRatio = ratioIdentifierForLogic == 'LIQUIDITY_RATIO';
         final isSolvencyRatio = ratioIdentifierForLogic == 'SOLVENCY_RATIO';
 
-        bool isDataEffectivelyEmpty =
+        final isDataEffectivelyEmpty =
             item.status == EvaluationStatusModel.incomplete &&
             item.yourValue == 0.0 &&
             (item.breakdown == null ||
@@ -48,7 +48,7 @@ class EvaluationDetailPage extends StatelessWidget {
           );
         } catch (_) {
           debugPrint(
-            "Could not find client RatioDef for identifier: $ratioIdentifierForLogic for detail page logic.",
+            'Could not find client RatioDef for identifier: $ratioIdentifierForLogic for detail page logic.',
           );
         }
 
@@ -59,15 +59,15 @@ class EvaluationDetailPage extends StatelessWidget {
         if (isLiquidityRatio) {
           displayValueStringForCardOrOtherText = formatMonths(item.yourValue);
         } else {
-          String formattedPercentage = item.yourValue.toStringAsFixed(
+          var formattedPercentage = item.yourValue.toStringAsFixed(
             item.yourValue.truncateToDouble() == item.yourValue ? 0 : 2,
           );
-          if (formattedPercentage.endsWith(".00")) {
+          if (formattedPercentage.endsWith('.00')) {
             formattedPercentage = formattedPercentage.substring(
               0,
               formattedPercentage.length - 3,
             );
-          } else if (formattedPercentage.endsWith(".0")) {
+          } else if (formattedPercentage.endsWith('.0')) {
             formattedPercentage = formattedPercentage.substring(
               0,
               formattedPercentage.length - 2,
@@ -82,7 +82,7 @@ class EvaluationDetailPage extends StatelessWidget {
           final entryValueObj = item.breakdown?.firstWhere(
             (e) => e.name == conceptualNameKey,
             orElse: () =>
-                ConceptualComponentValue(name: conceptualNameKey, value: 0.0),
+                ConceptualComponentValue(name: conceptualNameKey, value: 0),
           );
           return entryValueObj != null
               ? [
@@ -94,15 +94,15 @@ class EvaluationDetailPage extends StatelessWidget {
               : [];
         }
 
-        final List<String> currentRatioInputKeys = _getRatioInputKeys(
+        final currentRatioInputKeys = _getRatioInputKeys(
           clientRatioDef?.id ?? item.id,
         );
-        final String numeratorConceptualKey = currentRatioInputKeys.isNotEmpty
+        final numeratorConceptualKey = currentRatioInputKeys.isNotEmpty
             ? currentRatioInputKeys[0]
-            : "Numerator N/A";
-        final String denominatorConceptualKey = currentRatioInputKeys.length > 1
+            : 'Numerator N/A';
+        final denominatorConceptualKey = currentRatioInputKeys.length > 1
             ? currentRatioInputKeys[1]
-            : "Denominator N/A";
+            : 'Denominator N/A';
 
         return Scaffold(
           appBar: AppBar(
@@ -223,7 +223,7 @@ class EvaluationDetailPage extends StatelessWidget {
                 if (isDataEffectivelyEmpty && !isSolvencyRatio)
                   Padding(
                     /* ... existing empty data message ... */
-                    padding: const EdgeInsets.symmetric(vertical: 32.0),
+                    padding: const EdgeInsets.symmetric(vertical: 32),
                     child: Center(
                       child: Text(
                         'Data tidak cukup untuk menghitung rasio "${item.title}". Pastikan ada transaksi yang relevan pada periode terpilih.',
@@ -242,7 +242,7 @@ class EvaluationDetailPage extends StatelessWidget {
                     CustomSliderSingleRange(
                       currentValue: item.yourValue,
                       idealText:
-                          item.idealText ?? clientRatioDef.idealText ?? "N/A",
+                          item.idealText ?? clientRatioDef.idealText ?? 'N/A',
                       limit: 3, // Specific for Liquidity
                       limitType: SliderLimitType
                           .moreThanEqual, // Specific for Liquidity
@@ -265,10 +265,9 @@ class EvaluationDetailPage extends StatelessWidget {
                     CustomSliderSingleRange(
                       currentValue: item.yourValue,
                       idealText:
-                          item.idealText ?? clientRatioDef.idealText ?? "N/A",
+                          item.idealText ?? clientRatioDef.idealText ?? 'N/A',
                       limit: _getLimitFromRatioDef(clientRatioDef),
                       limitType: _getLimitTypeFromRatioDef(clientRatioDef),
-                      isMonthValue: false, // Default is percentage
                     ),
                     // REMOVE the redundant Text widget that was here
                     const SizedBox(height: 24),
@@ -311,7 +310,7 @@ class EvaluationDetailPage extends StatelessWidget {
                 ] else ...[
                   const Center(
                     child: Text(
-                      "Detail rasio tidak dapat ditampilkan (definisi tidak ditemukan).",
+                      'Detail rasio tidak dapat ditampilkan (definisi tidak ditemukan).',
                     ),
                   ),
                 ],
@@ -353,11 +352,11 @@ class EvaluationDetailPage extends StatelessWidget {
   }
 
   double _getLimitFromRatioDef(RatioDef def) {
-    final textToParse = def.idealText ?? "";
-    if (textToParse.startsWith("≥") ||
-        textToParse.startsWith("≤") ||
-        textToParse.startsWith(">") ||
-        textToParse.startsWith("<")) {
+    final textToParse = def.idealText ?? '';
+    if (textToParse.startsWith('≥') ||
+        textToParse.startsWith('≤') ||
+        textToParse.startsWith('>') ||
+        textToParse.startsWith('<')) {
       final match = RegExp(
         r'(\d+(\.\d+)?)',
       ).firstMatch(textToParse.substring(1));
@@ -373,14 +372,14 @@ class EvaluationDetailPage extends StatelessWidget {
   }
 
   SliderLimitType _getLimitTypeFromRatioDef(RatioDef def) {
-    final textToParse = def.idealText ?? "";
-    if (textToParse.contains(" - ")) {
+    final textToParse = def.idealText ?? '';
+    if (textToParse.contains(' - ')) {
       return SliderLimitType.moreThanEqual;
     }
-    if (textToParse.startsWith("≥")) return SliderLimitType.moreThanEqual;
-    if (textToParse.startsWith("≤")) return SliderLimitType.lessThanEqual;
-    if (textToParse.startsWith(">")) return SliderLimitType.moreThan;
-    if (textToParse.startsWith("<")) return SliderLimitType.lessThan;
+    if (textToParse.startsWith('≥')) return SliderLimitType.moreThanEqual;
+    if (textToParse.startsWith('≤')) return SliderLimitType.lessThanEqual;
+    if (textToParse.startsWith('>')) return SliderLimitType.moreThan;
+    if (textToParse.startsWith('<')) return SliderLimitType.lessThan;
     return SliderLimitType.moreThanEqual;
   }
 }
